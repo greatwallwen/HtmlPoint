@@ -1,0 +1,23 @@
+{
+  "verification": [
+    {
+      "command": "python -m pytest platform/helper/tests/test_retrieval.py platform/helper/tests/test_api.py platform/helper/tests/test_artifacts.py platform/helper/tests/test_source_visuals.py platform/helper/tests/test_pptx_parser.py platform/helper/tests/test_catalog.py platform/helper/tests/test_composition_storage.py -q",
+      "exitCode": 0,
+      "status": "passed",
+      "executedAt": "2026-07-18T19:44:45.2770748+08:00",
+      "sha256": [
+        "b0a238cbc1260db458f63944b38ca1a47cdf3e865faacb117066ea560b9622ea"
+      ],
+      "inputHashes": [
+        {
+          "path": "D:\\cursor\\AI培训\\docs\\superpowers\\plans\\2026-07-16-course-composition-and-authentic-visuals.md",
+          "sha256": "5e46c450c4937c4dc434ab514c0d9897180d60bed3634f9eb24960b7cc55bc9d"
+        },
+        {
+          "path": "D:\\cursor\\AI培训\\AGENTS.md",
+          "sha256": "60658d64cfe8e5d7e0d15db614aeeb0e9392c443764a24f874ecf9925c19027b"
+        }
+      ]
+    }
+  ]
+}

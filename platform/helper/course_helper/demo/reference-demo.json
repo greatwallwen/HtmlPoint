@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "rootId": "reference-demo",
+  "inventoryRoots": [
+    "dataset",
+    "AIExcelData"
+  ],
+  "sources": [
+    {
+      "kind": "pptx",
+      "path": "AI.pptx",
+      "slides": {
+        "start": 3,
+        "endInclusive": 18
+      }
+    },
+    {
+      "kind": "markdown",
+      "path": "AIGC实操 -数据分析.md",
+      "headings": [
+        "自行车共享需求"
+      ]
+    },
+    {
+      "kind": "markdown",
+      "path": "AIGC实操-Prompt工程.md",
+      "headings": [
+        "Prompt概论",
+        "正确提问"
+      ]
+    },
+    {
+      "kind": "csv",
+      "path": "dataset/1-train.csv"
+    },
+    {
+      "kind": "xlsx",
+      "path": "AIExcelData/ex-17-RFM.xlsx"
+    }
+  ],
+  "quarantinedExtensions": [
+    ".pth",
+    ".pt",
+    ".tmp",
+    ".whl"
+  ]
+}

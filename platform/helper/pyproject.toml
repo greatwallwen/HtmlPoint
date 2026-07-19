@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools==75.6.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "course-studio-helper"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "defusedxml==0.7.1",
+  "duckdb==1.5.4",
+  "fastembed==0.8.0",
+  "fastapi==0.115.6",
+  "markdown-it-py==2.2.0",
+  "openpyxl==3.1.2",
+  "packaging==23.2",
+  "Pillow==12.3.0",
+  "pydantic==2.5.3",
+  "python-pptx==1.0.2",
+  "uvicorn==0.32.1",
+]
+
+[project.scripts]
+course-helper = "course_helper.server:main"
+
+[project.optional-dependencies]
+dev = ["httpx==0.28.1", "pytest==8.3.4"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = [
+  "reference_demo: exercises an explicitly allowlisted local reference fixture",
+]

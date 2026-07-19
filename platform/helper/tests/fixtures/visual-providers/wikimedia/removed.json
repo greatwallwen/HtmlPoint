@@ -1,0 +1,8 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "pages": [
+      {"pageid": 42, "ns": 6, "title": "File:Verified.png", "missing": true}
+    ]
+  }
+}

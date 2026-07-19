@@ -1,0 +1,58 @@
+{
+  "acceptance": [
+    "Typed chart specs pin dataset, schema, column, query, and result digests and allow only verified DuckDB relations and allowlisted aggregates",
+    "CSV and XLSX fixtures produce deterministic accessible SVG bytes for bar, line, and scatter charts under row, time, result, and pixel ceilings",
+    "Sensitive fields, arbitrary SQL or expressions, HTML, script, external references, screenshot-derived charts, and schema drift fail closed",
+    "Generated SVG is validated through a trusted generated-artifact seam while source and network SVG remain unsupported",
+    "Each requested chart returns an independent evidence-backed success or sanitized failure outcome",
+    "Focused chart, dataset profiler, and artifact tests pass"
+  ],
+  "checkpointId": "43b21f3f96754a56a60a45603686d9bc",
+  "goal": "Build deterministic evidence-backed bar, line, and scatter chart artifacts from verified dataset relations without accepting arbitrary SQL or unsafe SVG",
+  "inputDrift": [],
+  "inputs": [
+    {
+      "path": "D:\\cursor\\AI培训\\docs\\superpowers\\plans\\2026-07-16-course-composition-and-authentic-visuals.md",
+      "sha256": "5e46c450c4937c4dc434ab514c0d9897180d60bed3634f9eb24960b7cc55bc9d"
+    },
+    {
+      "path": "D:\\cursor\\AI培训\\AGENTS.md",
+      "sha256": "60658d64cfe8e5d7e0d15db614aeeb0e9392c443764a24f874ecf9925c19027b"
+    }
+  ],
+  "nextAction": null,
+  "phaseId": "task10-evidence-backed-charts",
+  "resumeGate": "ready",
+  "route": {
+    "profile": "P2",
+    "recommended": {
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "high"
+    }
+  },
+  "schemaVersion": "1.0",
+  "startedAt": "2026-07-18T11:48:06.635374+00:00",
+  "status": "completed",
+  "updatedAt": "2026-07-18T12:12:51.124898+00:00",
+  "verification": [
+    {
+      "command": "python -m pytest platform/helper/tests/test_chart_builder.py platform/helper/tests/test_dataset_profiler.py platform/helper/tests/test_artifacts.py -q",
+      "executedAt": "2026-07-18T20:11:13.0588806+08:00",
+      "exitCode": 0,
+      "inputHashes": [
+        {
+          "path": "D:\\cursor\\AI培训\\docs\\superpowers\\plans\\2026-07-16-course-composition-and-authentic-visuals.md",
+          "sha256": "5e46c450c4937c4dc434ab514c0d9897180d60bed3634f9eb24960b7cc55bc9d"
+        },
+        {
+          "path": "D:\\cursor\\AI培训\\AGENTS.md",
+          "sha256": "60658d64cfe8e5d7e0d15db614aeeb0e9392c443764a24f874ecf9925c19027b"
+        }
+      ],
+      "sha256": [
+        "7ac5a53264584e4cabb136cf43603b97f8fb040189d9c5a88f9cf68b32905313"
+      ],
+      "status": "passed"
+    }
+  ]
+}

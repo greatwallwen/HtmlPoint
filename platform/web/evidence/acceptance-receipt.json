@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-07-16T02:34:36+08:00",
+  "releaseGateCompletedAt": "2026-07-16T03:51:43+08:00",
+  "currentCommitBeforeEvidenceCommit": "7b56d3b259279bd7a6edb1eaf779ca0f9827bf9c",
+  "reference": {
+    "path": "docs/product/assets/course-studio-light-reference.png",
+    "sha256": "36A5A9E54C863A326B98CA7082ACF16293EA423D442495E0317D85E91121B3B3",
+    "width": 1569,
+    "height": 1002
+  },
+  "evidence": {
+    "implementation": {
+      "path": "platform/web/evidence/design-qa-edit.png",
+      "sha256": "21EEF25DF85E27042D6843EFEECA648960C50608CB2531F768FEEF0278E37E09",
+      "width": 1569,
+      "height": 1002
+    },
+    "comparison": {
+      "path": "platform/web/evidence/design-qa-comparison.png",
+      "sha256": "512F29C5CDB8035508166299941C2A15EECA7967E91D4A29C20D0C11E2CAFA8E",
+      "width": 3138,
+      "height": 1002
+    },
+    "stage": {
+      "path": "platform/web/evidence/teaching-stage.png",
+      "sha256": "4D46AD2C81590646E5F540AF09ED981487941F5E64D7E027913061304560F003",
+      "width": 1038,
+      "height": 703
+    },
+    "presenter": {
+      "path": "platform/web/evidence/teaching-presenter.png",
+      "sha256": "0AEFAA418E494CD9C870BF4337D9773E36AA5BEEF3D5CCAC26BA0F177B1B7FC2",
+      "width": 1038,
+      "height": 703
+    },
+    "fixture": {
+      "path": "platform/web/evidence/browser-flow-fixture.md",
+      "sha256": "FEE44D070734EB68CF503DD85F6E60D0BF193E9D0107D069B709B918B8FBB20C"
+    }
+  },
+  "viewport": {
+    "width": 1569,
+    "height": 1002,
+    "deviceScaleFactor": 1
+  },
+  "workflowStepsExercised": [
+    "import_markdown_ready",
+    "generate_structured_course",
+    "edit_lesson",
+    "reorder_lesson",
+    "unlink_and_relink_source",
+    "run_supported_assistant_intents",
+    "preserve_unknown_assistant_intent",
+    "validate_course",
+    "restore_workspace_and_validation_after_reload",
+    "reject_blank_text_and_retry_persisted_failure",
+    "open_rehearsal_stage_and_presenter",
+    "require_both_projection_frame_acknowledgements",
+    "reject_stale_projection_frame_acknowledgements",
+    "synchronize_lesson_navigation",
+    "recover_stage_last_frame_after_reload",
+    "preserve_latest_navigation_frame_across_reconnect",
+    "recover_closed_projection_window",
+    "close_projection_windows_on_return_and_end",
+    "start_pause_reset_timer",
+    "enforce_navigation_boundaries",
+    "restore_focus_after_escape"
+  ],
+  "validationDigestPreview": "5efb11f763f8",
+  "browserHealth": {
+    "consoleErrorCount": 0,
+    "pageErrorCount": 0,
+    "failedRequestCount": 0,
+    "addLessonVisible": true,
+    "remainingSpaceBeforeAssistantPx": 173.7,
+    "measuredIconTarget": "44x44"
+  },
+  "rehearsal": {
+    "mode": "same-screen",
+    "stageConnected": true,
+    "presenterConnected": true,
+    "synchronization": "passed",
+    "initialFrameAcknowledgements": "passed",
+    "lastFrameRecovery": "passed",
+    "latestFrameReconnect": "passed",
+    "disconnectedWindowRecovery": "passed",
+    "sessionWindowCleanup": "passed",
+    "timerControls": "passed",
+    "boundaryControls": "passed"
+  },
+  "physicalDualScreenCertified": false,
+  "protectedChangedPathGuard": {
+    "baseline": "e6cd08d59",
+    "pathMetadataOnly": true,
+    "pathCount": 51,
+    "sortedPathListSha256": "069C7D15C6ECF337C608A7D9937F66FDB56CA3232533252A1314E3FBAAB855CF",
+    "forbiddenPathCount": 0
+  },
+  "commands": [
+    {
+      "command": "npm --prefix platform/web test -- --run",
+      "exitCode": 0,
+      "result": "11 test files and 194 tests passed"
+    },
+    {
+      "command": "npm --prefix platform/web run typecheck",
+      "exitCode": 0,
+      "result": "tsc --noEmit passed"
+    },
+    {
+      "command": "npm --prefix platform/web run build",
+      "exitCode": 0,
+      "result": "4663 modules transformed and production assets emitted"
+    },
+    {
+      "command": "npm --prefix platform/web audit --audit-level=high",
+      "exitCode": 0,
+      "result": "0 vulnerabilities"
+    },
+    {
+      "command": "python -m pytest platform/qa/test_run.py -q",
+      "exitCode": 0,
+      "result": "37 tests passed"
+    },
+    {
+      "command": "python platform/qa/run.py focused",
+      "exitCode": 0,
+      "result": "8 focused checks passed with hash-verified acceptance evidence"
+    },
+    {
+      "command": "python platform/qa/run.py all",
+      "exitCode": 0,
+      "result": "11 release checks passed including web tests, typecheck, and build"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "result": "clean"
+    }
+  ],
+  "designQa": "passed"
+}

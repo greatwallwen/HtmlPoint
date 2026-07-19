@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "channel": "chrome",
+  "productName": "Google Chrome",
+  "productVersion": "150.0.7871.124",
+  "fileVersion": "150.0.7871.124",
+  "executableSha256": "40ad3d87ea81270f36137e6f84fb36e9a2236aedd835696dd663ac1a27dd1b13",
+  "publisher": "CN=Google LLC, O=Google LLC, L=Mountain View, S=California, C=US, SERIALNUMBER=3582691, OID.2.5.4.15=Private Organization, OID.1.3.6.1.4.1.311.60.2.1.2=Delaware, OID.1.3.6.1.4.1.311.60.2.1.3=US",
+  "allowedBasename": "chrome.exe"
+}

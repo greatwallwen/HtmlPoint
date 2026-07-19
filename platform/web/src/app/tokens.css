@@ -1,0 +1,19 @@
+:root {
+  font-family: Inter, "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  color: #172033;
+  background: #f7f8fa;
+  --color-page: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f6f8;
+  --color-border: #e3e7ed;
+  --color-text: #172033;
+  --color-text-muted: #667085;
+  --color-brand: #1463ff;
+  --color-brand-soft: #eaf2ff;
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-error: #b42318;
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-panel: 14px;
+}

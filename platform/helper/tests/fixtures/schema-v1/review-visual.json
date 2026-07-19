@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "reviewPayloads": [
+    {
+      "kind": "source-changed",
+      "originalCanonicalPayload": "{\"blocking\":true,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"evidence_ids\":[\"evidence-source-changed\"],\"kind\":\"source-changed\",\"status\":\"open\",\"subject_version_id\":\"card-v1\",\"task_id\":\"review-source-changed\"}",
+      "originalSha256": "a775b37430585692999a8accd41a561a453ca943a2a9c3250e0a9816c84ddc59"
+    },
+    {
+      "kind": "near-duplicate",
+      "originalCanonicalPayload": "{\"blocking\":true,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"evidence_ids\":[\"evidence-near-duplicate\"],\"kind\":\"near-duplicate\",\"status\":\"open\",\"subject_version_id\":\"card-v1\",\"task_id\":\"review-near-duplicate\"}",
+      "originalSha256": "1fdde4c0bdc57ff528e9ba5b0b6847a7419fc0733a8bc55f1d25bdead8ecef1c"
+    },
+    {
+      "kind": "unknown-tag",
+      "originalCanonicalPayload": "{\"blocking\":true,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"evidence_ids\":[\"evidence-unknown-tag\"],\"kind\":\"unknown-tag\",\"status\":\"open\",\"subject_version_id\":\"card-v1\",\"task_id\":\"review-unknown-tag\"}",
+      "originalSha256": "508d24a585423424e97c15e5a2336960a1157ed84f47f4513c8cdd62168bd65d"
+    },
+    {
+      "kind": "deprecated-tag",
+      "originalCanonicalPayload": "{\"blocking\":true,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"evidence_ids\":[\"evidence-deprecated-tag\"],\"kind\":\"deprecated-tag\",\"status\":\"open\",\"subject_version_id\":\"card-v1\",\"task_id\":\"review-deprecated-tag\"}",
+      "originalSha256": "5704dcadc1865c3aa5d0883197c124df09997eddc3a9cefc3422a56034c3ccbb"
+    },
+    {
+      "kind": "tag-conflict",
+      "originalCanonicalPayload": "{\"blocking\":true,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"evidence_ids\":[\"evidence-tag-conflict\"],\"kind\":\"tag-conflict\",\"status\":\"open\",\"subject_version_id\":\"card-v1\",\"task_id\":\"review-tag-conflict\"}",
+      "originalSha256": "c978de350cb31140b55ed64ecc7db9d5c87f3ff7d9c650b907bdca6ac5f5daa7"
+    },
+    {
+      "kind": "citation-missing",
+      "originalCanonicalPayload": "{\"blocking\":true,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"evidence_ids\":[\"evidence-citation-missing\"],\"kind\":\"citation-missing\",\"status\":\"open\",\"subject_version_id\":\"card-v1\",\"task_id\":\"review-citation-missing\"}",
+      "originalSha256": "791c69d7d43d88f67b649a29e5640c1a973f2957b0bdbe5a71b0d561badf452b"
+    },
+    {
+      "kind": "visual-rights",
+      "originalCanonicalPayload": "{\"blocking\":true,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"evidence_ids\":[\"evidence-visual-rights\"],\"kind\":\"visual-rights\",\"status\":\"open\",\"subject_version_id\":\"visual-v1\",\"task_id\":\"review-visual-rights\"}",
+      "originalSha256": "53330ea2faebd9b3ce1da73aa4cc450c4264cee2d732f45583f3aee8471d8adc"
+    },
+    {
+      "kind": "visual-unverified",
+      "originalCanonicalPayload": "{\"blocking\":true,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"evidence_ids\":[\"evidence-visual-unverified\"],\"kind\":\"visual-unverified\",\"status\":\"open\",\"subject_version_id\":\"visual-v1\",\"task_id\":\"review-visual-unverified\"}",
+      "originalSha256": "c8544444ed536ddf8a372bd4a75fe1f5b4279d4d51be743fd31ff589903286bf"
+    },
+    {
+      "kind": "dataset-reference",
+      "originalCanonicalPayload": "{\"blocking\":true,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"evidence_ids\":[\"evidence-dataset-reference\"],\"kind\":\"dataset-reference\",\"status\":\"open\",\"subject_version_id\":\"dataset-v1\",\"task_id\":\"review-dataset-reference\"}",
+      "originalSha256": "da697e3abd3397ebf0dc2c2b93e7ff28983410a3ba5208388ad6c23785fd598b"
+    },
+    {
+      "kind": "sensitive-sample",
+      "originalCanonicalPayload": "{\"blocking\":true,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"evidence_ids\":[\"evidence-sensitive-sample\"],\"kind\":\"sensitive-sample\",\"status\":\"open\",\"subject_version_id\":\"dataset-v1\",\"task_id\":\"review-sensitive-sample\"}",
+      "originalSha256": "e591c11acbe75ddb750b71844fa578cf14a3345b553b2207c0ce3a9d1423834d"
+    },
+    {
+      "kind": "grain-needs-review",
+      "originalCanonicalPayload": "{\"blocking\":true,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"evidence_ids\":[\"evidence-grain-needs-review\"],\"kind\":\"grain-needs-review\",\"status\":\"open\",\"subject_version_id\":\"dataset-v1\",\"task_id\":\"review-grain-needs-review\"}",
+      "originalSha256": "db472e0b51d1c53feada3dfe5b55a700de1ec6263a376a5f55bc952d9ee0930c"
+    },
+    {
+      "kind": "provenance",
+      "originalCanonicalPayload": "{\"blocking\":true,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"evidence_ids\":[\"evidence-provenance\"],\"kind\":\"provenance\",\"status\":\"open\",\"subject_version_id\":\"card-v1\",\"task_id\":\"review-provenance\"}",
+      "originalSha256": "14e5934de5fd5d0341c7c7daa48c011e0432da0885f2eb4d919da44b85122974"
+    },
+    {
+      "kind": "manual-review",
+      "originalCanonicalPayload": "{\"blocking\":false,\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"trainer-v1\",\"actor_type\":\"human\"},\"evidence_ids\":[\"evidence-manual-review\"],\"kind\":\"manual-review\",\"status\":\"open\",\"subject_version_id\":\"card-v1\",\"task_id\":\"review-manual-review\"}",
+      "originalSha256": "fd5f5c1ac09185c464dbf003e975d7e3d95eccb804ef4dcb1379719a5b557472"
+    }
+  ],
+  "visualPayload": {
+    "originalCanonicalPayload": "{\"acquired_at\":\"2026-07-16T08:00:00Z\",\"alt_text\":\"Schema v1 source visual\",\"asset_url\":\"https://upload.wikimedia.org/schema-v1-final.png\",\"authenticity\":\"licensed-secondary\",\"author\":\"Example Author\",\"content_digest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"created_at\":\"2026-07-16T08:00:00Z\",\"created_by\":{\"actor_id\":\"system-v1\",\"actor_type\":\"system\"},\"derived_from_version_ids\":[],\"height\":720,\"landing_page_url\":\"https://commons.wikimedia.org/wiki/File:Schema-v1.png\",\"license_status\":\"licensed\",\"logical_id\":\"visual-schema-v1\",\"media_type\":\"image/png\",\"publisher\":\"Wikimedia Commons\",\"revision\":1,\"schema_version\":1,\"source_locator\":{\"ast_path\":[],\"heading_path\":[],\"kind\":\"pptx-slide\",\"slide_number\":3},\"usage_scope\":[\"private-training\"],\"version_id\":\"visual-schema-v1-version\",\"width\":1280}",
+    "originalSha256": "9fe4e94652c38f41ba932a184188cb05881278a4ec89247c13e7ef9a548ff663"
+  }
+}

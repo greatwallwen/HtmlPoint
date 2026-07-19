@@ -1,0 +1,321 @@
+{
+  "schemaVersion": 1,
+  "manifestId": "bge-small-zh-v1.5-fastembed-0.8.0",
+  "phase": "complete",
+  "package": {
+    "name": "fastembed",
+    "version": "0.8.0",
+    "wheelFilename": "fastembed-0.8.0-py3-none-any.whl",
+    "wheelSize": 116572,
+    "wheelSha256": "40bee672657574a1009e35ec50030a55f2b426842cb011845379817641bbbbd0"
+  },
+  "model": {
+    "id": "BAAI/bge-small-zh-v1.5",
+    "revision": "7999e1d3359715c523056ef9478215996d62a620",
+    "artifactRepository": "Qdrant/bge-small-zh-v1.5",
+    "artifactRevision": "46fbe35fd4374a00fee7de77dfddaeb6dd6a2c59",
+    "dimension": 512,
+    "normalized": true,
+    "encodingPolicy": "utf8-nfkc-no-prefix"
+  },
+  "files": [
+    {
+      "artifactUrl": "https://huggingface.co/Qdrant/bge-small-zh-v1.5/resolve/46fbe35fd4374a00fee7de77dfddaeb6dd6a2c59/config.json?download=true",
+      "officialIdentity": {
+        "digest": "60938626ad1097a0c1a14be4f8340e32c714a056",
+        "kind": "git-blob-sha1"
+      },
+      "path": "config.json",
+      "sha256": "9088751d39abbf86ec3d19ffca92ad62ad19075f7e59712e6c71217fa125d1d3",
+      "size": 739
+    },
+    {
+      "artifactUrl": "https://huggingface.co/Qdrant/bge-small-zh-v1.5/resolve/46fbe35fd4374a00fee7de77dfddaeb6dd6a2c59/model_optimized.onnx?download=true",
+      "officialIdentity": {
+        "digest": "1294ea4b6331115a353d81f96b85e8c8d7fdcc284453d5b2fab5b016230aad38",
+        "kind": "lfs-sha256"
+      },
+      "path": "model_optimized.onnx",
+      "sha256": "1294ea4b6331115a353d81f96b85e8c8d7fdcc284453d5b2fab5b016230aad38",
+      "size": 94781076
+    },
+    {
+      "artifactUrl": "https://huggingface.co/Qdrant/bge-small-zh-v1.5/resolve/46fbe35fd4374a00fee7de77dfddaeb6dd6a2c59/special_tokens_map.json?download=true",
+      "officialIdentity": {
+        "digest": "a8b3208c2884c4efb86e49300fdd3dc877220cdf",
+        "kind": "git-blob-sha1"
+      },
+      "path": "special_tokens_map.json",
+      "sha256": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3",
+      "size": 125
+    },
+    {
+      "artifactUrl": "https://huggingface.co/Qdrant/bge-small-zh-v1.5/resolve/46fbe35fd4374a00fee7de77dfddaeb6dd6a2c59/tokenizer.json?download=true",
+      "officialIdentity": {
+        "digest": "cdb3043fc938fc918c06e66cf704c2ba58f88747",
+        "kind": "git-blob-sha1"
+      },
+      "path": "tokenizer.json",
+      "sha256": "48cea5d44424912a6fd1ea647bf4fe50b55ab8b1e5879c3275f80e339e8fae26",
+      "size": 439125
+    },
+    {
+      "artifactUrl": "https://huggingface.co/Qdrant/bge-small-zh-v1.5/resolve/46fbe35fd4374a00fee7de77dfddaeb6dd6a2c59/tokenizer_config.json?download=true",
+      "officialIdentity": {
+        "digest": "3a59388f0fd1bd22dec2ce7902c1be8e1fb84107",
+        "kind": "git-blob-sha1"
+      },
+      "path": "tokenizer_config.json",
+      "sha256": "e6f3b96db926a37d4039995fbf5ad17de158dfb8f6343d607e4dbaad18d75f5a",
+      "size": 367
+    }
+  ],
+  "runtime": {
+    "architecture": "x86_64",
+    "os": "windows",
+    "python": "3.12",
+    "wheels": [
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/da/35/f2287558c17e29fafc8ef3daf819bb9834061cfa43bff8014f7df7f63bdc/anyio-4.14.2-py3-none-any.whl",
+        "filename": "anyio-4.14.2-py3-none-any.whl",
+        "name": "anyio",
+        "sha256": "9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494",
+        "size": 125813,
+        "version": "4.14.2"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/ef/2f/c5464532e965badff2f4c4c1a3a83f5697f0d7c407ed0cda44aaa99bb451/certifi-2026.6.17-py3-none-any.whl",
+        "filename": "certifi-2026.6.17-py3-none-any.whl",
+        "name": "certifi",
+        "sha256": "2227dcbaafe0d2f59279d1762ddddc37783ed4354594f194ffc31d20f41fc3db",
+        "size": 133289,
+        "version": "2026.6.17"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/80/cc/f920afd1a23c58ccd53c1d36085a71893a4737ff5e66e0371efab6809850/charset_normalizer-3.4.9-cp312-cp312-win_amd64.whl",
+        "filename": "charset_normalizer-3.4.9-cp312-cp312-win_amd64.whl",
+        "name": "charset-normalizer",
+        "sha256": "4b3dac63058cc36820b0dd072f89898604e2d39686fe05321729d00d8ac185a0",
+        "size": 162557,
+        "version": "3.4.9"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/fb/e2/79c688af8b210d232694e31e59da9f6ec747bae31c3f5946e4e9b98860d5/click-8.4.2-py3-none-any.whl",
+        "filename": "click-8.4.2-py3-none-any.whl",
+        "name": "click",
+        "sha256": "e6f9f66136c816745b9d65817da91d61d957fb16e02e4dcd0552553c5a197b76",
+        "size": 119243,
+        "version": "8.4.2"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl",
+        "filename": "colorama-0.4.6-py2.py3-none-any.whl",
+        "name": "colorama",
+        "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+        "size": 25335,
+        "version": "0.4.6"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/2a/e8/26b7d78bb8972498c467ca34cb12ee2e60d26ba5eae6d8443189a1af37a5/fastembed-0.8.0-py3-none-any.whl",
+        "filename": "fastembed-0.8.0-py3-none-any.whl",
+        "name": "fastembed",
+        "sha256": "40bee672657574a1009e35ec50030a55f2b426842cb011845379817641bbbbd0",
+        "size": 116572,
+        "version": "0.8.0"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/5b/4a/e213905d3b8ad3d35d14fc056b36134a274e7f6a1050e94428b5be10a94c/filelock-3.31.0-py3-none-any.whl",
+        "filename": "filelock-3.31.0-py3-none-any.whl",
+        "name": "filelock",
+        "sha256": "739b73e580fe88bb78d830aeddbc492519ece3d97ac8368de13a2032c61010c1",
+        "size": 96080,
+        "version": "3.31.0"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/e8/2d/d2a548598be01649e2d46231d151a6c56d10b964d94043a335ae56ea2d92/flatbuffers-25.12.19-py2.py3-none-any.whl",
+        "filename": "flatbuffers-25.12.19-py2.py3-none-any.whl",
+        "name": "flatbuffers",
+        "sha256": "7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4",
+        "size": 26661,
+        "version": "25.12.19"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/e5/22/4222d7ddf3da30f363edaa98e329c2bce6c65497c9cb2810931c8b2c0fbc/fsspec-2026.6.0-py3-none-any.whl",
+        "filename": "fsspec-2026.6.0-py3-none-any.whl",
+        "name": "fsspec",
+        "sha256": "02e0b71817df9b2169dc30a16832045764def1191b43dcff5bb85bdee212d2a1",
+        "size": 203949,
+        "version": "2026.6.0"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl",
+        "filename": "h11-0.16.0-py3-none-any.whl",
+        "name": "h11",
+        "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+        "size": 37515,
+        "version": "0.16.0"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/e9/f8/68b01c5c2edb56ac9a67b3d076ffddcb90867abaee923923eb34e7a14e76/hf_xet-1.5.2-cp38-abi3-win_amd64.whl",
+        "filename": "hf_xet-1.5.2-cp38-abi3-win_amd64.whl",
+        "name": "hf-xet",
+        "sha256": "ecf63d1cb69a9a7319910f8f83fcf9b46e7a32dfcf4b8f8eeddb55f647306e65",
+        "size": 3988373,
+        "version": "1.5.2"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl",
+        "filename": "httpcore-1.0.9-py3-none-any.whl",
+        "name": "httpcore",
+        "sha256": "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55",
+        "size": 78784,
+        "version": "1.0.9"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl",
+        "filename": "httpx-0.28.1-py3-none-any.whl",
+        "name": "httpx",
+        "sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad",
+        "size": 73517,
+        "version": "0.28.1"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/5f/c3/aeaaf3911d2529614be18d1c8b5496afc185560e76568063d517283318af/huggingface_hub-1.24.0-py3-none-any.whl",
+        "filename": "huggingface_hub-1.24.0-py3-none-any.whl",
+        "name": "huggingface-hub",
+        "sha256": "6ed4120a84a6beec900640aa7e346bd766a6b7341e41526fef5dc8bd81fb7d59",
+        "size": 771904,
+        "version": "1.24.0"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/1e/5e/d4e9f1a599fb8e573b7b87160658329fbf28d19eac2718f51fc3def3aa5a/idna-3.18-py3-none-any.whl",
+        "filename": "idna-3.18-py3-none-any.whl",
+        "name": "idna",
+        "sha256": "7f952cbe720b688055e3f87de14f5c3e5fdaa8bc3928985c4077ca689de849a2",
+        "size": 65455,
+        "version": "3.18"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl",
+        "filename": "loguru-0.7.3-py3-none-any.whl",
+        "name": "loguru",
+        "sha256": "31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c",
+        "size": 61595,
+        "version": "0.7.3"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/5b/3c/cd3527198cf159495966551c84a5f36805a10ac17b294f41f67b83f6a4d6/mmh3-5.2.1-cp312-cp312-win_amd64.whl",
+        "filename": "mmh3-5.2.1-cp312-cp312-win_amd64.whl",
+        "name": "mmh3",
+        "sha256": "3a9fed49c6ce4ed7e73f13182760c65c816da006debe67f37635580dfb0fae00",
+        "size": 41560,
+        "version": "5.2.1"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/65/66/53f31807a48a750f9d748da273bc3fcedd12b27ff1f3e373bfec55ef2dc0/numpy-2.5.1-cp312-cp312-win_amd64.whl",
+        "filename": "numpy-2.5.1-cp312-cp312-win_amd64.whl",
+        "name": "numpy",
+        "sha256": "f7d60026c0bdb1380e83bfa7a0419c4577ee4b9a08880afcb6dadeb74c649fa2",
+        "size": 12430966,
+        "version": "2.5.1"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/4f/88/8ec9db1a4d126bb8b758992beb40d1249df171917d75f44a327eb5f20dda/onnxruntime-1.27.0-cp312-cp312-win_amd64.whl",
+        "filename": "onnxruntime-1.27.0-cp312-cp312-win_amd64.whl",
+        "name": "onnxruntime",
+        "sha256": "20c321cf187ba496e648acf6b4cf90b4d398b0d17c2a77fdaeba365b908cc1c1",
+        "size": 13358769,
+        "version": "1.27.0"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/df/b2/87e62e8c3e2f4b32e5fe99e0b86d576da1312593b39f47d8ceef365e95ed/packaging-26.2-py3-none-any.whl",
+        "filename": "packaging-26.2-py3-none-any.whl",
+        "name": "packaging",
+        "sha256": "5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e",
+        "size": 100195,
+        "version": "26.2"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/45/89/da2f7971a317f83d807fdd4065c0af40208e59e692cc43d315a71a0e96d1/pillow-12.3.0-cp312-cp312-win_amd64.whl",
+        "filename": "pillow-12.3.0-cp312-cp312-win_amd64.whl",
+        "name": "pillow",
+        "sha256": "a2b55dd6b2a4c4b7d87ffa56bdb33fdc5fdb9a462173861a7bc097f17d91cb09",
+        "size": 7227137,
+        "version": "12.3.0"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/0a/19/8d0cb6f20a1ef7b18f1c8986ad5783f22f84cce39c6ce9a6e645ea55192e/protobuf-7.35.1-cp310-abi3-win_amd64.whl",
+        "filename": "protobuf-7.35.1-cp310-abi3-win_amd64.whl",
+        "name": "protobuf",
+        "sha256": "230a75ddfc2de4806e56696ce9640c1cdfdb6543b7cfce98d42a4c0a0e7bdb87",
+        "size": 439996,
+        "version": "7.35.1"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/92/ca/ebb707ab280636b8f46d040ccb051d1a9ddbc1f1ca2d90cdba626872f405/py_rust_stemmers-0.1.8-cp312-cp312-win_amd64.whl",
+        "filename": "py_rust_stemmers-0.1.8-cp312-cp312-win_amd64.whl",
+        "name": "py-rust-stemmers",
+        "sha256": "dd967eea2f808a1e73aa71ecccef0f4925a4cca4eb02ced94057afe3303153ef",
+        "size": 212134,
+        "version": "0.1.8"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/86/bf/899e81e4cce32febab4fb42bb97dcdf66bc135272882d1987881a4b519e9/pyyaml-6.0.3-cp312-cp312-win_amd64.whl",
+        "filename": "pyyaml-6.0.3-cp312-cp312-win_amd64.whl",
+        "name": "pyyaml",
+        "sha256": "5fcd34e47f6e0b794d17de1b4ff496c00986e1c83f7ab2fb8fcfe9616ff7477b",
+        "size": 154003,
+        "version": "6.0.3"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl",
+        "filename": "requests-2.34.2-py3-none-any.whl",
+        "name": "requests",
+        "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0",
+        "size": 73075,
+        "version": "2.34.2"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/97/c9/2553f72aaf65a2797d4229e37fa7fbe38ffbf3e32912d31bdd78b3323e59/tokenizers-0.23.1-cp310-abi3-win_amd64.whl",
+        "filename": "tokenizers-0.23.1-cp310-abi3-win_amd64.whl",
+        "name": "tokenizers",
+        "sha256": "e7bfaf995c1bdbbd21d13539decb6650967013759318627d85daeb7881af16b7",
+        "size": 2798223,
+        "version": "0.23.1"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/fe/21/99a0cdaf54eb35e77623c41b5a2c9472ee4404bba687052791fe2aba6773/tqdm-4.69.0-py3-none-any.whl",
+        "filename": "tqdm-4.69.0-py3-none-any.whl",
+        "name": "tqdm",
+        "sha256": "9979978912be667a6ef21fd5d8abf54e324e63d82f7f43c360792ebc2bc4e622",
+        "size": 676680,
+        "version": "4.69.0"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+        "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+        "name": "typing-extensions",
+        "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+        "size": 45571,
+        "version": "4.16.0"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl",
+        "filename": "urllib3-2.7.0-py3-none-any.whl",
+        "name": "urllib3",
+        "sha256": "9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897",
+        "size": 131087,
+        "version": "2.7.0"
+      },
+      {
+        "artifactUrl": "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl",
+        "filename": "win32_setctime-1.2.0-py3-none-any.whl",
+        "name": "win32-setctime",
+        "sha256": "95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390",
+        "size": 4083,
+        "version": "1.2.0"
+      }
+    ]
+  },
+  "aggregateDigest": "4b57e139b5605e27f22daaa946d5f041717f58c3ad05ca40adb8e2f7cbf529dd"
+}

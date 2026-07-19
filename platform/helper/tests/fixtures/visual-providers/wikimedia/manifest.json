@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "provider": "wikimedia-commons",
+  "files": {
+    "license-changed.json": "791876b4ebd5e27eb23c590af6edda8da3310a19dfdb5ecc04456a8d9e40f0b8",
+    "removed.json": "4ab2bf6f2f197d2def6b637beb938e3d45091bc486b2089bd3f43abbbc717ade",
+    "search.json": "a57ca62b8a96798c7a85e77361de03eb52e3b1504910d113e3bd1f818f6e769c",
+    "tiny.png.b64": "ec365928e3f1e551501ab13057a600fbff5abf56eb39d1cc8fbbca9fdc68468f",
+    "unknown-license.json": "2eed5e2d63beefe5376fa4c24462549cbd1ec9054f7966789a88b2fea56f1b26"
+  },
+  "decodedImage": {
+    "byteSize": 77,
+    "sha1": "b57f038cb32a96016a5a6913c8048767b700312a",
+    "sha256": "e15a01950b2259d5ec51acd0046ceb1a71ab026386227650aba30c30f6e848dd"
+  }
+}

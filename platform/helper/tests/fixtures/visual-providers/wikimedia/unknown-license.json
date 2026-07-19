@@ -1,0 +1,30 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "pages": [
+      {
+        "pageid": 42,
+        "ns": 6,
+        "title": "File:Verified.png",
+        "imageinfo": [
+          {
+            "url": "https://upload.wikimedia.org/wikipedia/commons/a/ab/Verified.png",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Verified.png",
+            "mime": "image/png",
+            "size": 77,
+            "width": 3,
+            "height": 2,
+            "sha1": "b57f038cb32a96016a5a6913c8048767b700312a",
+            "extmetadata": {
+              "ObjectName": {"value": "Verified diagram"},
+              "ImageDescription": {"value": "A real provider-hosted diagram."},
+              "Artist": {"value": "Example Creator"},
+              "LicenseShortName": {"value": "Custom License"},
+              "LicenseUrl": {"value": "https://example.invalid/license"}
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

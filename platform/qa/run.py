@@ -1187,7 +1187,7 @@ def protected_path_violations(changed_paths: Sequence[str]) -> list[str]:
 
 def committed_changed_paths(
     repo_root: Path,
-    baseline: str = "e6cd08d59",
+    baseline: str = "395d8300f502ea40ad40690cc64c7c4794ead262",
 ) -> list[str]:
     args = [
         "git",

@@ -374,3 +374,14 @@ production build are green. Protected/reference roots and live producers were
 not accessed. Physical dual-screen hardware and current live network authority
 remain NOT CERTIFIED. P3/xhigh was sufficient; Ultra was not needed. Report:
 `.superpowers/sdd/course-compose-task-19-report.md`.
+
+Final acceptance and reflection: complete. `python platform/qa/run.py all`
+passed QA 167, Helper 785/6 skipped/7 deselected, Web 279, typecheck, production
+build, and the real system-Chrome E2E in 2.9 minutes. The evidence supports a
+local personal desktop pilot, not a fully certified deployment: physical Win11
+dual-screen behavior, current live-network authority, protected-source replay,
+and signed desktop distribution remain outside the verified boundary. The next
+recommended product direction is a one-click personal course workflow that
+hides internal IDs, improves naming/review defaults, and automatically lays out
+lessons and visuals. P1 Terra/medium is recommended for the brainstorm; Ultra
+is not needed. Reflection: `.superpowers/sdd/platform-expectation-reflection.md`.

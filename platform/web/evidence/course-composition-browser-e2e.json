@@ -6,10 +6,10 @@
   "operations": [
     {
       "type": "knowledge_import_start",
-      "operationId": "import-operation-fb0a05bc-7666-41bb-9cd1-307b420154c9",
+      "operationId": "import-operation-14712c97-43f6-40ab-8089-675e65d09b4e",
       "resultIds": {
-        "operationId": "import-operation-fb0a05bc-7666-41bb-9cd1-307b420154c9",
-        "importId": "import-f7906284011a98e3a4e1e03c4b985429",
+        "operationId": "import-operation-14712c97-43f6-40ab-8089-675e65d09b4e",
+        "importId": "import-572f1abbf336a616fc580ed1085dd694",
         "sourceId": "e189c2f2-3425-56c7-9d15-31c84ca97a2b",
         "sourceVersionId": "0a2ba65c-0007-5c30-868d-23b7b9096400",
         "contentDigest": "5583a3b600260a24eaf8b613cc1e7180a75e653ce7d8ac2e88a3e1c1cff0b6fd",
@@ -27,10 +27,10 @@
     },
     {
       "type": "knowledge_import_start",
-      "operationId": "import-operation-d94a1cd6-f139-4f99-92a4-8b983f47de6d",
+      "operationId": "import-operation-6d648277-7e4e-4d7b-b498-b41bc0ccf6ca",
       "resultIds": {
-        "operationId": "import-operation-d94a1cd6-f139-4f99-92a4-8b983f47de6d",
-        "importId": "import-619dc42de56fb25a429249653c9a71ad",
+        "operationId": "import-operation-6d648277-7e4e-4d7b-b498-b41bc0ccf6ca",
+        "importId": "import-1341a8aa4655e814ed800d77a0b13ddd",
         "sourceId": "ea6d9f2c-631e-59a9-9bd8-369d21c29a6c",
         "sourceVersionId": "a8ef4b0f-54f1-5ba6-8ad4-da2590171b7f",
         "contentDigest": "724ac11900d80a0234804076e9330edbc1cf553369ca955542e2348b06ed5a70",
@@ -48,25 +48,25 @@
     },
     {
       "type": "knowledge_import_start",
-      "operationId": "import-operation-163c02ab-a49f-4e24-9043-3a43d6508a5c",
+      "operationId": "import-operation-bd394d66-3f17-4014-9f93-09d181944b4a",
       "resultIds": {
-        "operationId": "import-operation-163c02ab-a49f-4e24-9043-3a43d6508a5c",
-        "importId": "import-95247cffc777ea5708ed451081599e2b",
-        "sourceId": "659a6dd8-279e-5471-9428-53f9f4124d1b",
-        "sourceVersionId": "897899a7-9fbf-57f6-99f6-ee06269a205a",
-        "contentDigest": "c560c766906ff828ba50d0c38963ec78ab6835bc9dacfb15157730f3111ce0e7",
+        "operationId": "import-operation-bd394d66-3f17-4014-9f93-09d181944b4a",
+        "importId": "import-69cbac88c775bcec65490eca9406de70",
+        "sourceId": "0b124189-707f-5ce0-9a3a-40cf176a43ff",
+        "sourceVersionId": "da316056-e52d-5459-b15b-aa53d635e96a",
+        "contentDigest": "2de9bd867027e237667374cf85875c0e23aa477665d0c32aadbaf4aafeceac9e",
         "visualVersionIds": [
-          "82ba3754-3084-571c-b8bd-1c34bd9f5269"
+          "3a227aae-fdf9-55e0-8001-cf6046c05189"
         ],
         "candidateCardVersionIds": [
-          "cbc48392-77a0-52b8-9ae8-7aa705b05771"
+          "b8d5050e-216b-5065-91d9-2cf076f94d07"
         ],
         "datasetVersionIds": [],
         "reviewTaskIds": [
-          "review-65ba701346dc357318a0094d11f6dcb0449d808947f4e6096cb3c783d925fe86",
-          "review-af95341304d1518d02dad379ac3469479b71c25107ca469f020e00b2fb06be63"
+          "review-4d77eeef1943980f8ccb90ebfdfe7876704fe5e7566f01e459f509dd9c669d90",
+          "review-f55291014fb5a91f584cb86e0f57717322cc1b23c6bd75ccd3712de930d729f9"
         ],
-        "extractionEvidenceId": "import-extraction-b9328038b0b63d218fd3cbc151e6856b4cd3eac3593e4edb"
+        "extractionEvidenceId": "import-extraction-015074b74b418661fab3033844064a7e81827ede3450aa64"
       }
     },
     {
@@ -85,11 +85,11 @@
     },
     {
       "type": "knowledge_review_resolve",
-      "operationId": "review-operation-8b6cd595-640f-43d2-a6da-5d6ebbb306e2",
+      "operationId": "review-operation-c5420ae1-c12b-430d-bf77-717e93dac667",
       "resultIds": {
-        "operationId": "review-operation-8b6cd595-640f-43d2-a6da-5d6ebbb306e2",
+        "operationId": "review-operation-c5420ae1-c12b-430d-bf77-717e93dac667",
         "taskId": "review-139d005c5d0bfdb672de1d8028f61d3bf8697d4791d4aec8ed2a527b6a8cf709",
-        "resolutionId": "resolution-12bba7d2a8dfe4f89beb2316f13f863558b4a76bea7214ac"
+        "resolutionId": "resolution-cb83a592557286125d5256a5faff6b945de26f018a4059eb"
       }
     },
     {
@@ -111,6 +111,42 @@
       "operationId": null,
       "resultIds": {
         "evidenceIds": [
+          "import-extraction-015074b74b418661fab3033844064a7e81827ede3450aa64"
+        ],
+        "cardVersionId": "b8d5050e-216b-5065-91d9-2cf076f94d07",
+        "cardContentDigest": "401d265d18b300052f16a14dd6bd64b9ac0eb46771f6a4f2d57cdf3361cad844"
+      }
+    },
+    {
+      "type": "knowledge_review_resolve",
+      "operationId": "review-operation-117c38da-4592-4609-91f1-c3e80c33562b",
+      "resultIds": {
+        "operationId": "review-operation-117c38da-4592-4609-91f1-c3e80c33562b",
+        "taskId": "review-4d77eeef1943980f8ccb90ebfdfe7876704fe5e7566f01e459f509dd9c669d90",
+        "resolutionId": "resolution-39c50895e2e68464fffe8b857a1879f101452cd9f2ac624e"
+      }
+    },
+    {
+      "type": "knowledge_review_list",
+      "operationId": null,
+      "resultIds": {}
+    },
+    {
+      "type": "knowledge_review_detail",
+      "operationId": null,
+      "resultIds": {
+        "evidenceIds": [
+          "import-extraction-015074b74b418661fab3033844064a7e81827ede3450aa64"
+        ],
+        "cardVersionId": "b8d5050e-216b-5065-91d9-2cf076f94d07",
+        "cardContentDigest": "401d265d18b300052f16a14dd6bd64b9ac0eb46771f6a4f2d57cdf3361cad844"
+      }
+    },
+    {
+      "type": "knowledge_review_detail",
+      "operationId": null,
+      "resultIds": {
+        "evidenceIds": [
           "import-extraction-ac20e38573ec17121ea51bd9ae13195e6bb97cc0d4ed80e4"
         ],
         "cardVersionId": "281b7186-9408-5bd9-b67b-0ece9eea6a79",
@@ -119,11 +155,11 @@
     },
     {
       "type": "knowledge_review_resolve",
-      "operationId": "review-operation-40f20b2d-1e2c-4500-a763-3d786a4fcb76",
+      "operationId": "review-operation-c7172651-e2de-4e2d-b995-786c38c8cf3a",
       "resultIds": {
-        "operationId": "review-operation-40f20b2d-1e2c-4500-a763-3d786a4fcb76",
+        "operationId": "review-operation-c7172651-e2de-4e2d-b995-786c38c8cf3a",
         "taskId": "review-5eeae739a75a730dc1ed1933e2e1cf38ca9ff4ae81c0ba13123a4d0e3bbce291",
-        "resolutionId": "resolution-aba6d3bce3bc883509ea0d8b5569faee8475f5bea649ae36"
+        "resolutionId": "resolution-4b7563c459cbe64c79effd3945fb75ecf1550a1ac75c6b9c"
       }
     },
     {
@@ -140,42 +176,6 @@
         ],
         "cardVersionId": "281b7186-9408-5bd9-b67b-0ece9eea6a79",
         "cardContentDigest": "02ea3d6e8412fbbf6b9bb377928aa4eadd4f6f384c848a4e3bbc0df3100c5103"
-      }
-    },
-    {
-      "type": "knowledge_review_detail",
-      "operationId": null,
-      "resultIds": {
-        "evidenceIds": [
-          "near-dedup-3750268f20cc5143b3e217583e01972d581f2375eb605ae450cd06ab817140f6"
-        ],
-        "cardVersionId": "cbc48392-77a0-52b8-9ae8-7aa705b05771",
-        "cardContentDigest": "327ebef0cfba50d5fffbc7c6d5ad4ded67d17a7a9a80f2d310836411653e45e7"
-      }
-    },
-    {
-      "type": "knowledge_review_resolve",
-      "operationId": "review-operation-139ba847-7116-484c-9c61-fe5f36905a43",
-      "resultIds": {
-        "operationId": "review-operation-139ba847-7116-484c-9c61-fe5f36905a43",
-        "taskId": "review-65ba701346dc357318a0094d11f6dcb0449d808947f4e6096cb3c783d925fe86",
-        "resolutionId": "resolution-b0d9f3ab61b696f92330a72c98237500b0e4a7e6bfe754a0"
-      }
-    },
-    {
-      "type": "knowledge_review_list",
-      "operationId": null,
-      "resultIds": {}
-    },
-    {
-      "type": "knowledge_review_detail",
-      "operationId": null,
-      "resultIds": {
-        "evidenceIds": [
-          "near-dedup-3750268f20cc5143b3e217583e01972d581f2375eb605ae450cd06ab817140f6"
-        ],
-        "cardVersionId": "cbc48392-77a0-52b8-9ae8-7aa705b05771",
-        "cardContentDigest": "327ebef0cfba50d5fffbc7c6d5ad4ded67d17a7a9a80f2d310836411653e45e7"
       }
     },
     {
@@ -191,11 +191,11 @@
     },
     {
       "type": "knowledge_review_resolve",
-      "operationId": "review-operation-da9740cc-798d-4ace-8b5f-10bd578592ee",
+      "operationId": "review-operation-f522c971-2541-4942-aaf4-293af671169e",
       "resultIds": {
-        "operationId": "review-operation-da9740cc-798d-4ace-8b5f-10bd578592ee",
+        "operationId": "review-operation-f522c971-2541-4942-aaf4-293af671169e",
         "taskId": "review-94c2ecd834f1eb059c7d3a28dbc04c1584cf43dcfe45229cd45868d9eef4c468",
-        "resolutionId": "resolution-fdd4de3157ac1f5b16b07319465e22f2addaa3247985b803"
+        "resolutionId": "resolution-4be15d488f27b16ce176c4dd411e7cffffe4cfabbfd44f5b"
       }
     },
     {
@@ -216,23 +216,23 @@
     },
     {
       "type": "knowledge_card_publish",
-      "operationId": "card-publish-operation-ce0e9263-cc3d-443f-8033-9344760f417a",
+      "operationId": "card-publish-operation-27153ea6-9b93-40b2-9e82-a985fed947f2",
       "resultIds": {
-        "operationId": "card-publish-operation-ce0e9263-cc3d-443f-8033-9344760f417a",
+        "operationId": "card-publish-operation-27153ea6-9b93-40b2-9e82-a985fed947f2",
         "submittedCardVersionId": "281b7186-9408-5bd9-b67b-0ece9eea6a79",
         "publishedCardVersionId": "f6dc6c05-b3d7-5947-8143-30fdd86dd329",
         "publicationEvidenceId": "publish-1717a58b49922767accfc98010c58ed0de032e79417d350c21e27f581f383ff2",
-        "indexOutboxId": "index-outbox-3d321b97c4e5cd30b932d3793251e912cfb991bf1a958d6d"
+        "indexOutboxId": "index-outbox-69cd9398578d61c89f29ec3987212d4a3c36ea5f66497794"
       }
     },
     {
       "type": "knowledge_index",
-      "operationId": "index-operation-32df64ab-e802-4369-9736-77a4dfb56533",
+      "operationId": "index-operation-b21cce02-a4d4-4976-9ba1-fd6467ab0c5d",
       "resultIds": {
-        "operationId": "index-operation-32df64ab-e802-4369-9736-77a4dfb56533",
-        "consumedOutboxId": "index-outbox-3d321b97c4e5cd30b932d3793251e912cfb991bf1a958d6d",
-        "indexSnapshotId": "index-snapshot-a84e45d0a7c5baf31b1c8e63df737b444af67c9af67df1c4",
-        "indexSnapshotDigest": "a84e45d0a7c5baf31b1c8e63df737b444af67c9af67df1c49a05199b39eb249d"
+        "operationId": "index-operation-b21cce02-a4d4-4976-9ba1-fd6467ab0c5d",
+        "consumedOutboxId": "index-outbox-69cd9398578d61c89f29ec3987212d4a3c36ea5f66497794",
+        "indexSnapshotId": "index-snapshot-7cc7edf62ea533971a0b9359e7a4cf07f4089c6775b57036",
+        "indexSnapshotDigest": "7cc7edf62ea533971a0b9359e7a4cf07f4089c6775b57036c52db03b3377458f"
       }
     },
     {
@@ -245,19 +245,17 @@
       "operationId": null,
       "resultIds": {
         "evidenceIds": [
-          "import-extraction-b9328038b0b63d218fd3cbc151e6856b4cd3eac3593e4edb"
-        ],
-        "cardVersionId": "cbc48392-77a0-52b8-9ae8-7aa705b05771",
-        "cardContentDigest": "327ebef0cfba50d5fffbc7c6d5ad4ded67d17a7a9a80f2d310836411653e45e7"
+          "0af58783-becd-5f0c-97dd-cb42eccc3881"
+        ]
       }
     },
     {
       "type": "knowledge_review_resolve",
-      "operationId": "review-operation-27a81497-3758-48af-b9eb-3a67530b58eb",
+      "operationId": "review-operation-6fe47a8b-6d0a-4eff-894d-2999ff0db929",
       "resultIds": {
-        "operationId": "review-operation-27a81497-3758-48af-b9eb-3a67530b58eb",
-        "taskId": "review-af95341304d1518d02dad379ac3469479b71c25107ca469f020e00b2fb06be63",
-        "resolutionId": "resolution-3d2e600ea218d0b2c37e06180465061fe7daee677c44f3a9"
+        "operationId": "review-operation-6fe47a8b-6d0a-4eff-894d-2999ff0db929",
+        "taskId": "review-f3959325ee1ae4b83572a360bd0a61fa96aac87c00bbf5ed544e6a3bcf55b645",
+        "resolutionId": "resolution-2322d460aa3822dcca3fa7f93afa11a27aa5855b246084b4"
       }
     },
     {
@@ -270,236 +268,238 @@
       "operationId": null,
       "resultIds": {
         "evidenceIds": [
-          "import-extraction-b9328038b0b63d218fd3cbc151e6856b4cd3eac3593e4edb"
+          "0af58783-becd-5f0c-97dd-cb42eccc3881"
+        ]
+      }
+    },
+    {
+      "type": "knowledge_review_detail",
+      "operationId": null,
+      "resultIds": {
+        "evidenceIds": [
+          "near-dedup-4c96675d509bc7c004f3a98e3334adcccfd51940b7590baca369814a03976c0b"
         ],
-        "cardVersionId": "cbc48392-77a0-52b8-9ae8-7aa705b05771",
-        "cardContentDigest": "327ebef0cfba50d5fffbc7c6d5ad4ded67d17a7a9a80f2d310836411653e45e7"
+        "cardVersionId": "b8d5050e-216b-5065-91d9-2cf076f94d07",
+        "cardContentDigest": "401d265d18b300052f16a14dd6bd64b9ac0eb46771f6a4f2d57cdf3361cad844"
+      }
+    },
+    {
+      "type": "knowledge_review_resolve",
+      "operationId": "review-operation-0c05a40b-bbe0-4f16-86e3-b55e06481f37",
+      "resultIds": {
+        "operationId": "review-operation-0c05a40b-bbe0-4f16-86e3-b55e06481f37",
+        "taskId": "review-f55291014fb5a91f584cb86e0f57717322cc1b23c6bd75ccd3712de930d729f9",
+        "resolutionId": "resolution-53ca828e016f3b198c8dc04b336b08680f66c3617d7e12a3"
+      }
+    },
+    {
+      "type": "knowledge_review_list",
+      "operationId": null,
+      "resultIds": {}
+    },
+    {
+      "type": "knowledge_review_detail",
+      "operationId": null,
+      "resultIds": {
+        "evidenceIds": [
+          "near-dedup-4c96675d509bc7c004f3a98e3334adcccfd51940b7590baca369814a03976c0b"
+        ],
+        "cardVersionId": "b8d5050e-216b-5065-91d9-2cf076f94d07",
+        "cardContentDigest": "401d265d18b300052f16a14dd6bd64b9ac0eb46771f6a4f2d57cdf3361cad844"
       }
     },
     {
       "type": "knowledge_card_publish",
-      "operationId": "card-publish-operation-33cf6c61-7aa0-4470-91b5-850ed8471a02",
+      "operationId": "card-publish-operation-1e1665e2-914a-4bde-8a0f-3ed51ccbc45f",
       "resultIds": {
-        "operationId": "card-publish-operation-33cf6c61-7aa0-4470-91b5-850ed8471a02",
-        "submittedCardVersionId": "cbc48392-77a0-52b8-9ae8-7aa705b05771",
-        "publishedCardVersionId": "be3ada3a-0331-5c57-b98a-5df9c6a651e9",
-        "publicationEvidenceId": "publish-9b301d2241a1812c1adc55f3c216e0b3bacb54f07b611734d547ec02a086aec6",
-        "indexOutboxId": "index-outbox-c4770022290b52cc7e6a32c494e0ace9bb7542cc11b79a9a"
+        "operationId": "card-publish-operation-1e1665e2-914a-4bde-8a0f-3ed51ccbc45f",
+        "submittedCardVersionId": "b8d5050e-216b-5065-91d9-2cf076f94d07",
+        "publishedCardVersionId": "17b31d9a-5e00-5aef-bf9f-3e1ff3607e5d",
+        "publicationEvidenceId": "publish-7dbbea3f8cc4acde495a4e900cec52e38748d855d1eff66d1f53e7bb80d31d25",
+        "indexOutboxId": "index-outbox-7973dfaf689b82da13802fa1c9fa401fa4304a6e90babfd9"
       }
     },
     {
       "type": "knowledge_index",
-      "operationId": "index-operation-6f728b83-035f-44ce-bbad-a6cd91e67445",
+      "operationId": "index-operation-beb3f9de-9c42-42ba-bb6f-b8dc780dc14a",
       "resultIds": {
-        "operationId": "index-operation-6f728b83-035f-44ce-bbad-a6cd91e67445",
-        "consumedOutboxId": "index-outbox-c4770022290b52cc7e6a32c494e0ace9bb7542cc11b79a9a",
-        "indexSnapshotId": "index-snapshot-d4e18c8829a43c7fa13517310c00bacf42d84928cc57d630",
-        "indexSnapshotDigest": "d4e18c8829a43c7fa13517310c00bacf42d84928cc57d630f2ceb61a15da843a"
+        "operationId": "index-operation-beb3f9de-9c42-42ba-bb6f-b8dc780dc14a",
+        "consumedOutboxId": "index-outbox-7973dfaf689b82da13802fa1c9fa401fa4304a6e90babfd9",
+        "indexSnapshotId": "index-snapshot-b5a9febcc88e4748fee5ee5db01f7f50b02c6bb5fca3c6b9",
+        "indexSnapshotDigest": "b5a9febcc88e4748fee5ee5db01f7f50b02c6bb5fca3c6b99b0c5dc768015764"
       }
     },
     {
       "type": "knowledge_review_list",
       "operationId": null,
       "resultIds": {}
-    },
-    {
-      "type": "knowledge_review_detail",
-      "operationId": null,
-      "resultIds": {
-        "evidenceIds": [
-          "0af58783-becd-5f0c-97dd-cb42eccc3881"
-        ]
-      }
-    },
-    {
-      "type": "knowledge_review_resolve",
-      "operationId": "review-operation-bdd062d1-c6d9-43fa-af0b-738fe9ffa4a4",
-      "resultIds": {
-        "operationId": "review-operation-bdd062d1-c6d9-43fa-af0b-738fe9ffa4a4",
-        "taskId": "review-f3959325ee1ae4b83572a360bd0a61fa96aac87c00bbf5ed544e6a3bcf55b645",
-        "resolutionId": "resolution-1b62870575745b3b358e12d45904e3c00a850e58d33108bf"
-      }
-    },
-    {
-      "type": "knowledge_review_list",
-      "operationId": null,
-      "resultIds": {}
-    },
-    {
-      "type": "knowledge_review_detail",
-      "operationId": null,
-      "resultIds": {
-        "evidenceIds": [
-          "0af58783-becd-5f0c-97dd-cb42eccc3881"
-        ]
-      }
     },
     {
       "type": "course_compose",
-      "operationId": "compose-operation-4df0f7ef-dd6b-4015-9dd6-404545a55bdc",
+      "operationId": "compose-operation-cb251188-3498-42c9-9d5b-6dfcfc9c9989",
       "resultIds": {
-        "operationId": "compose-operation-4df0f7ef-dd6b-4015-9dd6-404545a55bdc",
-        "requirementId": "requirement-de817835-1975-4da0-8900-839afa1a639b",
-        "outlineVersionId": "outline-version-ddb0128c-df51-45cd-a761-56ba3dc59a12",
-        "outlineDigest": "81368cb58238dcf1eca30eb66eb1f40c405027ff7d19478c66c888dbe7be75c3",
-        "indexSnapshotId": "index-snapshot-d4e18c8829a43c7fa13517310c00bacf42d84928cc57d630",
-        "compositionEvidenceId": "composition-binding-aa57d42b2126ae059ce5c991f78af399277f7419cbc8",
+        "operationId": "compose-operation-cb251188-3498-42c9-9d5b-6dfcfc9c9989",
+        "requirementId": "requirement-7f76bf9c-6e06-4ec9-b08c-8e0a42d4715b",
+        "outlineVersionId": "outline-version-cfbe3244-24c1-4195-a80a-99c4cf0e0ab1",
+        "outlineDigest": "2bbdbce652bd39e0492aefbff847b7fcfbbb70a1e01c7401ed91591794aa923f",
+        "indexSnapshotId": "index-snapshot-b5a9febcc88e4748fee5ee5db01f7f50b02c6bb5fca3c6b9",
+        "compositionEvidenceId": "composition-binding-854d6d341f2c1ca1ebaa166e0a7bf191ace75e132849",
         "retrievalEvidenceIds": [
-          "retrieval-f50acca23d4136b1abbd3101978a9aac28f918cf5bce060a514991ff480a618a",
-          "retrieval-d10e37665c4b503c1f764417f21c519edb984ce2df8b71897b48426214751561"
+          "retrieval-9319f2e7eedc7172cef5ada5373a3c018260f7c481c3b6b6c42d8e503bfc128f",
+          "retrieval-b3b48c9e1b2f6723756b5f663cd138a1524c953c8be369c7eb96da286d0a025b"
         ]
       }
     },
     {
       "type": "course_outline_confirm",
-      "operationId": "confirm-operation-0e4fff45-60b5-46b7-a8d5-e6b49f687c41",
+      "operationId": "confirm-operation-a06f9927-f625-457f-baf4-fc87460eb39e",
       "resultIds": {
-        "operationId": "confirm-operation-0e4fff45-60b5-46b7-a8d5-e6b49f687c41",
-        "confirmationId": "confirmation-8f8140bf-a3cc-4391-bcb9-a6a6de6f37d2",
-        "confirmationDigest": "2bca72ecb1a2bf34a3947a3b968ccdc9ad69901be5cc33f0df8fe641a000493f",
-        "courseVersionId": "course-version-83fcd21c-4bcc-4b6d-8182-2f8bb4d06ea8",
-        "courseDigest": "259a6be6e67baacf16e9eb63ffdeeab3193c2b45015df222569bd0b00d2d3df6",
-        "outlineVersionId": "outline-version-ddb0128c-df51-45cd-a761-56ba3dc59a12",
-        "outlineDigest": "81368cb58238dcf1eca30eb66eb1f40c405027ff7d19478c66c888dbe7be75c3",
+        "operationId": "confirm-operation-a06f9927-f625-457f-baf4-fc87460eb39e",
+        "confirmationId": "confirmation-1563fe78-c435-4255-89ac-4bb559182c68",
+        "confirmationDigest": "07454f190de8f134720809c3a93dec93739f9984ca17ec543fd8e90cf901d132",
+        "courseVersionId": "course-version-fe1a8b3e-4c44-4dc9-995d-0f6c0e41aab9",
+        "courseDigest": "afda2ad5780db705e880d0443961c62446f91f792b49797de0923cbd44474194",
+        "outlineVersionId": "outline-version-cfbe3244-24c1-4195-a80a-99c4cf0e0ab1",
+        "outlineDigest": "2bbdbce652bd39e0492aefbff847b7fcfbbb70a1e01c7401ed91591794aa923f",
         "placementIds": [
-          "placement-ad6c21f5c416aaeb10869539",
-          "placement-ed7dd528e7b85b5ef2755bf0"
+          "placement-8e1c636c79d11db339c1c71a",
+          "placement-e095ab54306a025629e80be9"
         ],
-        "slideDeckId": "deckv-49c4d62983370efcd9c8fe61648f4e5f",
-        "runtimeManifestId": "runtimev-6fe0dcba3faa3c77c9ef687f739c5420"
+        "slideDeckId": "deckv-2372fe2f038f0bae401cc0e53e75f3f7",
+        "runtimeManifestId": "runtimev-a92ce78c9a4abb33f65e856c8d548dc7"
       }
     },
     {
       "type": "course_visual_attach",
-      "operationId": "visual-attach-operation-15ddf04d-9ab9-4fe5-8951-c7f2de7bb351",
+      "operationId": "visual-attach-operation-bdb7b144-7d96-496d-b628-3613c7ef984b",
       "resultIds": {
-        "operationId": "visual-attach-operation-15ddf04d-9ab9-4fe5-8951-c7f2de7bb351",
-        "placementId": "visual-placement-03436277-850d-40f1-a81c-95816c615d99",
-        "visualVersionId": "82ba3754-3084-571c-b8bd-1c34bd9f5269",
-        "slideNodeId": "slide-d1f68712b1017730c3e71b9cbf7f06f6",
-        "slotId": "visual-slot-visual-placement-03436277-850d-40f1-a81c-95816c615d99"
+        "operationId": "visual-attach-operation-bdb7b144-7d96-496d-b628-3613c7ef984b",
+        "placementId": "visual-placement-433b3803-58f9-445a-a1a5-b23b1d0d287e",
+        "visualVersionId": "3a227aae-fdf9-55e0-8001-cf6046c05189",
+        "slideNodeId": "slide-9f064819765200cfa720824e4c2b2364",
+        "slotId": "visual-slot-visual-placement-433b3803-58f9-445a-a1a5-b23b1d0d287e"
       }
     },
     {
       "type": "course_validate",
-      "operationId": "course-validate-operation-b126beb1-fde7-4c1d-9b81-e099e86e105b",
+      "operationId": "course-validate-operation-521f5d36-0dbb-4c4a-8f6d-53122db5dbfe",
       "resultIds": {
-        "operationId": "course-validate-operation-b126beb1-fde7-4c1d-9b81-e099e86e105b",
-        "courseVersionId": "coursev-00be13bdec58753b14cd1c856fcff80b",
-        "courseDigest": "909b876ea5efe763f3b1ae025a63f12313beedcbe71de00069caaab15a225131",
-        "slideDeckId": "deckv-8cd70fee278d93121f36fb6b2ab5358a",
-        "runtimeManifestId": "runtimev-3fd03bbda01681d378bd30e9a9ee395a",
-        "runtimeManifestDigest": "4e776bb65be1fb0b4654fc723c5bc7a30dc8302efb3171f1586d9bc176358e44",
-        "courseProjectionId": "course-projection-0a22c272ecd95d8cf13f5ffb85c02624"
+        "operationId": "course-validate-operation-521f5d36-0dbb-4c4a-8f6d-53122db5dbfe",
+        "courseVersionId": "coursev-369bcc8df3cf9a65c3c363d970b290ea",
+        "courseDigest": "5350c604c1ad7d2ef6036bdde41bb0913b69064a714b4c9b3a421e61d6af22fb",
+        "slideDeckId": "deckv-6c8879a1aa1b26daafcabc89785c091b",
+        "runtimeManifestId": "runtimev-b59d8edbde0355968d3f573dd6bc1929",
+        "runtimeManifestDigest": "6720e94e5cd799f318d9a7df73236110db65da9a487c29e47337dbcfefde994c",
+        "courseProjectionId": "course-projection-cd5d6ffaa43c7ba98899557d00dc7128"
       }
     },
     {
       "type": "chart_build",
-      "operationId": "chart-build-operation-f0ffc999-4204-4520-821f-d12aa440d7a7",
+      "operationId": "chart-build-operation-38c8d05a-59d2-4447-8732-875550289707",
       "resultIds": {
-        "operationId": "chart-build-operation-f0ffc999-4204-4520-821f-d12aa440d7a7"
+        "operationId": "chart-build-operation-38c8d05a-59d2-4447-8732-875550289707"
       }
     },
     {
       "type": "course_visual_attach",
-      "operationId": "visual-attach-operation-7c4aee3e-271c-43c4-90b8-81219d0e0717",
+      "operationId": "visual-attach-operation-248784b5-7f65-4466-9bab-fdb0a6848bcd",
       "resultIds": {
-        "operationId": "visual-attach-operation-7c4aee3e-271c-43c4-90b8-81219d0e0717",
-        "placementId": "visual-placement-8be8f564-1273-415f-8dd2-c01cdf91b4d1",
+        "operationId": "visual-attach-operation-248784b5-7f65-4466-9bab-fdb0a6848bcd",
+        "placementId": "visual-placement-d09c8254-3d03-410b-95ff-0bad7e58f115",
         "visualVersionId": "dd0868b3-0f41-5c51-b9d9-fe491c66f361",
-        "slideNodeId": "slide-e7acd00bc964b805368e774a84313b69",
-        "slotId": "visual-slot-visual-placement-8be8f564-1273-415f-8dd2-c01cdf91b4d1"
+        "slideNodeId": "slide-bfc22152081a6deea9d4b3cd82dd6c18",
+        "slotId": "visual-slot-visual-placement-d09c8254-3d03-410b-95ff-0bad7e58f115"
       }
     },
     {
       "type": "course_validate",
-      "operationId": "course-validate-operation-5eb3932f-1057-4f33-905c-c4b808723f61",
+      "operationId": "course-validate-operation-3146a816-7dd4-459a-849d-624a3b935090",
       "resultIds": {
-        "operationId": "course-validate-operation-5eb3932f-1057-4f33-905c-c4b808723f61",
-        "courseDigest": "d71b8f8c107fb1ae109ec5745b48d0af6c636ff3b2f26f09d3bf5e1837957010",
-        "courseProjectionId": "course-projection-a199801efad7018a143c679cbbf93cab",
-        "courseVersionId": "coursev-5ffc2f47174cac4e97ecdd52548865de",
-        "runtimeManifestDigest": "f1783cc00e4041193124db40e0e0aac2c1b03ee66f9e30236e771a756f14111e",
-        "runtimeManifestId": "runtimev-0517619696124b029ca4dd82f958b509",
-        "slideDeckId": "deckv-bffd2b9d20789c0f39cf7b4dc3a7d76c"
+        "operationId": "course-validate-operation-3146a816-7dd4-459a-849d-624a3b935090",
+        "courseDigest": "36ee06a60f5cbe80fcb974126efeff3289cc9e154884aaecf24c742a7d3a8d96",
+        "courseProjectionId": "course-projection-7ef1afed792cc711bbb5b1f84a4883d3",
+        "courseVersionId": "coursev-98d94361d783945935d6dad14321ecd7",
+        "runtimeManifestDigest": "44abb89420970a54bbe20c100e9fe10e7966ef5cb2419d50a481f3f752a87ec4",
+        "runtimeManifestId": "runtimev-6776c948d2db50754257d8d52472948f",
+        "slideDeckId": "deckv-17fe6dfd3b81b02a5de509a608bebe30"
       }
     },
     {
       "type": "visual_search",
-      "operationId": "visual-search-operation-dc37a4d3-8a85-4b8a-ad2d-7a22cb89634f",
+      "operationId": "visual-search-operation-daccaf4e-107d-41bf-9ebc-5b007c438aab",
       "resultIds": {
-        "operationId": "visual-search-operation-dc37a4d3-8a85-4b8a-ad2d-7a22cb89634f"
+        "operationId": "visual-search-operation-daccaf4e-107d-41bf-9ebc-5b007c438aab"
       }
     },
     {
       "type": "visual_acquire",
-      "operationId": "visual-acquire-operation-6e7a9577-0bb5-4f7d-8824-b044e7e796a8",
+      "operationId": "visual-acquire-operation-795a9613-0f7d-4e27-8e68-3eb6b1145845",
       "resultIds": {
-        "operationId": "visual-acquire-operation-6e7a9577-0bb5-4f7d-8824-b044e7e796a8"
+        "operationId": "visual-acquire-operation-795a9613-0f7d-4e27-8e68-3eb6b1145845"
       }
     },
     {
       "type": "visual_revalidate",
-      "operationId": "visual-revalidate-operation-a25ec0f3-108a-4ed2-ba69-02e224e2d4c7",
+      "operationId": "visual-revalidate-operation-c5b9acfc-e1cf-476e-a6ef-42b9e2ab7971",
       "resultIds": {
-        "operationId": "visual-revalidate-operation-a25ec0f3-108a-4ed2-ba69-02e224e2d4c7"
+        "operationId": "visual-revalidate-operation-c5b9acfc-e1cf-476e-a6ef-42b9e2ab7971"
       }
     },
     {
       "type": "course_visual_attach",
-      "operationId": "visual-attach-operation-d9a28f28-e2e3-41fa-b8da-a3c5b51e60eb",
+      "operationId": "visual-attach-operation-a42d71d7-e9d8-4579-a69a-f001db27004e",
       "resultIds": {
-        "operationId": "visual-attach-operation-d9a28f28-e2e3-41fa-b8da-a3c5b51e60eb",
-        "placementId": "visual-placement-de78cfed-7450-46ae-8682-0ed016197faf",
+        "operationId": "visual-attach-operation-a42d71d7-e9d8-4579-a69a-f001db27004e",
+        "placementId": "visual-placement-eb8631f8-8735-49e5-b925-42ea448b7746",
         "visualVersionId": "1182ff5e-4bb4-520f-a7c4-abfa3fd45fea",
-        "slideNodeId": "slide-e7acd00bc964b805368e774a84313b69",
-        "slotId": "visual-slot-visual-placement-de78cfed-7450-46ae-8682-0ed016197faf"
+        "slideNodeId": "slide-bfc22152081a6deea9d4b3cd82dd6c18",
+        "slotId": "visual-slot-visual-placement-eb8631f8-8735-49e5-b925-42ea448b7746"
       }
     },
     {
       "type": "course_validate",
-      "operationId": "course-validate-operation-07f89909-797e-41a7-b48b-7a63a08a7c91",
+      "operationId": "course-validate-operation-150038bb-6c11-45d6-a897-19f2a7746b39",
       "resultIds": {
-        "operationId": "course-validate-operation-07f89909-797e-41a7-b48b-7a63a08a7c91",
-        "courseDigest": "e33e0eeb608add3b566d650733f447bccad9da9e67d98879fea1342ee27825e9",
-        "courseProjectionId": "course-projection-e396bd3cec5c5873097c214e51a33b3d",
-        "courseVersionId": "coursev-0b05368d4dd08a6b0798ac1c8d43234d",
-        "runtimeManifestDigest": "84d7681b3b3216b972a7ac1d9293e246916a2be08e3723d6478b4bd344bb129a",
-        "runtimeManifestId": "runtimev-aa5d178693ef56bcbd46a91c6e53c77f",
-        "slideDeckId": "deckv-5463d2dadf8e8f3f7f91309c9c6a4fde"
+        "operationId": "course-validate-operation-150038bb-6c11-45d6-a897-19f2a7746b39",
+        "courseDigest": "77e446b259767905831a0ef87445489fc6c1e8a7ba2cf1fb1dae06f02af4a2d5",
+        "courseProjectionId": "course-projection-5ac194274653522425c84c7b4eebe70b",
+        "courseVersionId": "coursev-3e1010a3cf1736e64cceff72cca98b93",
+        "runtimeManifestDigest": "217a5c872f39d1a57b446a44474befe5a7892b0908529f6f36989ebd7f1969b9",
+        "runtimeManifestId": "runtimev-6d1b0456e7a41baec7e2026086800350",
+        "slideDeckId": "deckv-df542a9f16f7e5c7aa276e9f4bab8c66"
       }
     },
     {
       "type": "course_publish",
-      "operationId": "course-publish-operation-9b5047da-1920-47e3-a48c-57536a436928",
+      "operationId": "course-publish-operation-7a79d9d5-32f0-4702-a3c6-ded16008511b",
       "resultIds": {
-        "operationId": "course-publish-operation-9b5047da-1920-47e3-a48c-57536a436928",
-        "courseVersionId": "coursev-0b05368d4dd08a6b0798ac1c8d43234d",
-        "slideDeckId": "deckv-5463d2dadf8e8f3f7f91309c9c6a4fde",
-        "runtimeManifestId": "runtimev-aa5d178693ef56bcbd46a91c6e53c77f",
-        "runtimeManifestDigest": "84d7681b3b3216b972a7ac1d9293e246916a2be08e3723d6478b4bd344bb129a",
-        "courseProjectionId": "course-projection-e396bd3cec5c5873097c214e51a33b3d"
+        "operationId": "course-publish-operation-7a79d9d5-32f0-4702-a3c6-ded16008511b",
+        "courseVersionId": "coursev-3e1010a3cf1736e64cceff72cca98b93",
+        "slideDeckId": "deckv-df542a9f16f7e5c7aa276e9f4bab8c66",
+        "runtimeManifestId": "runtimev-6d1b0456e7a41baec7e2026086800350",
+        "runtimeManifestDigest": "217a5c872f39d1a57b446a44474befe5a7892b0908529f6f36989ebd7f1969b9",
+        "courseProjectionId": "course-projection-5ac194274653522425c84c7b4eebe70b"
       }
     },
     {
       "type": "course_publish",
-      "operationId": "course-publish-operation-9b5047da-1920-47e3-a48c-57536a436928",
+      "operationId": "course-publish-operation-7a79d9d5-32f0-4702-a3c6-ded16008511b",
       "resultIds": {
-        "operationId": "course-publish-operation-9b5047da-1920-47e3-a48c-57536a436928",
-        "courseProjectionId": "course-projection-e396bd3cec5c5873097c214e51a33b3d",
-        "courseVersionId": "coursev-0b05368d4dd08a6b0798ac1c8d43234d",
-        "runtimeManifestDigest": "84d7681b3b3216b972a7ac1d9293e246916a2be08e3723d6478b4bd344bb129a",
-        "runtimeManifestId": "runtimev-aa5d178693ef56bcbd46a91c6e53c77f",
-        "slideDeckId": "deckv-5463d2dadf8e8f3f7f91309c9c6a4fde"
+        "operationId": "course-publish-operation-7a79d9d5-32f0-4702-a3c6-ded16008511b",
+        "courseProjectionId": "course-projection-5ac194274653522425c84c7b4eebe70b",
+        "courseVersionId": "coursev-3e1010a3cf1736e64cceff72cca98b93",
+        "runtimeManifestDigest": "217a5c872f39d1a57b446a44474befe5a7892b0908529f6f36989ebd7f1969b9",
+        "runtimeManifestId": "runtimev-6d1b0456e7a41baec7e2026086800350",
+        "slideDeckId": "deckv-df542a9f16f7e5c7aa276e9f4bab8c66"
       }
     }
   ],
   "published": {
-    "courseVersionId": "coursev-0b05368d4dd08a6b0798ac1c8d43234d",
-    "slideDeckId": "deckv-5463d2dadf8e8f3f7f91309c9c6a4fde",
-    "runtimeManifestId": "runtimev-aa5d178693ef56bcbd46a91c6e53c77f",
-    "runtimeManifestDigest": "84d7681b3b3216b972a7ac1d9293e246916a2be08e3723d6478b4bd344bb129a",
-    "courseProjectionId": "course-projection-e396bd3cec5c5873097c214e51a33b3d"
+    "courseVersionId": "coursev-3e1010a3cf1736e64cceff72cca98b93",
+    "slideDeckId": "deckv-df542a9f16f7e5c7aa276e9f4bab8c66",
+    "runtimeManifestId": "runtimev-6d1b0456e7a41baec7e2026086800350",
+    "runtimeManifestDigest": "217a5c872f39d1a57b446a44474befe5a7892b0908529f6f36989ebd7f1969b9",
+    "courseProjectionId": "course-projection-5ac194274653522425c84c7b4eebe70b"
   },
   "checks": {
     "exactOperationReplay": true,

@@ -344,7 +344,7 @@ git commit -m "feat(projection): add deterministic certification reducer"
 - Consumes: `DisplayTopology`, `PhysicalRect`, and certification eligibility from Task 2.
 - Produces: `IDisplayTopologyProvider.Read(ReadOnlySpan<byte> sessionSalt)` and a PerMonitorV2 native provider.
 
-- [ ] **Step 1: Write failing mapping and safety tests**
+- [x] **Step 1: Write failing mapping and safety tests**
 
 Define test cases for single, extended, duplicate, remote, unknown, negative
 coordinates, rotated monitors, mixed DPI, missing metadata, overflow, and a
@@ -361,7 +361,7 @@ SetCimInstance
 Set-WmiInstance
 ```
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 ```powershell
 .tools/dotnet/dotnet.exe test platform/windows/tests/CourseStudio.ProjectionHost.Core.Tests/CourseStudio.ProjectionHost.Core.Tests.csproj --no-restore --filter "FullyQualifiedName~DisplayTopologyMapperTests|FullyQualifiedName~ForbiddenDisplayApiTests"
@@ -369,7 +369,7 @@ Set-WmiInstance
 
 Expected: FAIL because native mapping is absent.
 
-- [ ] **Step 3: Implement the provider behind one interface**
+- [x] **Step 3: Implement the provider behind one interface**
 
 Use this interface and output boundary:
 
@@ -398,7 +398,7 @@ inside the adapter. Derive `AnonymousDisplayId` as HMAC-SHA256 over the raw
 stable tuple with the per-session salt. Assert effective PerMonitorV2 awareness
 before window creation; failure returns `unknown` and prevents Host startup.
 
-- [ ] **Step 4: Run unit GREEN and a non-certifying read-only smoke**
+- [x] **Step 4: Run unit GREEN and a non-certifying read-only smoke**
 
 ```powershell
 .tools/dotnet/dotnet.exe test platform/windows/tests/CourseStudio.ProjectionHost.Core.Tests/CourseStudio.ProjectionHost.Core.Tests.csproj --no-restore
@@ -409,7 +409,7 @@ Expected on the current machine: extended topology with two anonymous
 candidates corresponding to the integrated and Samsung displays, and
 `physicalDualScreenCertified=false`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add -- platform/windows/src/CourseStudio.ProjectionHost/Native platform/windows/src/CourseStudio.ProjectionHost/app.manifest platform/windows/tests/CourseStudio.ProjectionHost.Core.Tests

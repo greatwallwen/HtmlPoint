@@ -9,5 +9,6 @@
     <PackageReference Include="MSTest.TestAdapter" />
     <PackageReference Include="MSTest.TestFramework" />
     <ProjectReference Include="../../src/CourseStudio.ProjectionHost.Core/CourseStudio.ProjectionHost.Core.csproj" />
+    <ProjectReference Include="../../src/CourseStudio.ProjectionHost/CourseStudio.ProjectionHost.csproj" />
   </ItemGroup>
 </Project>

@@ -101,8 +101,21 @@
         "resolved": "4.3.2",
         "contentHash": "GNvrVI6/Y5pNoKnK1/VELBls3XiHNZaj+zh14LtwlCqFI8zXTW3vuBe0Jv2qEr9wxHlOAQQBTJPRoNRjneGrKQ=="
       },
+      "coursestudio.projectionhost": {
+        "type": "Project",
+        "dependencies": {
+          "CourseStudio.ProjectionHost.Core": "[1.0.0, )",
+          "Microsoft.Web.WebView2": "[1.0.4078.44, )"
+        }
+      },
       "coursestudio.projectionhost.core": {
         "type": "Project"
+      },
+      "Microsoft.Web.WebView2": {
+        "type": "CentralTransitive",
+        "requested": "[1.0.4078.44, )",
+        "resolved": "1.0.4078.44",
+        "contentHash": "TQkHa/aOHUqFHnJIJ/2ZmJ4nLcQJi0Pc0rj9BAs7SP5sT/KtVtb8jFp9uqQL6cKzCRSrwjS/wEPA43NWUOzU+A=="
       }
     }
   }

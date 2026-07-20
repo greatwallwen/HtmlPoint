@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "phase": "dual-screen-task8-concise-native-controls",
+  "executedAt": "2026-07-20T13:51:05.3217392+08:00",
+  "projectBoundary": "D:\\cursor\\AI培训",
+  "removed": [
+    {
+      "path": "D:\\cursor\\AI培训\\platform\\qa\\__pycache__",
+      "files": 2,
+      "bytes": 501412,
+      "regeneration": "Python import bytecode"
+    },
+    {
+      "path": "D:\\cursor\\AI培训\\platform\\web\\dist",
+      "files": 6,
+      "bytes": 573223,
+      "regeneration": "Vite production build"
+    },
+    {
+      "path": "D:\\cursor\\AI培训\\platform\\web\\node_modules\\.vite",
+      "files": 1,
+      "bytes": 2560,
+      "regeneration": "Vite dependency cache"
+    }
+  ],
+  "removedTotals": {
+    "targets": 3,
+    "files": 9,
+    "bytes": 1077195
+  },
+  "retained": [
+    {
+      "path": "D:\\cursor\\AI培训\\.pytest_cache",
+      "classification": "pre-existing inaccessible cache",
+      "reason": "ACL denied access; not created by Task 8"
+    },
+    {
+      "path": "D:\\cursor\\AI培训\\platform\\web\\node_modules",
+      "classification": "retained dependency",
+      "reason": "dependency installation is not phase cache"
+    },
+    {
+      "path": "D:\\cursor\\AI培训\\.superpowers\\sdd",
+      "classification": "durable evidence",
+      "reason": "phase checkpoints, route receipts, reflection, and verification"
+    }
+  ],
+  "preservationChecks": {
+    "protectedCourseAIProductUntouched": true,
+    "protectedReferencesUntouched": true,
+    "knownTask8CachesRemaining": 0,
+    "gitLooseObjects": 0,
+    "gitPacks": 1,
+    "gitPackKiB": 3865,
+    "gitGarbageObjects": 0
+  }
+}

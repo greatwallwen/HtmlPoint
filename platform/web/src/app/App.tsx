@@ -23,6 +23,7 @@ import {
 } from "../services/helper-session";
 import { KnowledgeClient } from "../services/knowledge-client";
 import { ArtifactClient } from "../services/artifact-client";
+import { HelperProjectionClient } from "../services/projection-client";
 import {
   createNativeProjectionArtifactReader,
   detectNativeProjectionAdapter,
@@ -175,6 +176,7 @@ function StudioWorkflow({
   const { state, dispatch } = useWorkspace();
   const [knowledgeClient, setKnowledgeClient] = useState<KnowledgeClient>();
   const [artifactClient, setArtifactClient] = useState<ArtifactClient>();
+  const [projectionClient, setProjectionClient] = useState<HelperProjectionClient>();
 
   useEffect(() => {
     if (knowledgeClient !== undefined) {
@@ -185,6 +187,7 @@ function StudioWorkflow({
       if (current && session !== undefined) {
         setKnowledgeClient(new KnowledgeClient(session));
         setArtifactClient(new ArtifactClient(session));
+        setProjectionClient(new HelperProjectionClient(session));
       }
     });
     return () => {
@@ -237,6 +240,19 @@ function StudioWorkflow({
     return () => { current = false; };
   }, [dispatch, knowledgeClient, state.governed, state.governedProjection]);
 
+  const projectionIdentity =
+    state.governed.courseVersionId !== undefined &&
+    state.governed.slideDeckId !== undefined &&
+    state.governed.runtimeManifestId !== undefined &&
+    state.governedProjection?.runtimeManifest !== undefined
+      ? {
+          courseVersionId: state.governed.courseVersionId,
+          slideDeckId: state.governed.slideDeckId,
+          runtimeManifestId: state.governed.runtimeManifestId,
+          runtimeManifestDigest: state.governedProjection.runtimeManifest.contentDigest,
+        }
+      : undefined;
+
   let content: JSX.Element;
   switch (state.step) {
     case "import":
@@ -255,6 +271,8 @@ function StudioWorkflow({
           selectedLessonId={state.selectedLessonId}
           runtime={teachingRuntime}
           slideDeck={state.governedProjection?.slideDeck}
+          projectionClient={projectionClient}
+          projectionIdentity={projectionIdentity}
           onReturnToEdit={() => dispatch({ type: "GO_TO_STEP", step: "edit" })}
         />
       );

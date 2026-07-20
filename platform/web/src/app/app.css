@@ -2018,6 +2018,217 @@ button {
   gap: 10px;
 }
 
+.teaching-setup-page--native {
+  background: #f5f7fb;
+}
+
+.native-teaching-panel {
+  width: min(980px, 100%);
+}
+
+.native-session-status {
+  display: inline-flex;
+  min-height: 36px;
+  padding: 7px 13px;
+  align-items: center;
+  border: 1px solid #cbd8f2;
+  border-radius: 999px;
+  background: #f4f7ff;
+  color: var(--color-brand);
+  font-size: 13px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.native-session-status--certified {
+  border-color: #b7dfc5;
+  background: #effaf3;
+  color: var(--color-success);
+}
+
+.native-session-status--error,
+.native-session-status--invalidated {
+  border-color: #ead49d;
+  background: #fffbeb;
+  color: var(--color-warning);
+}
+
+.native-certification-badges {
+  display: flex;
+  margin-top: 26px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.native-certification-badges span {
+  display: inline-flex;
+  min-height: 36px;
+  padding: 7px 12px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.native-certification-badges .is-certified {
+  border-color: #b7dfc5;
+  background: #effaf3;
+  color: var(--color-success);
+}
+
+.native-progress {
+  display: grid;
+  margin: 24px 0 0;
+  padding: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  list-style: none;
+}
+
+.native-progress__item {
+  display: flex;
+  min-width: 0;
+  min-height: 78px;
+  padding: 14px;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+
+.native-progress__icon {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.native-progress__item > span:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.native-progress__item strong {
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.native-progress__item small {
+  font-size: 12px;
+}
+
+.native-progress__item--active {
+  border-color: #b7caf6;
+  background: #f4f7ff;
+  color: var(--color-brand);
+}
+
+.native-progress__item--active .native-progress__icon {
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
+  box-shadow: none;
+}
+
+.native-progress__item--complete {
+  border-color: #c8e6d2;
+  background: #f4fbf6;
+  color: var(--color-success);
+}
+
+.native-progress__item--complete .native-progress__icon {
+  background: #e9f7ee;
+  color: var(--color-success);
+  box-shadow: none;
+}
+
+.native-role-assignment {
+  display: grid;
+  margin-top: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.native-role-assignment span {
+  display: flex;
+  min-height: 48px;
+  padding: 12px 15px;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.native-witness-notice,
+.native-projection-error {
+  margin-top: 18px;
+  padding: 17px 18px;
+  border: 1px solid #c9d8f7;
+  border-radius: var(--radius-card);
+  background: #f6f8ff;
+  color: var(--color-text);
+}
+
+.native-projection-error {
+  border-color: #ead49d;
+  background: #fffbeb;
+}
+
+.native-witness-notice p,
+.native-projection-error p {
+  margin: 7px 0 0;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.native-teaching-actions {
+  display: grid;
+  margin-top: 24px;
+  gap: 12px;
+}
+
+.native-primary-action {
+  width: 100%;
+  min-height: 52px;
+  justify-content: center;
+}
+
+.native-primary-action,
+.native-secondary-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.native-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.native-close-button {
+  justify-content: center;
+}
+
+.native-close-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .teaching-error-card .secondary-button {
   width: max-content;
   margin-top: 22px;
@@ -2434,6 +2645,14 @@ button {
     flex-direction: column;
   }
 
+  .native-progress {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .native-role-assignment {
+    grid-template-columns: 1fr;
+  }
+
   .stage-view__header,
   .presenter-view__header {
     padding: 12px 18px;
@@ -2455,5 +2674,16 @@ button {
   .presenter-controls {
     grid-column: 1;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .native-progress {
+    grid-template-columns: 1fr;
+  }
+
+  .native-secondary-actions .secondary-button {
+    flex: 1 1 100%;
+    justify-content: center;
   }
 }

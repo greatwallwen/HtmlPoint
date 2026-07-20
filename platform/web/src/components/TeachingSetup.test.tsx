@@ -4,6 +4,8 @@ import { StrictMode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { CourseDocument } from "../domain/course";
+import type { ProjectionIdentity } from "../domain/projection";
+import type { ProjectionReceipt } from "../domain/projection-schema";
 import type {
   TeachingBus,
   TeachingBusEnvelope,
@@ -14,6 +16,10 @@ import type {
 import { PresenterView } from "./PresenterView";
 import { StageView } from "./StageView";
 import { TeachingSetup, type TeachingRuntime } from "./TeachingSetup";
+import {
+  ProjectionClientError,
+  type ProjectionClient,
+} from "../services/projection-client";
 
 const COURSE: CourseDocument = {
   schemaVersion: 1,
@@ -559,6 +565,360 @@ describe("TeachingSetup", () => {
     );
 
     vi.useRealTimers();
+  });
+});
+
+const NATIVE_IDENTITY: ProjectionIdentity = {
+  courseVersionId: "private-course-version",
+  slideDeckId: "private-deck-version",
+  runtimeManifestId: "private-runtime-version",
+  runtimeManifestDigest: "f".repeat(64),
+};
+
+const nativeReceipt = (
+  command: ProjectionReceipt["command"],
+  input: { commandId: string; sessionId: string | null; expectedGeneration: number },
+  patch: Partial<ProjectionReceipt> = {},
+): ProjectionReceipt => ({
+  schemaVersion: 1,
+  commandId: input.commandId,
+  sessionId: input.sessionId,
+  command,
+  accepted: true,
+  status: "candidate",
+  generation: input.expectedGeneration,
+  message: "projection_command_accepted",
+  assignments: [],
+  ...patch,
+});
+
+const nativeClient = (): ProjectionClient => ({
+  detect: vi.fn((input) => Promise.resolve(nativeReceipt("detect_displays", input))),
+  open: vi.fn((input) => Promise.resolve(nativeReceipt("open_projection_session", input))),
+  assign: vi.fn((input) => Promise.resolve(nativeReceipt("assign_projection_window", input, {
+    status: "assigned",
+    generation: input.expectedGeneration + 1,
+    assignments: [
+      { role: "stage", displayId: "a".repeat(64), windowGeneration: input.expectedGeneration + 1 },
+      { role: "presenter", displayId: "b".repeat(64), windowGeneration: input.expectedGeneration + 1 },
+    ],
+  }))),
+  fullscreen: vi.fn((input) => Promise.resolve(nativeReceipt("enter_projection_fullscreen", input, { status: "fullscreen" }))),
+  verify: vi.fn((input) => Promise.resolve(nativeReceipt("verify_projection_assignment", input, { status: "witness_pending" }))),
+  close: vi.fn((input) => Promise.resolve(nativeReceipt("close_projection_session", input, { status: "closed" }))),
+});
+
+describe("native TeachingSetup", () => {
+  it("runs the concise light native flow and hides every internal identity", async () => {
+    const user = userEvent.setup();
+    const client = nativeClient();
+    render(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={client}
+        projectionIdentity={NATIVE_IDENTITY}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "开始双屏授课" })).toBeVisible();
+    expect(screen.getAllByRole("listitem")).toHaveLength(4);
+    await user.click(screen.getByRole("button", { name: "开始双屏授课" }));
+
+    await waitFor(() => expect(client.fullscreen).toHaveBeenCalledOnce());
+    expect(screen.getByText("学员屏 · 外接屏")).toBeVisible();
+    expect(screen.getByText("讲师屏 · 主屏")).toBeVisible();
+    expect(screen.getByRole("button", { name: "开始现场确认" })).toBeVisible();
+    const visible = document.body.textContent ?? "";
+    expect(visible).not.toContain(NATIVE_IDENTITY.courseVersionId);
+    expect(visible).not.toContain(NATIVE_IDENTITY.slideDeckId);
+    expect(visible).not.toContain(NATIVE_IDENTITY.runtimeManifestId);
+    expect(visible).not.toContain(NATIVE_IDENTITY.runtimeManifestDigest);
+    expect(visible).not.toMatch(/[0-9a-f]{64}/);
+    expect(visible).not.toMatch(/[0-9a-f]{8}-[0-9a-f-]{27,}/i);
+
+    await user.click(screen.getByRole("button", { name: "开始现场确认" }));
+    expect(await screen.findByText("请分别查看两个屏幕上的验证码，并在本机确认窗口中输入。")).toBeVisible();
+    expect(screen.getByText("个人设备会话未认证")).toBeVisible();
+    expect(screen.getByText("发布签名未认证")).toBeVisible();
+  });
+
+  it("invalidates witness on Swap and closes the native session on Escape", async () => {
+    const user = userEvent.setup();
+    const client = nativeClient();
+    client.verify = vi.fn((input) => Promise.resolve(nativeReceipt("verify_projection_assignment", input, { status: "certified" })));
+    render(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={client}
+        projectionIdentity={NATIVE_IDENTITY}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "开始双屏授课" }));
+    await user.click(await screen.findByRole("button", { name: "开始现场确认" }));
+    expect(await screen.findByText("个人设备会话已认证")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "交换屏幕" }));
+    expect(await screen.findByText("学员屏 · 主屏")).toBeVisible();
+    expect(screen.getByText("个人设备会话未认证")).toBeVisible();
+    expect(client.assign).toHaveBeenLastCalledWith(expect.objectContaining({ swap: true }));
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(client.close).toHaveBeenCalledOnce());
+  });
+
+  it("offers bounded Runtime and Host recovery plus an uncertified browser fallback", async () => {
+    const user = userEvent.setup();
+    const fallbackRuntime = createRuntime(new InMemoryTeachingHub());
+    const { rerender } = render(
+      <TeachingSetup
+        course={COURSE}
+        projectionIdentity={NATIVE_IDENTITY}
+        runtime={fallbackRuntime}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("本机双屏服务未连接")).toBeVisible();
+    expect(screen.getByRole("button", { name: "进入同屏排练" })).toBeVisible();
+
+    const unavailable = nativeClient();
+    unavailable.detect = vi.fn(() => Promise.reject(new ProjectionClientError("projection_unavailable", true)));
+    rerender(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={unavailable}
+        projectionIdentity={NATIVE_IDENTITY}
+        runtime={fallbackRuntime}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "开始双屏授课" }));
+    expect(await screen.findByText("双屏主机暂不可用")).toBeVisible();
+    expect(screen.getByRole("button", { name: "重试" })).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "进入同屏排练" }));
+    expect(screen.getByText("排练模式，未认证物理双屏")).toBeVisible();
+    expect(screen.queryByText("个人设备会话已认证")).toBeNull();
+  });
+
+  it("keeps single duplicate and remote topologies uncertified and never restores certification on reload", async () => {
+    const user = userEvent.setup();
+    const ineligible = nativeClient();
+    ineligible.detect = vi.fn((input) => Promise.resolve(nativeReceipt(
+      "detect_displays",
+      input,
+      {
+        accepted: false,
+        status: "invalidated",
+        message: "display_topology_ineligible",
+      },
+    )));
+    const first = render(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={ineligible}
+        projectionIdentity={NATIVE_IDENTITY}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "开始双屏授课" }));
+    expect(await screen.findByText("需要本机扩展双屏")).toBeVisible();
+    expect(screen.getByText(/复制模式、远程会话和单屏都不会认证/)).toBeVisible();
+    expect(screen.getByText("个人设备会话未认证")).toBeVisible();
+
+    first.unmount();
+    render(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={nativeClient()}
+        projectionIdentity={NATIVE_IDENTITY}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("个人设备会话未认证")).toBeVisible();
+    expect(screen.getByRole("button", { name: "开始双屏授课" })).toBeVisible();
+  });
+
+  it("invalidates and closes the prior session when the published projection identity changes", async () => {
+    const user = userEvent.setup();
+    const client = nativeClient();
+    client.verify = vi.fn((input) => Promise.resolve(nativeReceipt(
+      "verify_projection_assignment",
+      input,
+      { status: "certified" },
+    )));
+    const view = render(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={client}
+        projectionIdentity={NATIVE_IDENTITY}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "开始双屏授课" }));
+    await user.click(await screen.findByRole("button", { name: "开始现场确认" }));
+    expect(await screen.findByText("个人设备会话已认证")).toBeVisible();
+
+    view.rerender(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={client}
+        projectionIdentity={{
+          ...NATIVE_IDENTITY,
+          runtimeManifestId: "private-runtime-version-2",
+          runtimeManifestDigest: "e".repeat(64),
+        }}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("个人设备会话未认证")).toBeVisible();
+    expect(screen.getByRole("button", { name: "开始双屏授课" })).toBeVisible();
+    await waitFor(() => expect(client.close).toHaveBeenCalledOnce());
+  });
+
+  it("closes before entering browser rehearsal or returning to edit", async () => {
+    const user = userEvent.setup();
+    const fallbackClient = nativeClient();
+    const fallbackRuntime = createRuntime(new InMemoryTeachingHub());
+    const first = render(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={fallbackClient}
+        projectionIdentity={NATIVE_IDENTITY}
+        runtime={fallbackRuntime}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "开始双屏授课" }));
+    await user.click(await screen.findByRole("button", { name: "进入同屏排练" }));
+    expect(await screen.findByText("排练模式，未认证物理双屏")).toBeVisible();
+    expect(fallbackClient.close).toHaveBeenCalledOnce();
+
+    first.unmount();
+    const editClient = nativeClient();
+    const onReturnToEdit = vi.fn();
+    render(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={editClient}
+        projectionIdentity={NATIVE_IDENTITY}
+        onReturnToEdit={onReturnToEdit}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "开始双屏授课" }));
+    await user.click(await screen.findByRole("button", { name: "返回编辑" }));
+    await waitFor(() => expect(editClient.close).toHaveBeenCalledOnce());
+    expect(onReturnToEdit).toHaveBeenCalledOnce();
+  });
+
+  it("queues Escape during an in-flight command and closes before the flow can continue", async () => {
+    const user = userEvent.setup();
+    const client = nativeClient();
+    let resolveOpen!: (receipt: ProjectionReceipt) => void;
+    let openInput!: Parameters<ProjectionClient["open"]>[0];
+    client.open = vi.fn((input) => {
+      openInput = input;
+      return new Promise<ProjectionReceipt>((resolve) => {
+        resolveOpen = resolve;
+      });
+    });
+    render(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={client}
+        projectionIdentity={NATIVE_IDENTITY}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "开始双屏授课" }));
+    await waitFor(() => expect(client.open).toHaveBeenCalledOnce());
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.getByText("正在安全关闭")).toBeVisible();
+    await act(async () => {
+      resolveOpen(nativeReceipt("open_projection_session", openInput));
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(client.close).toHaveBeenCalledOnce());
+    expect(client.assign).not.toHaveBeenCalled();
+    expect(await screen.findByRole("button", { name: "开始双屏授课" })).toBeVisible();
+  });
+
+  it("best-effort closes the old session when identity changes during a failing assignment", async () => {
+    const user = userEvent.setup();
+    const client = nativeClient();
+    let rejectAssign!: (error: unknown) => void;
+    client.assign = vi.fn(() => new Promise<ProjectionReceipt>((_resolve, reject) => {
+      rejectAssign = reject;
+    }));
+    const view = render(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={client}
+        projectionIdentity={NATIVE_IDENTITY}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "开始双屏授课" }));
+    await waitFor(() => expect(client.assign).toHaveBeenCalledOnce());
+
+    view.rerender(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={client}
+        projectionIdentity={{
+          ...NATIVE_IDENTITY,
+          runtimeManifestId: "private-runtime-version-2",
+          runtimeManifestDigest: "e".repeat(64),
+        }}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+    await act(async () => {
+      rejectAssign(new ProjectionClientError("projection_timeout", true));
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(client.close).toHaveBeenCalledOnce());
+    expect(screen.getByText("个人设备会话未认证")).toBeVisible();
+    expect(screen.getByRole("button", { name: "开始双屏授课" })).toBeVisible();
+  });
+
+  it("does not start a replacement flow when closing the prior session is rejected", async () => {
+    const user = userEvent.setup();
+    const client = nativeClient();
+    client.fullscreen = vi.fn(() => Promise.reject(
+      new ProjectionClientError("projection_command_failed", false),
+    ));
+    render(
+      <TeachingSetup
+        course={COURSE}
+        projectionClient={client}
+        projectionIdentity={NATIVE_IDENTITY}
+        onReturnToEdit={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "开始双屏授课" }));
+    expect(await screen.findByRole("button", { name: "重试" })).toBeVisible();
+
+    client.close = vi.fn((input) => Promise.resolve(nativeReceipt(
+      "close_projection_session",
+      input,
+      {
+        accepted: false,
+        status: "invalidated",
+        message: "generation_mismatch",
+      },
+    )));
+    await user.click(screen.getByRole("button", { name: "重试" }));
+
+    await waitFor(() => expect(client.close).toHaveBeenCalledOnce());
+    expect(client.detect).toHaveBeenCalledOnce();
+    expect(client.open).toHaveBeenCalledOnce();
+    expect(client.assign).toHaveBeenCalledOnce();
+    expect(client.fullscreen).toHaveBeenCalledOnce();
   });
 });
 

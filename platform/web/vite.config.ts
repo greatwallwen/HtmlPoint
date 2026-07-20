@@ -3,6 +3,20 @@ import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    target: "es2022",
+    sourcemap: false,
+    assetsDir: "assets",
+    manifest: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom"],
+          validation: ["zod"],
+        },
+      },
+    },
+  },
   server: {
     host: "0.0.0.0",
     allowedHosts: ["terminal.local"],

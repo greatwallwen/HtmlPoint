@@ -516,7 +516,7 @@ git commit -m "feat(projection): control role windows and native witness"
 - Consumes: immutable course projection, role windows, Task 1 schemas.
 - Produces: `ProjectionBootstrap`, same-origin session assets, role-bound `message_accepted` and `frame_committed` events.
 
-- [ ] **Step 1: Write failing web/native bridge tests**
+- [x] **Step 1: Write failing web/native bridge tests**
 
 TypeScript tests must prove that native mode accepts a strict bootstrap only
 from `window.chrome.webview`, never reads Chrome localStorage for course data,
@@ -526,7 +526,7 @@ network origins, arbitrary paths, new windows, downloads, permissions,
 DevTools, service workers, unknown asset IDs, Runtime identity drift, and
 unmapped navigation.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 ```powershell
 npm.cmd --prefix platform/web test -- --run src/services/native-projection.test.ts
@@ -535,7 +535,7 @@ npm.cmd --prefix platform/web test -- --run src/services/native-projection.test.
 
 Expected: FAIL because the native projection adapters are missing.
 
-- [ ] **Step 3: Implement the strict browser adapter**
+- [x] **Step 3: Implement the strict browser adapter**
 
 Use this injected boundary:
 
@@ -559,7 +559,7 @@ host-injected role handshake succeeds. Stage/Presenter report
 frame-dependent `useLayoutEffect` followed by two `requestAnimationFrame`
 callbacks. Browser rehearsal behavior remains unchanged.
 
-- [ ] **Step 4: Implement Host resource and Runtime policy**
+- [x] **Step 4: Implement Host resource and Runtime policy**
 
 Map the exact built web folder to
 `https://projection.course-studio.test/index.html` with deny-by-default host
@@ -574,7 +574,7 @@ process paths, Microsoft Authenticode verification, and SHA-256. Store the
 result in `WebViewRuntimeIdentity`; any changed process/version/path/digest
 emits `runtime_identity_changed` and invalidates certification.
 
-- [ ] **Step 5: Run GREEN and build the exact web bundle**
+- [x] **Step 5: Run GREEN and build the exact web bundle**
 
 ```powershell
 npm.cmd --prefix platform/web test -- --run src/services/native-projection.test.ts src/domain/teaching.test.ts
@@ -587,7 +587,7 @@ git diff --check
 Expected: focused Web/.NET tests, typecheck, and build pass; no visible windows
 open.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add -- platform/windows/src/CourseStudio.ProjectionHost/Web platform/windows/host-policy.json platform/windows/tests/CourseStudio.ProjectionHost.Core.Tests platform/web/src/services/native-projection.ts platform/web/src/services/native-projection.test.ts platform/web/src/app/App.tsx platform/web/src/components/StageView.tsx platform/web/src/components/PresenterView.tsx platform/web/vite.config.ts

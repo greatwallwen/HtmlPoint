@@ -16,7 +16,11 @@ import {
 
 import type { CourseDocument } from "../domain/course";
 import type { SlideDeck } from "../domain/helper-contracts-schema";
-import type { ArtifactClient } from "../services/artifact-client";
+import type { ProjectionArtifactReader } from "../services/artifact-client";
+import {
+  useNativeProjectionCommit,
+  type NativeProjectionRenderContext,
+} from "../services/native-projection";
 import {
   isNewerTeachingFrame,
   isSameTeachingFrame,
@@ -56,7 +60,8 @@ export interface PresenterViewProps {
   sessionId: string;
   runtime?: TeachingRuntime;
   slideDeck?: SlideDeck;
-  artifactClient?: ArtifactClient;
+  artifactClient?: ProjectionArtifactReader;
+  nativeProjection?: NativeProjectionRenderContext;
 }
 
 export function PresenterView({
@@ -65,6 +70,7 @@ export function PresenterView({
   runtime = defaultTeachingRuntime,
   slideDeck,
   artifactClient,
+  nativeProjection,
 }: PresenterViewProps): JSX.Element {
   const lessons = useMemo(() => flattenCourseLessons(course), [course]);
   const validSession = isValidTeachingSessionId(sessionId);
@@ -92,6 +98,16 @@ export function PresenterView({
   const [connection, setConnection] =
     useState<ConnectionState>("connecting");
   const lastLiveSignalRef = useRef<number | undefined>(undefined);
+  const activeFrame = nativeProjection?.frame.teachingFrame ?? frame;
+  useNativeProjectionCommit(nativeProjection?.adapter, nativeProjection?.frame);
+
+  useEffect(() => {
+    if (nativeProjection === undefined) return;
+    frameRef.current = nativeProjection.frame.teachingFrame;
+    sequenceRef.current = nativeProjection.frame.sequence;
+    hasAuthoritativeFrameRef.current = true;
+    setHasAuthoritativeFrame(true);
+  }, [nativeProjection?.frame]);
 
   const acceptFrame = useCallback((candidate: TeachingFrame): boolean => {
     const current = frameRef.current;
@@ -132,7 +148,7 @@ export function PresenterView({
   );
 
   useEffect(() => {
-    if (!validSession || lessons.length === 0) return;
+    if (nativeProjection !== undefined || !validSession || lessons.length === 0) return;
 
     const bus = runtime.createBus(sessionId);
     busRef.current = bus;
@@ -199,10 +215,10 @@ export function PresenterView({
       bus.close();
       if (busRef.current === bus) busRef.current = null;
     };
-  }, [acceptFrame, course.id, lessons.length, runtime, sessionId, validSession]);
+  }, [acceptFrame, course.id, lessons.length, nativeProjection?.adapter, runtime, sessionId, validSession]);
 
   useEffect(() => {
-    if (!frame?.playing) return;
+    if (nativeProjection !== undefined || !frame?.playing) return;
     const timer = globalThis.window.setInterval(() => {
       publishUpdate((current) => ({
         playing: true,
@@ -210,7 +226,7 @@ export function PresenterView({
       }));
     }, 1_000);
     return () => globalThis.window.clearInterval(timer);
-  }, [frame?.playing, publishUpdate]);
+  }, [frame?.playing, nativeProjection?.adapter, publishUpdate]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -240,8 +256,8 @@ export function PresenterView({
     );
   }
 
-  const current = frame
-    ? lessons.find(({ lesson }) => lesson.id === frame.lessonId)
+  const current = activeFrame
+    ? lessons.find(({ lesson }) => lesson.id === activeFrame.lessonId)
     : lessons[0];
   const currentIndex = current?.index ?? 0;
   const next = lessons[currentIndex + 1];
@@ -268,8 +284,8 @@ export function PresenterView({
           <p className="presenter-view__role">讲师屏</p>
           <p className="presenter-view__course">{course.title}</p>
         </div>
-        <span className={`projection-connection projection-connection--${connection}`} role="status">
-          {connectionLabel[connection]}
+        <span className={`projection-connection projection-connection--${nativeProjection ? "connected" : connection}`} role="status">
+          {connectionLabel[nativeProjection ? "connected" : connection]}
         </span>
       </header>
 
@@ -290,7 +306,7 @@ export function PresenterView({
 
           <aside className="presenter-timer" aria-label="授课计时">
             <p>本节计时</p>
-            <strong aria-live="off">{formatElapsed(frame?.elapsedSeconds ?? 0)}</strong>
+            <strong aria-live="off">{formatElapsed(activeFrame?.elapsedSeconds ?? 0)}</strong>
             <span>预计 {current.lesson.durationMinutes} 分钟</span>
           </aside>
 
@@ -307,8 +323,8 @@ export function PresenterView({
             </button>
             <button
               type="button"
-              aria-label={frame?.playing ? "暂停计时" : "开始计时"}
-              title={frame?.playing ? "暂停计时" : "开始计时"}
+              aria-label={activeFrame?.playing ? "暂停计时" : "开始计时"}
+              title={activeFrame?.playing ? "暂停计时" : "开始计时"}
               disabled={!hasAuthoritativeFrame}
               onClick={() =>
                 publishUpdate((currentFrame) => ({
@@ -316,12 +332,12 @@ export function PresenterView({
                 }))
               }
             >
-              {frame?.playing ? (
+              {activeFrame?.playing ? (
                 <Pause aria-hidden="true" />
               ) : (
                 <Play aria-hidden="true" />
               )}
-              <span>{frame?.playing ? "暂停计时" : "开始计时"}</span>
+              <span>{activeFrame?.playing ? "暂停计时" : "开始计时"}</span>
             </button>
             <button
               type="button"

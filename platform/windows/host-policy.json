@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "origin": "https://projection.course-studio.test",
+  "documentPath": "/index.html",
+  "sessionAssetPrefix": "/session-assets/",
+  "newWindowsAllowed": false,
+  "downloadsAllowed": false,
+  "permissionsAllowed": false,
+  "devToolsAllowed": false,
+  "serviceWorkersAllowed": false,
+  "hostObjectsAllowed": false,
+  "defaultContextMenusAllowed": false,
+  "externalFetchAllowed": false
+}

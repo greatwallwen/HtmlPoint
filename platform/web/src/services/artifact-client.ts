@@ -18,7 +18,16 @@ export interface LoadedArtifact {
   readonly objectUrl: string;
 }
 
-export class ArtifactClient {
+export interface ProjectionArtifactReader {
+  fork(): ProjectionArtifactReader;
+  fetchArtifact(
+    artifactId: string,
+    externalSignal?: AbortSignal,
+  ): Promise<LoadedArtifact>;
+  dispose(): void;
+}
+
+export class ArtifactClient implements ProjectionArtifactReader {
   readonly #session: VerifiedHelperSession;
   readonly #helperOrigin: string;
   readonly #sessionToken: string;

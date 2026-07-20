@@ -55,6 +55,12 @@ internal sealed class RoleWindow : Window
 
     internal event Action<RoleWindow, string>? Invalidated;
 
+    internal void SetProjectionContent(UIElement content)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        Content = content;
+    }
+
     internal void AllowProgrammaticClose()
     {
         _programmaticClose = true;

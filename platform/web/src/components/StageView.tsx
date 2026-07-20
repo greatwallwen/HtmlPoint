@@ -2,7 +2,11 @@ import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 
 import type { CourseDocument } from "../domain/course";
 import type { SlideDeck } from "../domain/helper-contracts-schema";
-import type { ArtifactClient } from "../services/artifact-client";
+import type { ProjectionArtifactReader } from "../services/artifact-client";
+import {
+  useNativeProjectionCommit,
+  type NativeProjectionRenderContext,
+} from "../services/native-projection";
 import {
   isNewerTeachingFrame,
   isSameTeachingFrame,
@@ -42,7 +46,8 @@ export interface StageViewProps {
   sessionId: string;
   runtime?: TeachingRuntime;
   slideDeck?: SlideDeck;
-  artifactClient?: ArtifactClient;
+  artifactClient?: ProjectionArtifactReader;
+  nativeProjection?: NativeProjectionRenderContext;
 }
 
 export function StageView({
@@ -51,6 +56,7 @@ export function StageView({
   runtime = defaultTeachingRuntime,
   slideDeck,
   artifactClient,
+  nativeProjection,
 }: StageViewProps): JSX.Element {
   const lessons = useMemo(() => flattenCourseLessons(course), [course]);
   const validSession = isValidTeachingSessionId(sessionId);
@@ -59,9 +65,11 @@ export function StageView({
   const [connection, setConnection] =
     useState<ConnectionState>("connecting");
   const lastLiveSignalRef = useRef<number | undefined>(undefined);
+  const activeFrame = nativeProjection?.frame.teachingFrame ?? frame;
+  useNativeProjectionCommit(nativeProjection?.adapter, nativeProjection?.frame);
 
   useEffect(() => {
-    if (!validSession || lessons.length === 0) return;
+    if (nativeProjection !== undefined || !validSession || lessons.length === 0) return;
 
     const bus = runtime.createBus(sessionId);
     const recovery = bus.readLastFrame();
@@ -130,7 +138,7 @@ export function StageView({
       unsubscribe();
       bus.close();
     };
-  }, [course.id, lessons.length, runtime, sessionId, validSession]);
+  }, [course.id, lessons.length, nativeProjection?.adapter, runtime, sessionId, validSession]);
 
   if (!validSession || lessons.length === 0) {
     return (
@@ -151,8 +159,8 @@ export function StageView({
     );
   }
 
-  const current = frame
-    ? lessons.find(({ lesson }) => lesson.id === frame.lessonId)
+  const current = activeFrame
+    ? lessons.find(({ lesson }) => lesson.id === activeFrame.lessonId)
     : undefined;
 
   return (
@@ -162,12 +170,12 @@ export function StageView({
           <p className="stage-view__role">学员屏</p>
           <p className="stage-view__course">{course.title}</p>
         </div>
-        <span className={`projection-connection projection-connection--${connection}`} role="status">
-          {connectionLabel[connection]}
+        <span className={`projection-connection projection-connection--${nativeProjection ? "connected" : connection}`} role="status">
+          {connectionLabel[nativeProjection ? "connected" : connection]}
         </span>
       </header>
 
-      {!frame ? (
+      {!activeFrame ? (
         <section className="stage-view__waiting" aria-live="polite">
           <p className="eyebrow">授课会话已建立</p>
           <h1>等待讲师开始</h1>
@@ -189,7 +197,7 @@ export function StageView({
           <div className="stage-slide__meta">
             <span>预计 {current.lesson.durationMinutes} 分钟</span>
             <span>第 {current.index + 1} / {lessons.length} 节</span>
-            <span>{formatElapsed(frame.elapsedSeconds)}</span>
+            <span>{formatElapsed(activeFrame.elapsedSeconds)}</span>
           </div>
           <progress
             aria-label="课程进度"

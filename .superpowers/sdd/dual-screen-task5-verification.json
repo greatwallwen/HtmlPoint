@@ -1,0 +1,49 @@
+{
+  "verification": [
+    {
+      "command": "npm.cmd --prefix platform/web test -- --run src/services/native-projection.test.ts src/domain/teaching.test.ts; npm.cmd --prefix platform/web run typecheck; npm.cmd --prefix platform/web run build; .tools/dotnet/dotnet.exe test platform/windows/CourseStudio.ProjectionHost.slnx --no-restore --filter TestCategory!=projection_integration; git diff --check",
+      "exitCode": 0,
+      "status": "passed",
+      "executedAt": "2026-07-20T10:40:00+08:00",
+      "sha256": [
+        "56a436dcb4b390773295cc0224cc7d874b1a8777d1d2d1f63cada11ebf8e2610",
+        "eb0130b5e18ac51782a4a442ea7409ad84f29c7f5bfd023e3b5e6f994e3ac614",
+        "313b8c676b9c453657b0e36597dae978d0ce0d59ff4a39c19901683aa59c0cfc",
+        "ef1f53187cbf5bd04b8ce0776bc0c7fd5848f5dc6a36098333105ab2feecc1c0",
+        "6057b6ff64a4795892b3a1bfef6f21b6e0c9498b2c036b225f4d980bc56eb80d",
+        "d771e2270dca96807990666b08e306eb29f76c207879ad98671b38bbcdfd9754",
+        "d407bdaf4e9104ae6fb96b4bce6bce0a31136813629c21a0834346e6f016735e",
+        "f4b135c315898da112379b8d4359c5ee975ab372aefcacec253e428b55de59c8",
+        "f677279f52cc9fc8aa1b5e1dbb65dcce3d0f75430838ac7e69d8e1dca0116ca1",
+        "588b709fd37775b1d0f4831a7e22eb1b9c8f5300bd7374cc9aa4cf59b069ca6f",
+        "9c2458f2a9c607568eca751fcc91ae196bb155566e2418e7b596ba417f24a101",
+        "641a00efdf59f4c2e20b981cb917acbc62aeb7a2f5fca16e9777c121935c4edf",
+        "0a84c785df9ddb19ae9b993088ed4b84fe593ae91026ebb09162620bcad54d96",
+        "98cb074a6e2fc737997f86399ff24a1dbfe1852a2d25acb76d7b306701c70b9f",
+        "536802a9b6f4d3413dfa63f3588d97cb09a7eeaa570b70d8de2be78d644f08b2"
+      ],
+      "inputHashes": [
+        {
+          "path": "D:\\cursor\\AI培训\\docs\\superpowers\\plans\\2026-07-20-win11-physical-dual-screen.md",
+          "sha256": "e7b12a6ba25c5d49d59aa838186899cfbd2c4ef860233a83b66f8be654b8cb55"
+        },
+        {
+          "path": "D:\\cursor\\AI培训\\docs\\superpowers\\specs\\2026-07-20-win11-dual-screen-and-one-click-course-design.md",
+          "sha256": "29629c79ed1f763a6c7dc16e17cf50c04327646544542d6a4aff750d997eeda5"
+        },
+        {
+          "path": "D:\\cursor\\AI培训\\AGENTS.md",
+          "sha256": "60658d64cfe8e5d7e0d15db614aeeb0e9392c443764a24f874ecf9925c19027b"
+        },
+        {
+          "path": "D:\\cursor\\AI培训\\platform\\windows\\src\\CourseStudio.ProjectionHost.Core\\ProjectionContracts.cs",
+          "sha256": "c8da62dd8d61e1b735a4c716b5ae9b68b4f862a22247c3c257d73554e1698ad7"
+        },
+        {
+          "path": "D:\\cursor\\AI培训\\platform\\windows\\src\\CourseStudio.ProjectionHost\\Windows\\RoleWindowController.cs",
+          "sha256": "b2dac29094bbe9ae81fdd10516b74d0cc3bcd969da4513cc08768ab45557253b"
+        }
+      ]
+    }
+  ]
+}

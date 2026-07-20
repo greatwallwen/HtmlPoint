@@ -23,6 +23,13 @@ import {
 } from "../services/helper-session";
 import { KnowledgeClient } from "../services/knowledge-client";
 import { ArtifactClient } from "../services/artifact-client";
+import {
+  createNativeProjectionArtifactReader,
+  detectNativeProjectionAdapter,
+  type NativeProjectionAdapter,
+  type ProjectionBootstrap,
+  type ProjectionFrame,
+} from "../services/native-projection";
 import { requestTeachingProjection, type TeachingProjectionSnapshot } from "../domain/projection-bus";
 import { projectReopenedCourse } from "../domain/course-agent";
 import "./tokens.css";
@@ -31,6 +38,72 @@ import "./app.css";
 export interface AppProps
   extends Pick<WorkspaceProviderProps, "initialState" | "storage" | "agent"> {
   teachingRuntime?: TeachingRuntime;
+}
+
+function NativeTeachingProjection({
+  adapter,
+}: {
+  adapter: NativeProjectionAdapter;
+}): JSX.Element {
+  const [bootstrap, setBootstrap] = useState<ProjectionBootstrap>();
+  const [frame, setFrame] = useState<ProjectionFrame>();
+
+  useEffect(() => {
+    let current = true;
+    const unsubscribe = adapter.subscribeFrame((nextFrame) => {
+      if (!current) return;
+      adapter.reportMessageAccepted(nextFrame);
+      setFrame(nextFrame);
+    });
+    void adapter.waitForBootstrap().then((nextBootstrap) => {
+      if (!current) return;
+      adapter.reportMessageAccepted(nextBootstrap.frame);
+      setBootstrap(nextBootstrap);
+      setFrame(nextBootstrap.frame);
+    });
+    return () => {
+      current = false;
+      unsubscribe();
+    };
+  }, [adapter]);
+
+  const artifactClient = useMemo(
+    () =>
+      bootstrap === undefined
+        ? undefined
+        : createNativeProjectionArtifactReader(bootstrap),
+    [bootstrap],
+  );
+
+  if (bootstrap === undefined || frame === undefined) {
+    return (
+      <main className="teaching-error-page">
+        <section className="teaching-error-card" role="status">
+          <p className="eyebrow">Physical projection</p>
+          <h1>Preparing the trusted teaching view</h1>
+        </section>
+      </main>
+    );
+  }
+
+  const nativeProjection = { adapter, frame };
+  return adapter.role === "stage" ? (
+    <StageView
+      course={bootstrap.course}
+      sessionId={bootstrap.sessionId}
+      slideDeck={bootstrap.slideDeck}
+      artifactClient={artifactClient}
+      nativeProjection={nativeProjection}
+    />
+  ) : (
+    <PresenterView
+      course={bootstrap.course}
+      sessionId={bootstrap.sessionId}
+      slideDeck={bootstrap.slideDeck}
+      artifactClient={artifactClient}
+      nativeProjection={nativeProjection}
+    />
+  );
 }
 
 function WorkspaceProjection({
@@ -209,6 +282,13 @@ function StudioWorkflow({
 
 export function App(props: AppProps): JSX.Element {
   const { teachingRuntime, ...workspaceProps } = props;
+  const nativeAdapter = useMemo(
+    () => detectNativeProjectionAdapter(globalThis.window),
+    [],
+  );
+  if (nativeAdapter !== undefined) {
+    return <NativeTeachingProjection adapter={nativeAdapter} />;
+  }
   return (
     <WorkspaceProvider {...workspaceProps}>
       <WorkspaceProjection teachingRuntime={teachingRuntime} />

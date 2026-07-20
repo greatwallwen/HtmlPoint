@@ -3,7 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 
 import type { SlideDeck, SlideNode } from "../domain/helper-contracts-schema";
 import { trustedExternalLinkProps } from "../services/knowledge-client";
-import type { ArtifactClient, LoadedArtifact } from "../services/artifact-client";
+import type {
+  LoadedArtifact,
+  ProjectionArtifactReader,
+} from "../services/artifact-client";
 
 function flatten(nodes: SlideNode[]): SlideNode[] {
   const result: SlideNode[] = [];
@@ -18,7 +21,7 @@ function flatten(nodes: SlideNode[]): SlideNode[] {
 
 export interface SlideVisualGalleryProps {
   slideDeck?: SlideDeck;
-  artifactClient?: ArtifactClient;
+  artifactClient?: ProjectionArtifactReader;
   compact?: boolean;
 }
 
@@ -59,7 +62,7 @@ function GovernedVisual({
   artifactClient,
 }: {
   binding: SlideNode["assetBindings"][number];
-  artifactClient?: ArtifactClient;
+  artifactClient?: ProjectionArtifactReader;
 }) {
   const scopedClient = useMemo(
     () => artifactClient?.fork(),

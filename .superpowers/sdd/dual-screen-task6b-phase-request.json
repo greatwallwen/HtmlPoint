@@ -1,0 +1,28 @@
+{
+  "phaseId": "dual-screen-task6b-published-bundle-lifecycle",
+  "goal": "Resolve one exact published projection bundle from the local catalog and give the Helper ownership of optional fixed-policy Host supervision without launching a Host at startup",
+  "inputs": [
+    "D:\\cursor\\AI培训\\docs\\superpowers\\plans\\2026-07-20-win11-physical-dual-screen.md",
+    "D:\\cursor\\AI培训\\docs\\superpowers\\specs\\2026-07-20-win11-dual-screen-and-one-click-course-design.md",
+    "D:\\cursor\\AI培训\\AGENTS.md",
+    "D:\\cursor\\AI培训\\platform\\helper\\course_helper\\projection_host.py",
+    "D:\\cursor\\AI培训\\platform\\helper\\course_helper\\catalog.py",
+    "D:\\cursor\\AI培训\\platform\\helper\\course_helper\\artifacts.py",
+    "D:\\cursor\\AI培训\\platform\\helper\\course_helper\\domain\\slide_ast.py"
+  ],
+  "acceptance": [
+    "Only an exact open-session payload can resolve one published course deck and runtime manifest whose identities and semantic digests all agree",
+    "The manifest artifact order is recomputed from the deck and every path-free catalog metadata record opens only through the contained digest-verifying ArtifactStore",
+    "The bounded path-free bootstrap and navigation identity bind the exact immutable projection and never contain a filesystem path browser URL or secret",
+    "A fixed app-data projection policy is optional when the Host is absent but any partial malformed mismatched or unsafe install fails closed without launching a process",
+    "HelperRuntime owns the optional supervisor and every browser failure normal server exit and server exception attempts bounded shutdown with a redacted outcome"
+  ],
+  "route": {
+    "profile": "P3",
+    "recommended": {
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh"
+    }
+  },
+  "nextAction": "Write published bundle resolver and Helper lifecycle tests and observe RED"
+}

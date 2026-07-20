@@ -235,11 +235,16 @@ class JobRunner(Protocol):
     ) -> JobOutcome: ...
 
 
+class ProjectionSupervisor(Protocol):
+    def shutdown(self) -> None: ...
+
+
 @dataclass(frozen=True)
 class HelperRuntime:
     config: WorkerRuntimeConfig
     launch_session: LaunchSession
     job_runner: JobRunner
+    projection_supervisor: ProjectionSupervisor | None = None
 
 
 def create_app(runtime: HelperRuntime) -> FastAPI:

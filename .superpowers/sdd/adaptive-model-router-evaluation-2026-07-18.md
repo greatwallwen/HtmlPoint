@@ -149,3 +149,22 @@ stay below the review ceiling, while executable identity, child-process
 containment, and authenticated transport deserve a bounded P3 review. Ultra
 still has no demonstrated marginal benefit here; the independent P3-class
 review converged without an unresolved Critical/Important issue.
+
+## Dual-screen Task 6B audit
+
+The route remained P3 with `gpt-5.6-sol/xhigh` recommended and
+`recommended_only`; no model switch is claimed. The bounded security review
+found three Important issues that green functional suites did not expose:
+catalog/WAL identity replacement, duplicate artifact-binding overwrite, and a
+policy stat/read replacement window. Two follow-up passes closed all three,
+including the subtler constructor and sidecar lease interval. Final affected
+verification passed 105 tests with 2 existing integration-gated skips and no
+cache recreation.
+
+The fixed-date publication fixture failure was environment/input drift, not a
+reasoning failure, so it correctly did not trigger an upgrade. Task 6B again
+supports P3/xhigh as a bounded review ceiling for filesystem identity and
+publication trust boundaries. Ultra is still unnecessary: deterministic TDD
+plus independent P3 review converged to zero Critical/Important findings. Task
+7 should route independently and can use a lower construction profile, with a
+bounded security review for authenticated dispatch and replay handling.

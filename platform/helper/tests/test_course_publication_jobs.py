@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from pathlib import Path
 
+import pytest
 from pydantic import TypeAdapter, ValidationError
 
 from course_helper.jobs import (
@@ -19,7 +21,7 @@ from course_helper.jobs import (
     visual_detach_request_digest,
 )
 from course_helper.slide_builder import course_publication_request_digest
-from test_course_publication import _prepare_publication
+from test_course_publication import NETWORK_NOW, _prepare_publication
 from test_slide_builder import ACTOR
 
 
@@ -150,7 +152,18 @@ def test_course_publication_job_contracts_are_strict_lower_camel_and_digest_boun
 
 def test_attach_detach_validate_publish_and_replay_use_durable_authorities(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    from course_helper import jobs
+
+    fixed_now = NETWORK_NOW + timedelta(hours=1)
+
+    class FixedDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return fixed_now if tz is not None else fixed_now.replace(tzinfo=None)
+
+    monkeypatch.setattr(jobs, "datetime", FixedDateTime)
     fixture = _prepare_publication(tmp_path)
     fixture.catalog.close()
     config = _config(tmp_path)

@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://course-studio.local/contracts/projection/v1/projection-event.schema.json",
+  "title": "ProjectionEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "sessionId",
+    "generation",
+    "sequence",
+    "occurredAt",
+    "eventType",
+    "status",
+    "payload"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "eventId": { "$ref": "#/$defs/uuid" },
+    "sessionId": { "$ref": "#/$defs/uuid" },
+    "generation": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+    "sequence": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "eventType": {
+      "enum": [
+        "topology_detected",
+        "session_opened",
+        "window_assigned",
+        "fullscreen_entered",
+        "frame_committed",
+        "assignment_verified",
+        "witness_started",
+        "witness_confirmed",
+        "session_certified",
+        "session_invalidated",
+        "session_closed",
+        "host_error"
+      ]
+    },
+    "status": {
+      "enum": [
+        "undetected",
+        "candidate",
+        "assigned",
+        "fullscreen",
+        "syncing",
+        "witness_pending",
+        "certified",
+        "invalidated",
+        "closed"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "maxProperties": 32,
+      "additionalProperties": { "$ref": "#/$defs/jsonValue" }
+    }
+  },
+  "$defs": {
+    "uuid": { "type": "string", "format": "uuid" },
+    "jsonValue": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number", "minimum": -1000000000000, "maximum": 1000000000000 },
+        { "type": "string", "maxLength": 4096 },
+        {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/jsonValue" }
+        },
+        {
+          "type": "object",
+          "maxProperties": 32,
+          "additionalProperties": { "$ref": "#/$defs/jsonValue" }
+        }
+      ]
+    },
+    "rectangle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "integer", "minimum": -1000000, "maximum": 1000000 },
+        "y": { "type": "integer", "minimum": -1000000, "maximum": 1000000 },
+        "width": { "type": "integer", "minimum": 1, "maximum": 100000 },
+        "height": { "type": "integer", "minimum": 1, "maximum": 100000 }
+      }
+    },
+    "display": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "displayId",
+        "bounds",
+        "workArea",
+        "isPrimary",
+        "isInternal",
+        "scalePercent",
+        "refreshRateMilliHertz"
+      ],
+      "properties": {
+        "displayId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bounds": { "$ref": "#/$defs/rectangle" },
+        "workArea": { "$ref": "#/$defs/rectangle" },
+        "isPrimary": { "type": "boolean" },
+        "isInternal": { "type": "boolean" },
+        "scalePercent": { "type": "integer", "minimum": 50, "maximum": 500 },
+        "refreshRateMilliHertz": { "type": "integer", "minimum": 1000, "maximum": 1000000 }
+      }
+    },
+    "displayTopology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "topologyId", "capturedAt", "sessionKind", "mode", "displays"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "topologyId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "capturedAt": { "type": "string", "format": "date-time" },
+        "sessionKind": { "enum": ["interactive_local", "remote", "unknown"] },
+        "mode": { "enum": ["single", "extended", "duplicate", "unknown"] },
+        "displays": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/display" }
+        }
+      }
+    }
+  }
+}

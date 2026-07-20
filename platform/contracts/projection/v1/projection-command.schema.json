@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://course-studio.local/contracts/projection/v1/projection-command.schema.json",
+  "title": "ProjectionCommand",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "commandId",
+    "command",
+    "sessionId",
+    "expectedGeneration",
+    "payload"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "commandId": { "$ref": "#/$defs/uuid" },
+    "command": { "$ref": "#/$defs/commandName" },
+    "sessionId": {
+      "oneOf": [
+        { "$ref": "#/$defs/uuid" },
+        { "type": "null" }
+      ]
+    },
+    "expectedGeneration": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
+    },
+    "payload": {
+      "type": "object",
+      "maxProperties": 32,
+      "additionalProperties": { "$ref": "#/$defs/jsonValue" }
+    }
+  },
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "commandName": {
+      "enum": [
+        "detect_displays",
+        "open_projection_session",
+        "assign_projection_window",
+        "enter_projection_fullscreen",
+        "verify_projection_assignment",
+        "close_projection_session"
+      ]
+    },
+    "status": {
+      "enum": [
+        "undetected",
+        "candidate",
+        "assigned",
+        "fullscreen",
+        "syncing",
+        "witness_pending",
+        "certified",
+        "invalidated",
+        "closed"
+      ]
+    },
+    "jsonValue": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number", "minimum": -1000000000000, "maximum": 1000000000000 },
+        { "type": "string", "maxLength": 4096 },
+        {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/jsonValue" }
+        },
+        {
+          "type": "object",
+          "maxProperties": 32,
+          "additionalProperties": { "$ref": "#/$defs/jsonValue" }
+        }
+      ]
+    },
+    "assignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "displayId", "windowGeneration"],
+      "properties": {
+        "role": { "enum": ["stage", "presenter"] },
+        "displayId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "windowGeneration": { "type": "integer", "minimum": 0, "maximum": 2147483647 }
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "commandId",
+        "sessionId",
+        "command",
+        "accepted",
+        "status",
+        "generation",
+        "message",
+        "assignments"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "commandId": { "$ref": "#/$defs/uuid" },
+        "sessionId": {
+          "oneOf": [
+            { "$ref": "#/$defs/uuid" },
+            { "type": "null" }
+          ]
+        },
+        "command": { "$ref": "#/$defs/commandName" },
+        "accepted": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/status" },
+        "generation": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "message": { "type": "string", "maxLength": 500 },
+        "assignments": {
+          "type": "array",
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/assignment" }
+        }
+      }
+    }
+  }
+}

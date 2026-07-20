@@ -1,0 +1,24 @@
+{
+  "phaseId": "dual-screen-task1-contracts-toolchain",
+  "goal": "Install the exact local .NET toolchain and define strict cross-language projection contracts",
+  "inputs": [
+    "D:\\cursor\\AI培训\\docs\\superpowers\\plans\\2026-07-20-win11-physical-dual-screen.md",
+    "D:\\cursor\\AI培训\\docs\\superpowers\\specs\\2026-07-20-win11-dual-screen-and-one-click-course-design.md",
+    "D:\\cursor\\AI培训\\AGENTS.md"
+  ],
+  "acceptance": [
+    "Official .NET 10.0.301 and WebView2 1.0.4078.44 inputs are verified and restored only under ignored .tools paths",
+    "Csharp Python TypeScript and JSON fixtures use the same strict command status and evidence vocabulary",
+    "Invalid extra path URL token HWND executable and raw course fields fail closed",
+    "Focused Python Web and dotnet contract tests pass after observed RED failures",
+    "Protected roots remain unread and untouched"
+  ],
+  "route": {
+    "profile": "P3",
+    "recommended": {
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh"
+    }
+  },
+  "nextAction": "Verify official toolchain identities and create testable project skeletons"
+}

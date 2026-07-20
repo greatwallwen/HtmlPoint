@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/CourseStudio.ProjectionHost.Core/CourseStudio.ProjectionHost.Core.csproj" />
+  <Project Path="src/CourseStudio.ProjectionHost/CourseStudio.ProjectionHost.csproj" />
+  <Project Path="tests/CourseStudio.ProjectionHost.Core.Tests/CourseStudio.ProjectionHost.Core.Tests.csproj" />
+</Solution>

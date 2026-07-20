@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>CourseStudio.ProjectionHost.Core</RootNamespace>
+  </PropertyGroup>
+</Project>

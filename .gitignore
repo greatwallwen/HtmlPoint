@@ -78,3 +78,7 @@ platform/projection/**/bin/
 platform/projection/**/obj/
 platform/projection/publish/
 platform/projection/udf/
+platform/windows/**/bin/
+platform/windows/**/obj/
+platform/windows/publish/
+platform/windows/udf/

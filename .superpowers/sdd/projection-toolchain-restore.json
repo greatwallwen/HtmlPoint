@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-07-20T09:23:10+08:00",
+  "scope": "local ignored toolchain only",
+  "sdk": {
+    "version": "10.0.301",
+    "releaseMetadataUrl": "https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/10.0/releases.json",
+    "archiveUrl": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.301/dotnet-sdk-10.0.301-win-x64.zip",
+    "archiveBytes": 297403780,
+    "archiveSha512": "38456e992c4df0ff0ac9fc5f28ff09a88543c0fc4e4deedffda9c4ebaf852c4519addacf28814ea77ea42ce2d37db812fae5ba1fe25f06364ca5a6027036387f",
+    "installerUrl": "https://dot.net/v1/dotnet-install.ps1",
+    "installerSha256": "6585899aed55ff6ae13dbe1e8c3b878f2d00433520e7efbe250b75db948b7da9",
+    "installedRelativePath": ".tools/dotnet/dotnet.exe",
+    "installedExecutableSha256": "a5ccdc3a41d5e5c6014ff64509aed176db39f4f14caffff3dd1997f8907e94d7",
+    "pathMutation": false,
+    "globalWorkloadInstall": false
+  },
+  "nuget": {
+    "source": "https://api.nuget.org/v3/index.json",
+    "cacheRelativePath": ".tools/nuget/packages",
+    "webView2": {
+      "version": "1.0.4078.44",
+      "contentHash": "TQkHa/aOHUqFHnJIJ/2ZmJ4nLcQJi0Pc0rj9BAs7SP5sT/KtVtb8jFp9uqQL6cKzCRSrwjS/wEPA43NWUOzU+A=="
+    },
+    "locks": [
+      {
+        "path": "platform/windows/src/CourseStudio.ProjectionHost.Core/packages.lock.json",
+        "sha256": "3adca8ee913405bbfc61802308086157370bed623cc0dc4d20883aac4495a442"
+      },
+      {
+        "path": "platform/windows/src/CourseStudio.ProjectionHost/packages.lock.json",
+        "sha256": "90a22ce607881a0f9d39c10eaa40bfc48963756af8b58704298502cf60f2b5aa"
+      },
+      {
+        "path": "platform/windows/tests/CourseStudio.ProjectionHost.Core.Tests/packages.lock.json",
+        "sha256": "ac4660303d5ec6020e686ed12c2baf21030d480682915833f3380775da15862b"
+      }
+    ]
+  },
+  "verification": {
+    "python": "5 passed",
+    "typescript": "5 passed",
+    "dotnet": "1 passed",
+    "lockedRestore": "passed",
+    "diffCheck": "passed",
+    "redObserved": true,
+    "protectedRootsAccessed": false
+  }
+}

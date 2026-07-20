@@ -92,7 +92,7 @@
 - Produces: `ProjectionCommand`, `ProjectionReceipt`, `DisplayTopology`, `ProjectionEvent`, `ProjectionStatus` with identical field names and enum values in C#, Python, and TypeScript.
 - Consumes: existing Helper strict-model conventions and Web Zod schema conventions.
 
-- [ ] **Step 1: Add only project skeletons and exact version pins**
+- [x] **Step 1: Add only project skeletons and exact version pins**
 
 Create `global.json`:
 
@@ -117,7 +117,7 @@ Host project starts as a WPF-enabled library with the WebView2 package reference
 so restore locks the final dependencies before any source exists. Task 4 changes
 only its output type to `WinExe`.
 
-- [ ] **Step 2: Perform the explicit local restore prerequisite**
+- [x] **Step 2: Perform the explicit local restore prerequisite**
 
 Run from PowerShell after downloading the official installer script to
 `.tools/bootstrap/dotnet-install.ps1` and verifying its downloaded SHA-256 in
@@ -135,7 +135,7 @@ lock-file, and cache digests in
 `.superpowers/sdd/projection-toolchain-restore.json`. Unset any download flag
 before continuing.
 
-- [ ] **Step 3: Write failing Python and TypeScript contract tests**
+- [x] **Step 3: Write failing Python and TypeScript contract tests**
 
 The Python test must include this behavior:
 
@@ -159,7 +159,7 @@ it("round-trips the canonical detect fixture and rejects extras", () => {
 });
 ```
 
-- [ ] **Step 4: Run the contract tests and verify RED**
+- [x] **Step 4: Run the contract tests and verify RED**
 
 Run:
 
@@ -170,7 +170,7 @@ npm.cmd --prefix platform/web test -- --run src/domain/projection-schema.test.ts
 
 Expected: both fail because the projection contract modules do not exist.
 
-- [ ] **Step 5: Implement the minimal strict contracts**
+- [x] **Step 5: Implement the minimal strict contracts**
 
 Use these exact discriminators and statuses:
 
@@ -211,7 +211,7 @@ coordinates, unique role/display assignments, and bounded text. The canonical
 fixture contains no device path, friendly hardware name, URL, token, HWND,
 executable path, or raw course body.
 
-- [ ] **Step 6: Run GREEN and lock contract parity**
+- [x] **Step 6: Run GREEN and lock contract parity**
 
 Run the two commands from Step 4 plus:
 
@@ -222,7 +222,7 @@ git diff --check
 
 Expected: all pass with no warnings or whitespace errors.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add -- global.json .gitignore platform/contracts/projection platform/windows/Directory.Build.props platform/windows/Directory.Packages.props platform/windows/CourseStudio.ProjectionHost.slnx platform/windows/src/CourseStudio.ProjectionHost.Core platform/windows/src/CourseStudio.ProjectionHost/CourseStudio.ProjectionHost.csproj platform/windows/tests/CourseStudio.ProjectionHost.Core.Tests platform/helper/course_helper/domain/projection.py platform/helper/tests/test_projection_contracts.py platform/web/src/domain/projection-schema.ts platform/web/src/domain/projection-schema.test.ts

@@ -131,3 +131,21 @@ cross-file state, or an evidence-based reasoning failure. This is the smallest
 change supported by Tasks 8-10 and avoids weakening P3 review. Skill validation
 passes. Revised `SKILL.md` SHA-256:
 `E69F807A92830253072ECEAF5B0752521217DEFFF6EDFF882281E699686B01D3`.
+
+## Dual-screen Task 6A audit
+
+The route was P3 with `gpt-5.6-sol/xhigh` recommended, but execution remained
+`recommended_only`; no in-place model switch is claimed. That review ceiling
+was justified: two bounded security passes found four Important launch,
+containment, and stale-state defects plus two protocol-tightening issues that
+the first green suites did not expose. Three correction rounds closed those
+findings, the double-base64 chunk ceiling, cancellation interruption, local
+.NET runtime policy, and graceful temp cleanup. Final evidence was 24 focused
+Helper/publication tests with 2 integration-gated skips, 36 .NET tests, and 23
+explicit real-Host tests with no orphan or new temp directory.
+
+This strengthens the current split-route rule: deterministic construction can
+stay below the review ceiling, while executable identity, child-process
+containment, and authenticated transport deserve a bounded P3 review. Ultra
+still has no demonstrated marginal benefit here; the independent P3-class
+review converged without an unresolved Critical/Important issue.

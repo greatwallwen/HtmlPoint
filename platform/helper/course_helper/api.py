@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import hashlib
 import re
+import threading
+import time
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -20,9 +23,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from course_helper.catalog import CURRENT_MIGRATION_VERSION, KnowledgeCatalog
 from course_helper.artifacts import ArtifactError, ArtifactStore
-from course_helper.domain.evidence import EvidenceObject
+from course_helper.domain.evidence import EvidenceCheck, EvidenceError, EvidenceObject
 from course_helper.domain.composition import course_version_content_digest
 from course_helper.domain.knowledge import TagVocabularyVersion
+from course_helper.domain.projection import ProjectionCommand, ProjectionReceipt
 from course_helper.domain.slide_ast import (
     runtime_manifest_content_digest,
     slide_deck_content_digest,
@@ -30,10 +34,20 @@ from course_helper.domain.slide_ast import (
 from course_helper.jobs import (
     JobOutcome,
     JobSpec,
+    ProjectionAssignWindowJob,
+    ProjectionCloseSessionJob,
+    ProjectionDetectDisplaysJob,
+    ProjectionEnterFullscreenJob,
+    ProjectionJob,
+    ProjectionOpenSessionJob,
+    ProjectionVerifyAssignmentJob,
     WorkerRuntimeConfig,
     _camelize_json,
     _lower_camel,
+    projection_job_command,
+    projection_job_timeout_seconds,
 )
+from course_helper.projection_host import ProjectionHostError
 from course_helper.index_outbox import reopen_index_snapshot
 from course_helper.session import LaunchSession, SessionRejected
 from course_helper.source_inventory import (
@@ -236,6 +250,20 @@ class JobRunner(Protocol):
 
 
 class ProjectionSupervisor(Protocol):
+    def detect_displays(self, command: ProjectionCommand) -> ProjectionReceipt: ...
+
+    def open_session(self, command: ProjectionCommand) -> ProjectionReceipt: ...
+
+    def assign_windows(self, command: ProjectionCommand) -> ProjectionReceipt: ...
+
+    def enter_fullscreen(self, command: ProjectionCommand) -> ProjectionReceipt: ...
+
+    def verify_assignment(self, command: ProjectionCommand) -> ProjectionReceipt: ...
+
+    def close_session(self, command: ProjectionCommand) -> ProjectionReceipt: ...
+
+    def cancel_current(self) -> None: ...
+
     def shutdown(self) -> None: ...
 
 
@@ -247,11 +275,229 @@ class HelperRuntime:
     projection_supervisor: ProjectionSupervisor | None = None
 
 
+async def _run_projection_job(
+    job: ProjectionJob,
+    supervisor: ProjectionSupervisor | None,
+) -> JobOutcome:
+    started_at = datetime.now(timezone.utc)
+    started_tick = time.monotonic()
+    if supervisor is None:
+        return _projection_failure_outcome(
+            job,
+            reason_code="projection_unavailable",
+            status_code=503,
+            started_at=started_at,
+            started_tick=started_tick,
+        )
+    command = projection_job_command(job)
+    dispatch = {
+        ProjectionDetectDisplaysJob: supervisor.detect_displays,
+        ProjectionOpenSessionJob: supervisor.open_session,
+        ProjectionAssignWindowJob: supervisor.assign_windows,
+        ProjectionEnterFullscreenJob: supervisor.enter_fullscreen,
+        ProjectionVerifyAssignmentJob: supervisor.verify_assignment,
+        ProjectionCloseSessionJob: supervisor.close_session,
+    }
+    method = dispatch.get(type(job))
+    if method is None:
+        return _projection_failure_outcome(
+            job,
+            reason_code="projection_command_failed",
+            status_code=422,
+            started_at=started_at,
+            started_tick=started_tick,
+        )
+    operation = asyncio.create_task(asyncio.to_thread(method, command))
+    try:
+        receipt = await asyncio.wait_for(
+            asyncio.shield(operation),
+            timeout=projection_job_timeout_seconds(job),
+        )
+    except TimeoutError:
+        await _cancel_and_join_projection(supervisor, operation)
+        return _projection_failure_outcome(
+            job,
+            reason_code="projection_timeout",
+            status_code=504,
+            started_at=started_at,
+            started_tick=started_tick,
+        )
+    except asyncio.CancelledError:
+        await _cancel_and_join_projection(supervisor, operation)
+        raise
+    except ProjectionHostError as error:
+        reason_code, status_code = _projection_error_projection(str(error))
+        return _projection_failure_outcome(
+            job,
+            reason_code=reason_code,
+            status_code=status_code,
+            started_at=started_at,
+            started_tick=started_tick,
+        )
+    except Exception:
+        return _projection_failure_outcome(
+            job,
+            reason_code="projection_command_failed",
+            status_code=503,
+            started_at=started_at,
+            started_tick=started_tick,
+        )
+    receipt = _sanitized_projection_receipt(receipt)
+    finished_at = datetime.now(timezone.utc)
+    accepted = receipt.accepted
+    evidence = EvidenceObject(
+        evidence_id=f"projection-{command.command_id}",
+        kind="runtime",
+        subject_version_id=(str(command.session_id) if command.session_id else None),
+        status="verified" if accepted else "warning",
+        input_summary={
+            "command": command.command,
+            "expectedGeneration": command.expected_generation,
+        },
+        output_summary={
+            "accepted": accepted,
+            "status": receipt.status,
+            "generation": receipt.generation,
+        },
+        producer="course-helper-projection-gateway",
+        producer_version=SERVICE_VERSION,
+        started_at=started_at,
+        finished_at=finished_at,
+        duration_ms=max(0, int((time.monotonic() - started_tick) * 1000)),
+        checks=(
+            EvidenceCheck(
+                code="projection-command",
+                status="passed" if accepted else "warning",
+                message=(
+                    "Projection command returned a verified receipt"
+                    if accepted
+                    else "Projection command was rejected by the native state machine"
+                ),
+            ),
+        ),
+    )
+    return JobOutcome(
+        status_code=200 if accepted else 409,
+        result={"receipt": receipt.model_dump(mode="json", by_alias=True)},
+        evidence=evidence,
+    )
+
+
+async def _cancel_and_join_projection(
+    supervisor: ProjectionSupervisor,
+    operation: asyncio.Task[ProjectionReceipt],
+) -> None:
+    cleanup = asyncio.create_task(
+        _cancel_and_join_projection_once(supervisor, operation)
+    )
+    while not cleanup.done():
+        try:
+            await asyncio.shield(cleanup)
+        except asyncio.CancelledError:
+            continue
+    try:
+        cleanup.result()
+    except Exception:
+        pass
+
+
+async def _cancel_and_join_projection_once(
+    supervisor: ProjectionSupervisor,
+    operation: asyncio.Task[ProjectionReceipt],
+) -> None:
+    try:
+        await asyncio.to_thread(supervisor.cancel_current)
+    except Exception:
+        pass
+    try:
+        await operation
+    except asyncio.CancelledError:
+        raise
+    except Exception:
+        pass
+
+
+def _sanitized_projection_receipt(receipt: ProjectionReceipt) -> ProjectionReceipt:
+    public_rejections = {
+        "generation_mismatch",
+        "display_topology_ineligible",
+        "display_topology_missing",
+        "fullscreen_verification_failed",
+    }
+    message = (
+        "projection_command_accepted"
+        if receipt.accepted
+        else (
+            receipt.message
+            if receipt.message in public_rejections
+            else "projection_command_rejected"
+        )
+    )
+    return receipt.model_copy(update={"message": message})
+
+
+def _projection_failure_outcome(
+    job: ProjectionJob,
+    *,
+    reason_code: str,
+    status_code: int,
+    started_at: datetime,
+    started_tick: float,
+) -> JobOutcome:
+    finished_at = datetime.now(timezone.utc)
+    evidence = EvidenceObject(
+        evidence_id=f"projection-{job.command_id}",
+        kind="runtime",
+        subject_version_id=(str(job.session_id) if job.session_id else None),
+        status="failed",
+        input_summary={
+            "commandType": job.type,
+            "expectedGeneration": job.expected_generation,
+        },
+        output_summary={"reasonCode": reason_code},
+        producer="course-helper-projection-gateway",
+        producer_version=SERVICE_VERSION,
+        started_at=started_at,
+        finished_at=finished_at,
+        duration_ms=max(0, int((time.monotonic() - started_tick) * 1000)),
+        errors=(
+            EvidenceError(
+                code=reason_code,
+                message="Projection command could not be completed",
+                retryable=status_code in {503, 504},
+            ),
+        ),
+    )
+    return JobOutcome(
+        status_code=status_code,
+        result={"reasonCode": reason_code, "status": "failed"},
+        evidence=evidence,
+    )
+
+
+def _projection_error_projection(code: str) -> tuple[str, int]:
+    if code == "command_id_collision":
+        return "command_replay_conflict", 409
+    if code in {
+        "published_bundle_unavailable",
+        "bundle_invalid",
+        "asset_metadata_invalid",
+        "asset_open_failed",
+        "asset_size_mismatch",
+        "asset_digest_mismatch",
+    }:
+        return "projection_content_unavailable", 422
+    if code.startswith("host_") or code == "supervisor_closed":
+        return "projection_unavailable", 503
+    return "projection_command_failed", 503
+
+
 def create_app(runtime: HelperRuntime) -> FastAPI:
     """Create a loopback-only API with explicit origin and session guards."""
 
     app = FastAPI(title="Course Studio Helper", version=SERVICE_VERSION)
     app.state.runtime = runtime
+    projection_command_gate = threading.Lock()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[runtime.launch_session.allowed_origin],
@@ -317,11 +563,19 @@ def create_app(runtime: HelperRuntime) -> FastAPI:
         request: Request,
         _authenticated: str = Depends(require_session),
     ) -> JSONResponse:
-        outcome = await runtime.job_runner.run(
-            job,
-            disconnected=request.is_disconnected,
-            session_id=_session_owner_id(_authenticated),
-        )
+        if isinstance(job, ProjectionJob):
+            while not projection_command_gate.acquire(blocking=False):
+                await asyncio.sleep(0.01)
+            try:
+                outcome = await _run_projection_job(job, runtime.projection_supervisor)
+            finally:
+                projection_command_gate.release()
+        else:
+            outcome = await runtime.job_runner.run(
+                job,
+                disconnected=request.is_disconnected,
+                session_id=_session_owner_id(_authenticated),
+            )
         response = JobResponse(
             result=outcome.result,
             evidence=EvidenceResponse.from_domain(outcome.evidence),

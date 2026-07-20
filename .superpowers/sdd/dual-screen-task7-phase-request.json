@@ -1,0 +1,28 @@
+{
+  "phaseId": "dual-screen-task7-authenticated-projection-jobs",
+  "goal": "Expose exactly six strict authenticated projection operations through the existing jobs endpoint and dispatch each only to the matching Helper-owned supervisor method",
+  "inputs": [
+    "D:\\cursor\\AI培训\\docs\\superpowers\\plans\\2026-07-20-win11-physical-dual-screen.md",
+    "D:\\cursor\\AI培训\\docs\\superpowers\\specs\\2026-07-20-win11-dual-screen-and-one-click-course-design.md",
+    "D:\\cursor\\AI培训\\AGENTS.md",
+    "D:\\cursor\\AI培训\\platform\\helper\\course_helper\\domain\\projection.py",
+    "D:\\cursor\\AI培训\\platform\\helper\\course_helper\\projection_host.py",
+    "D:\\cursor\\AI培训\\platform\\helper\\course_helper\\session.py",
+    "D:\\cursor\\AI培训\\.superpowers\\sdd\\dual-screen-task6b-verification.json"
+  ],
+  "acceptance": [
+    "The JobSpec discriminator accepts exactly six bounded projection job schemas and rejects every extra path URL HWND token shell raw-manifest raw-course or asset-bytes field before dispatch",
+    "The existing authenticated jobs endpoint authorizes the App session and maps each projection discriminator to exactly one matching supervisor command without a worker subprocess",
+    "Open session accepts only published course deck and runtime identities while every operation enforces command replay and expected-generation semantics in the supervisor",
+    "Missing Host supervision timeout stale generation replay and domain failures return bounded sanitized responses without paths secrets raw payloads or process details",
+    "Focused projection job tests and the complete offline Helper regression pass without starting a Host unless an explicit projection operation is submitted"
+  ],
+  "route": {
+    "profile": "P3",
+    "recommended": {
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh"
+    }
+  },
+  "nextAction": "Write strict projection JobSpec and authenticated dispatch tests and observe RED"
+}

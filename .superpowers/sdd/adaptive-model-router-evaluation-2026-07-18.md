@@ -168,3 +168,23 @@ publication trust boundaries. Ultra is still unnecessary: deterministic TDD
 plus independent P3 review converged to zero Critical/Important findings. Task
 7 should route independently and can use a lower construction profile, with a
 bounded security review for authenticated dispatch and replay handling.
+
+## Dual-screen Task 7 audit
+
+The deterministic schema and dispatch construction was small, but the router
+classified the authenticated command boundary as P3 and recommended
+`gpt-5.6-sol/xhigh`; execution remained `recommended_only`. The bounded review
+ceiling was justified. It found that an asyncio timeout could return while the
+worker thread later mutated Host state, that synchronous global cancellation
+could block the event loop or affect another queued command, and that repeated
+Task cancellation could interrupt cleanup. Three correction rounds produced a
+single pre-supervisor gate plus independent shielded cancel-and-join cleanup.
+The final review found no Critical/Important issue, and the full offline Helper
+gate passed 899 tests.
+
+This unit refines the split-route evidence: ordinary strict Pydantic models are
+lower-profile work, but their integration with cancellation, threads, and a
+stateful native supervisor warrants one P3 review. Ultra remains unnecessary;
+the failures were deterministic and converged under targeted concurrency
+probes. Task 8 UI/reducer construction should route lower, reserving P3 only
+for its final hardware-certification boundary review.

@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated, Any, Literal, cast
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pydantic import (
     BaseModel,
@@ -58,6 +58,7 @@ from course_helper.domain.composition import (
     course_version_content_digest,
 )
 from course_helper.domain.evidence import EvidenceCheck, EvidenceError, EvidenceObject
+from course_helper.domain.projection import ProjectionCommand
 from course_helper.domain.visual_policy import (
     AttributionBlock,
     CropRect,
@@ -943,6 +944,107 @@ class KnowledgeUpgradeResolveJob(_KnowledgeResolutionJob):
         return self
 
 
+class _EmptyProjectionPayload(HttpRequestModel):
+    pass
+
+
+class _OpenProjectionPayload(HttpRequestModel):
+    course_version_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+    slide_deck_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+    runtime_manifest_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+
+
+class _AssignProjectionPayload(HttpRequestModel):
+    swap: bool = Field(default=False, strict=True)
+
+
+class _ProjectionJobBase(HttpRequestModel):
+    command_id: UUID
+    expected_generation: int = Field(strict=True, ge=0, le=2_147_483_647)
+
+
+class ProjectionDetectDisplaysJob(_ProjectionJobBase):
+    type: Literal["projection_detect_displays"]
+    session_id: None = None
+    payload: _EmptyProjectionPayload
+
+
+class ProjectionOpenSessionJob(_ProjectionJobBase):
+    type: Literal["projection_open_session"]
+    session_id: UUID
+    payload: _OpenProjectionPayload
+
+
+class ProjectionAssignWindowJob(_ProjectionJobBase):
+    type: Literal["projection_assign_window"]
+    session_id: UUID
+    payload: _AssignProjectionPayload
+
+
+class ProjectionEnterFullscreenJob(_ProjectionJobBase):
+    type: Literal["projection_enter_fullscreen"]
+    session_id: UUID
+    payload: _EmptyProjectionPayload
+
+
+class ProjectionVerifyAssignmentJob(_ProjectionJobBase):
+    type: Literal["projection_verify_assignment"]
+    session_id: UUID
+    payload: _EmptyProjectionPayload
+
+
+class ProjectionCloseSessionJob(_ProjectionJobBase):
+    type: Literal["projection_close_session"]
+    session_id: UUID
+    payload: _EmptyProjectionPayload
+
+
+ProjectionJob = (
+    ProjectionDetectDisplaysJob
+    | ProjectionOpenSessionJob
+    | ProjectionAssignWindowJob
+    | ProjectionEnterFullscreenJob
+    | ProjectionVerifyAssignmentJob
+    | ProjectionCloseSessionJob
+)
+
+
+def projection_job_command(job: ProjectionJob) -> ProjectionCommand:
+    commands = {
+        ProjectionDetectDisplaysJob: "detect_displays",
+        ProjectionOpenSessionJob: "open_projection_session",
+        ProjectionAssignWindowJob: "assign_projection_window",
+        ProjectionEnterFullscreenJob: "enter_projection_fullscreen",
+        ProjectionVerifyAssignmentJob: "verify_projection_assignment",
+        ProjectionCloseSessionJob: "close_projection_session",
+    }
+    command = commands.get(type(job))
+    if command is None:
+        raise ValueError("projection job type is not allowlisted")
+    return ProjectionCommand.model_validate(
+        {
+            "schemaVersion": 1,
+            "commandId": job.command_id,
+            "command": command,
+            "sessionId": job.session_id,
+            "expectedGeneration": job.expected_generation,
+            "payload": job.payload.model_dump(mode="json", by_alias=True),
+        }
+    )
+
+
+def projection_job_timeout_seconds(job: ProjectionJob) -> int:
+    ceilings = {
+        "projection_detect_displays": 20,
+        "projection_open_session": 120,
+        "projection_assign_window": 30,
+        "projection_enter_fullscreen": 30,
+        "projection_verify_assignment": 30,
+        "projection_close_session": 30,
+    }
+    return ceilings[job.type]
+
+
 JobSpec = Annotated[
     SourceIngestJob
     | DatasetProfileJob
@@ -968,7 +1070,8 @@ JobSpec = Annotated[
     | CourseVisualAttachJob
     | CourseVisualDetachJob
     | CourseValidateJob
-    | CoursePublishJob,
+    | CoursePublishJob
+    | ProjectionJob,
     Field(discriminator="type"),
 ]
 

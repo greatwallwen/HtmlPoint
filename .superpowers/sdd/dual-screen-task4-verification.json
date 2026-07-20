@@ -1,0 +1,43 @@
+{
+  "verification": [
+    {
+      "command": ".tools/dotnet/dotnet.exe test platform/windows/CourseStudio.ProjectionHost.slnx --no-restore --filter TestCategory!=projection_integration; git diff --check",
+      "exitCode": 0,
+      "status": "passed",
+      "executedAt": "2026-07-20T10:01:56+08:00",
+      "sha256": [
+        "66db04224a7c4d9279ab137364d89a950f5afe56308343a4f3af698dbe488d04",
+        "b2dac29094bbe9ae81fdd10516b74d0cc3bcd969da4513cc08768ab45557253b",
+        "4ae112ff12213a84b5f898f19e97e80da4e61e2e8744de3a9d98a0dff86a74a5",
+        "0fa13d2389d88680888a9a6e62ef7e3e08a7d6bef749da802e196a15ad6ccff4",
+        "1c8497fba12b0b962e38f908427a8ff77d1ba768c548c045c47ecd3228849067",
+        "cdaf43dc750f057b709f276e010788b480f5db5fa71ae7d1a7544473df04d90e",
+        "4d0eab6234e6529dc82ad42dc592d3f7d41232ea2337cccec244922ef83809bb",
+        "8d25b0960d574ef60324bb5a62a18af1bfc63adbb8f7323214ed8afb239c1d17",
+        "3aebf8a314d01db7a808ae80c77473b49a1ef74e3bb68bb76d907086b10cb525"
+      ],
+      "inputHashes": [
+        {
+          "path": "D:\\cursor\\AI培训\\docs\\superpowers\\plans\\2026-07-20-win11-physical-dual-screen.md",
+          "sha256": "88d69ab296eaddc42ac32899fc0965bac7cd909aa8dca6a62a8c8bf8c24fd521"
+        },
+        {
+          "path": "D:\\cursor\\AI培训\\docs\\superpowers\\specs\\2026-07-20-win11-dual-screen-and-one-click-course-design.md",
+          "sha256": "29629c79ed1f763a6c7dc16e17cf50c04327646544542d6a4aff750d997eeda5"
+        },
+        {
+          "path": "D:\\cursor\\AI培训\\AGENTS.md",
+          "sha256": "60658d64cfe8e5d7e0d15db614aeeb0e9392c443764a24f874ecf9925c19027b"
+        },
+        {
+          "path": "D:\\cursor\\AI培训\\platform\\windows\\src\\CourseStudio.ProjectionHost.Core\\ProjectionState.cs",
+          "sha256": "07bb94cad2d6b76924b3c667a9efece6a6d61792e75ffe822e4ef41f85d0c244"
+        },
+        {
+          "path": "D:\\cursor\\AI培训\\platform\\windows\\src\\CourseStudio.ProjectionHost\\Native\\DisplayTopologyMapper.cs",
+          "sha256": "1a546c5fd5e92c2582670f11bc00165380d629ed76df14819d306d7e753aa6bf"
+        }
+      ]
+    }
+  ]
+}

@@ -433,7 +433,7 @@ git commit -m "feat(projection): enumerate Win11 display candidates"
 - Consumes: Task 2 reducer and Task 3 candidate displays.
 - Produces: `IRoleWindowController`, verified `RoleWindowEvidence`, and one-use `NativeWitnessProof`.
 
-- [ ] **Step 1: Write failing window and witness tests**
+- [x] **Step 1: Write failing window and witness tests**
 
 Cover one unique window per role, external-Stage/internal-Presenter defaults,
 Swap, negative/mixed-DPI coordinates, exact target rectangles, style restore,
@@ -441,7 +441,7 @@ minimize/cloak/move invalidation, Escape, user close, partial-open rollback,
 90-second expiry, wrong codes, replay, one attempt, zeroization, and proof that
 a fake coordinator cannot create `NativeWitnessProof`.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 ```powershell
 .tools/dotnet/dotnet.exe test platform/windows/tests/CourseStudio.ProjectionHost.Core.Tests/CourseStudio.ProjectionHost.Core.Tests.csproj --no-restore --filter "FullyQualifiedName~RoleWindowPolicyTests|FullyQualifiedName~HardwareWitnessTests"
@@ -449,7 +449,7 @@ a fake coordinator cannot create `NativeWitnessProof`.
 
 Expected: FAIL because window policy and witness coordinator are absent.
 
-- [ ] **Step 3: Implement role-window policy and exact verification**
+- [x] **Step 3: Implement role-window policy and exact verification**
 
 Use this boundary:
 
@@ -470,7 +470,7 @@ fullscreen by saving/restoring style and placement and applying `WS_POPUP` with
 `SWP_FRAMECHANGED`. Verify `GetWindowRect`, DWM extended-frame bounds,
 `MonitorFromWindow`, `IsWindowVisible`, `IsIconic`, and `DWMWA_CLOAKED`.
 
-- [ ] **Step 4: Implement attended witness UI**
+- [x] **Step 4: Implement attended witness UI**
 
 `HardwareWitnessCoordinator.Begin` generates two independent six-character
 codes with `RandomNumberGenerator.Fill`, stores only salted HMAC digests, shows
@@ -481,7 +481,7 @@ buffers, and returns an internal `NativeWitnessProof`. Any wrong, expired,
 cancelled, moved, minimized, topology-changed, or replayed attempt consumes the
 challenge and invalidates the session.
 
-- [ ] **Step 5: Run GREEN**
+- [x] **Step 5: Run GREEN**
 
 ```powershell
 .tools/dotnet/dotnet.exe test platform/windows/CourseStudio.ProjectionHost.slnx --no-restore --filter "TestCategory!=projection_integration"
@@ -490,7 +490,7 @@ git diff --check
 
 Expected: all native-policy unit tests pass without opening visible windows.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add -- platform/windows/src/CourseStudio.ProjectionHost platform/windows/tests/CourseStudio.ProjectionHost.Core.Tests

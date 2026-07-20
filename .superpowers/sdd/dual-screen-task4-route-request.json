@@ -1,0 +1,17 @@
+{
+  "unit": "wpf-role-windows-and-attended-witness",
+  "signals": {
+    "mechanical": false,
+    "architecture": true,
+    "ambiguous": false,
+    "highStake": false,
+    "nondeterministic": true,
+    "security": true,
+    "hardwareControl": true,
+    "boundedUltraAudit": false,
+    "networkFailures": 0,
+    "reasoningFailures": 0
+  },
+  "availableModels": ["gpt-5.6-terra", "gpt-5.6-sol"],
+  "availableEfforts": ["low", "medium", "high", "xhigh", "ultra"]
+}

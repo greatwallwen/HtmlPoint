@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.1",
+  "unit": "wpf-role-windows-and-attended-witness",
+  "profile": "P3",
+  "reasonCodes": ["critical_risk", "hardware_control", "security_boundary"],
+  "recommended": {
+    "model": "gpt-5.6-sol",
+    "reasoningEffort": "xhigh"
+  },
+  "dispatch": {
+    "mechanism": "inline_primary_agent",
+    "model": "gpt-5.6-sol",
+    "reasoningEffort": "xhigh"
+  },
+  "switchStatus": "recommended_only",
+  "actual": null,
+  "executionReceipt": null
+}

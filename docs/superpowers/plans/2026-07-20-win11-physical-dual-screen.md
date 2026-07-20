@@ -241,7 +241,7 @@ git commit -m "test(projection): define personal dual-screen contracts"
 - Consumes: Task 1 contract enums and records.
 - Produces: `IProjectionReducer.Apply(ProjectionState, ProjectionSignal) -> ProjectionTransition`, `ProjectionTransition.Events`, and deterministic evidence digests.
 
-- [ ] **Step 1: Write reducer tests for the complete happy path and invalidation**
+- [x] **Step 1: Write reducer tests for the complete happy path and invalidation**
 
 Use a table-driven test whose valid signal order is exactly:
 
@@ -265,7 +265,7 @@ topology change, DPI change, role collision, minimize, cloak, frame rollback,
 identity mismatch, heartbeat expiry, navigation change, Runtime change, Helper
 restart, and Host restart transitions to `Invalidated`.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 ```powershell
 .tools/dotnet/dotnet.exe test platform/windows/tests/CourseStudio.ProjectionHost.Core.Tests/CourseStudio.ProjectionHost.Core.Tests.csproj --no-restore --filter "FullyQualifiedName~ProjectionReducerTests"
@@ -273,7 +273,7 @@ restart, and Host restart transitions to `Invalidated`.
 
 Expected: FAIL because reducer types are missing.
 
-- [ ] **Step 3: Implement immutable state and transition interfaces**
+- [x] **Step 3: Implement immutable state and transition interfaces**
 
 Use these public shapes:
 
@@ -307,14 +307,14 @@ or UI calls. All event ordering and evidence JSON use canonical ordinal field
 ordering and SHA-256. Reject invalid transitions with stable codes rather than
 silently ignoring them.
 
-- [ ] **Step 4: Add deterministic replay and fake-certification rejection tests**
+- [x] **Step 4: Add deterministic replay and fake-certification rejection tests**
 
 Replay one seeded signal sequence 100 times and assert identical receipt bytes.
 Pass a `SimulatedWitnessObserved` signal and assert it cannot produce
 `Certified`. Pass an expired or reused challenge and assert `Invalidated` with
 `witness_expired` or `witness_replayed`.
 
-- [ ] **Step 5: Run GREEN**
+- [x] **Step 5: Run GREEN**
 
 ```powershell
 .tools/dotnet/dotnet.exe test platform/windows/tests/CourseStudio.ProjectionHost.Core.Tests/CourseStudio.ProjectionHost.Core.Tests.csproj --no-restore
@@ -323,7 +323,7 @@ git diff --check
 
 Expected: all Core tests pass and replay receipts are byte-identical.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add -- platform/windows/src/CourseStudio.ProjectionHost.Core platform/windows/tests/CourseStudio.ProjectionHost.Core.Tests

@@ -162,6 +162,32 @@ def resolve_personal_attention(
     )
 
 
+def list_resumable_personal_runs(
+    catalog: KnowledgeCatalog,
+    *,
+    limit: int = 100,
+) -> tuple[PersonalCourseRun, ...]:
+    """Return persisted work that can safely resume without a human decision."""
+
+    if type(limit) is not int or not 1 <= limit <= 1000:
+        raise ValueError("personal run limit must be from 1 to 1000")
+    rows = catalog.connection.execute(
+        """
+        SELECT run_id, request_digest, source_snapshot_digest, status, revision,
+               payload_json, updated_at
+        FROM personal_course_runs
+        WHERE status IN (
+            'queued', 'importing', 'organizing_knowledge', 'composing',
+            'assigning_visuals', 'validating'
+        )
+        ORDER BY updated_at, run_id
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    return tuple(_decode_row(cast(str, row[0]), tuple(row[1:])) for row in rows)
+
+
 def _find_by_snapshot(
     catalog: KnowledgeCatalog,
     request_digest: str,
@@ -204,5 +230,6 @@ __all__ = [
     "advance_personal_run",
     "create_personal_run",
     "get_personal_run",
+    "list_resumable_personal_runs",
     "resolve_personal_attention",
 ]

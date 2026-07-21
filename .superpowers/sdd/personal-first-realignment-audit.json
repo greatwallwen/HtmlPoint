@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "phase": "personal-first-direction-audit",
+  "status": "design-gate",
+  "date": "2026-07-20",
+  "protectedSourceAccessed": false,
+  "evidence": {
+    "report": "platform/web/evidence/product-audit-2026-07-20/audit.md",
+    "importScreenshot": {
+      "path": "platform/web/evidence/product-audit-2026-07-20/01-import.png",
+      "sha256": "ff3a02d9db2b518ccd379547b01fdf5bb115f9490274e0c011e0090bbddef481"
+    },
+    "offlineGeneratedScreenshot": {
+      "path": "platform/web/evidence/product-audit-2026-07-20/03-offline-generated.png",
+      "sha256": "171388dca4d6bbf370ef7343231deb41b8679cf22f286b551b5fe0e6371d3a20"
+    }
+  },
+  "finding": "major-product-direction-drift",
+  "retainedAssets": [
+    "schema-first content and knowledge contracts",
+    "local helper and evidence objects",
+    "Slide AST projections",
+    "dual-screen state machine as an optional teaching capability"
+  ],
+  "corrections": [
+    "make governed personal course creation the primary path",
+    "remove fake browser-only success",
+    "compress review into one attention bundle",
+    "hide internal identifiers from default UI",
+    "make physical dual-screen certification independent from course creation"
+  ],
+  "modelRoute": {
+    "profile": "P2",
+    "recommended": "gpt-5.6-sol/high",
+    "ultraRequired": false,
+    "actualModelChange": false
+  }
+}

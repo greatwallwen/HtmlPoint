@@ -15,7 +15,7 @@
 | 个人组课入口 | `D:/cursor/AI培训/platform/web/evidence/personal-course-entry.png` | 1440 × 960 | `F9D81EF9348ED73802DE51583EA00BC47AAEA17788D701F021AC2ED9F6E48197` |
 | 单次主操作 | `D:/cursor/AI培训/platform/web/evidence/personal-course-post-action.png` | 1440 × 960 | `96485AFE10B565ECF0E6DB17CD6C658D913E5BEB252825304922113CD4F66385` |
 | 课程就绪首页 | `D:/cursor/AI培训/platform/web/evidence/personal-course-ready.png` | 1440 × 960 | `B688E8E0251992529A28713DDDE64CA433BA62D509202255F67C7517EEA2FC1C` |
-| 浏览器验收收据 | `D:/cursor/AI培训/platform/web/evidence/personal-course-browser-e2e.json` | — | `DC65BCA58B561A3180919814A94262AA5DB9056E2A9F1021682B90E69CE72F29` |
+| 浏览器验收收据 | `D:/cursor/AI培训/platform/web/evidence/personal-course-browser-e2e.json` | — | `DB8681AC7DC414157E7ED21E355E1138C95CBE41BA3FE85EF699F38E03A95FE0` |
 
 已把批准稿与当前入口置于同一视觉复核输入中检查。当前入口继承了批准稿的白色表面、蓝色主动作、深色标题、细边框、真实线性图标和克制阴影；布局按个人首次使用场景收敛为一个决策面，不照搬原编辑器的三栏结构。
 

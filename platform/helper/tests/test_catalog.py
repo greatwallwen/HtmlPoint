@@ -487,10 +487,10 @@ def test_open_applies_and_validates_migration_with_foreign_keys_and_fts5(tmp_pat
         assert "projected_text" in columns
         assert catalog.connection.execute(
             "SELECT version FROM schema_migrations ORDER BY version"
-        ).fetchall() == [(1,), (2,), (3,), (4,), (5,), (6,), (7,)]
+        ).fetchall() == [(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,)]
 
     with KnowledgeCatalog.open(database) as reopened:
-        assert reopened.connection.execute("SELECT count(*) FROM schema_migrations").fetchone()[0] == 7
+        assert reopened.connection.execute("SELECT count(*) FROM schema_migrations").fetchone()[0] == 8
 
 
 def test_open_rejects_an_unsupported_migration_version(tmp_path: Path) -> None:

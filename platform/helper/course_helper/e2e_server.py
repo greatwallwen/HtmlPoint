@@ -5,9 +5,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlsplit
+from zipfile import ZipFile, ZipInfo
 
 import uvicorn
 from PIL import Image
@@ -19,6 +21,21 @@ from course_helper.catalog import KnowledgeCatalog
 from course_helper.jobs import BoundedJobRunner, WorkerRuntimeConfig
 from course_helper.personal_supervisor import PersonalCourseSupervisor
 from course_helper.session import LaunchSession
+
+
+_CANONICAL_ZIP_TIMESTAMP = (2000, 1, 1, 0, 0, 0)
+
+
+def _canonicalize_zip_archive(path: Path) -> None:
+    canonical = path.with_suffix(f"{path.suffix}.canonical")
+    with ZipFile(path, "r") as source, ZipFile(canonical, "w") as target:
+        for member in sorted(source.infolist(), key=lambda item: item.filename):
+            info = ZipInfo(member.filename, date_time=_CANONICAL_ZIP_TIMESTAMP)
+            info.compress_type = member.compress_type
+            info.create_system = member.create_system
+            info.external_attr = member.external_attr
+            target.writestr(info, source.read(member.filename))
+    canonical.replace(path)
 
 
 def _safe_origin(value: str) -> str:
@@ -55,10 +72,16 @@ def _write_fixtures(root: Path) -> dict[str, str]:
     image.save(image_bytes, format="PNG")
     pptx = fixtures / "ai-evidence.pptx"
     presentation = Presentation()
+    fixed_time = datetime(2000, 1, 1)
+    presentation.core_properties.created = fixed_time
+    presentation.core_properties.modified = fixed_time
+    presentation.core_properties.author = "Course Studio E2E"
+    presentation.core_properties.last_modified_by = "Course Studio E2E"
     slide = presentation.slides.add_slide(presentation.slide_layouts[6])
     slide.shapes.add_textbox(Inches(0.6), Inches(0.5), Inches(6), Inches(0.8)).text = "真实来源图形"
     slide.shapes.add_picture(BytesIO(image_bytes.getvalue()), Inches(1), Inches(1.5), width=Inches(3.2))
     presentation.save(pptx)
+    _canonicalize_zip_archive(pptx)
     return {"markdown": str(markdown), "dataset": str(dataset), "pptx": str(pptx)}
 
 

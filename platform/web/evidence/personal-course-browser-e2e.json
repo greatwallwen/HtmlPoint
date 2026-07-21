@@ -5,7 +5,7 @@
   "browserPolicySha256": "09afacb6ef18559c4c974780d25ccf1c41dc4eaa565d429849e9c05a3f653673",
   "fixtures": {
     "markdownSha256": "5583a3b600260a24eaf8b613cc1e7180a75e653ce7d8ac2e88a3e1c1cff0b6fd",
-    "pptxSha256": "c3848ce2eaa66dbdbb4cb4fe4eb7bfdab13270e559a2fc3ff4f5b0e586b644a8",
+    "pptxSha256": "788fd61c8c6baf04d9881bc5b19b6430e6d0488afbfcc54afbd7025423d5f88f",
     "datasetSha256": "724ac11900d80a0234804076e9330edbc1cf553369ca955542e2348b06ed5a70"
   },
   "operations": [

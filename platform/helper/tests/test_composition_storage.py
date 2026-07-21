@@ -457,7 +457,7 @@ def test_current_migrations_and_requirement_registration_reuse_original_clock(
     with KnowledgeCatalog.open(tmp_path / "knowledge.db") as catalog:
         assert catalog.connection.execute(
             "SELECT version FROM schema_migrations ORDER BY version"
-        ).fetchall() == [(1,), (2,), (3,), (4,), (5,), (6,), (7,)]
+        ).fetchall() == [(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,)]
         first = catalog.register_course_requirement(requirement(), clock=lambda: next(ticks))
         second = catalog.register_course_requirement(requirement(), clock=lambda: next(ticks))
         assert second == first

@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "task": "personal-first-task9-final-verification",
+  "recordedAt": "2026-07-21T14:57:22+08:00",
+  "status": "passed",
+  "productDirection": {
+    "assessment": "aligned",
+    "majorDivergence": false,
+    "supergrillRequired": false,
+    "reason": "A personal user can now select real local course materials, describe one course, use one primary action, resolve at most one attention bundle, reopen the persisted course, and continue into editor and teaching views without seeing internal binding identifiers."
+  },
+  "verification": [
+    {
+      "command": "python -m pytest platform/helper/tests/test_static_web.py platform/helper/tests/test_personal_course_contracts.py platform/helper/tests/test_personal_runs.py platform/helper/tests/test_personal_knowledge.py platform/helper/tests/test_personal_orchestrator.py platform/helper/tests/test_personal_jobs.py -q",
+      "result": "19 passed"
+    },
+    {
+      "command": "npm.cmd --prefix platform/web test -- --run src/domain/personal-course-schema.test.ts src/components/PersonalCourseCreate.test.tsx src/components/PersonalCourseProgress.test.tsx src/components/PersonalCourseAttention.test.tsx src/components/PersonalCourseHome.test.tsx src/app/App.test.tsx",
+      "result": "42 passed"
+    },
+    {
+      "command": "python platform/qa/run.py all with an isolated same-volume pytest basetemp because the machine default pytest root is ACL-locked",
+      "result": "passed: 176 QA tests, 926 Helper tests, 329 Web tests, light-theme and protected-path gates, production build, and browser E2E"
+    },
+    {
+      "command": "npm.cmd --prefix platform/web run typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd --prefix platform/web run build",
+      "result": "passed; 4686 modules transformed"
+    },
+    {
+      "command": "npm.cmd --prefix platform/web run test:e2e -- --grep one personal action",
+      "result": "1 passed in real Chrome; repeated receipt SHA-256 remained DB8681AC7DC414157E7ED21E355E1138C95CBE41BA3FE85EF699F38E03A95FE0"
+    },
+    {
+      "command": ".tools\\dotnet\\dotnet.exe test platform/windows/CourseStudio.ProjectionHost.slnx --no-restore --filter TestCategory!=projection_integration",
+      "result": "42 passed; live projection integration and physical hardware certification were not claimed"
+    }
+  ],
+  "browserAcceptance": {
+    "onePrimaryComposeAction": true,
+    "manualKnowledgePublicationClicks": 0,
+    "manualVisualBindingClicks": 0,
+    "attentionBundleCount": 1,
+    "persistedCourseReopen": true,
+    "opaqueIdentifiersHidden": true,
+    "sourceDatasetAndVisualProvenanceVisible": true,
+    "noPageErrors": true,
+    "noConsoleErrors": true,
+    "noUnexpectedSameOriginFailures": true,
+    "controlledArtifactAbortCount": 1,
+    "protectedSourceAccessed": false
+  },
+  "artifactHashes": [
+    {
+      "path": "platform/web/evidence/personal-course-browser-e2e.json",
+      "sha256": "DB8681AC7DC414157E7ED21E355E1138C95CBE41BA3FE85EF699F38E03A95FE0"
+    },
+    {
+      "path": "platform/web/evidence/personal-course-entry.png",
+      "sha256": "F9D81EF9348ED73802DE51583EA00BC47AAEA17788D701F021AC2ED9F6E48197"
+    },
+    {
+      "path": "platform/web/evidence/personal-course-post-action.png",
+      "sha256": "96485AFE10B565ECF0E6DB17CD6C658D913E5BEB252825304922113CD4F66385"
+    },
+    {
+      "path": "platform/web/evidence/personal-course-ready.png",
+      "sha256": "B688E8E0251992529A28713DDDE64CA433BA62D509202255F67C7517EEA2FC1C"
+    },
+    {
+      "path": "platform/helper/course_helper/e2e_server.py",
+      "sha256": "1DA0FD2798B65335F14B782D46A4F24085C10E08CC47AAF18FBBBEA203D25CC5"
+    },
+    {
+      "path": "platform/helper/tests/test_e2e_server.py",
+      "sha256": "5826B5A4E5F86EE0190C07C64EECF0FD976F6F7692FDB48749BF1BC7E4906CB6"
+    },
+    {
+      "path": "platform/web/design-qa.md",
+      "sha256": "DAE0B30EFC3593EB80A4C99FD62052A3B0B3A17FC47ACBC3F0FA26B2A5BA71FF"
+    }
+  ],
+  "certification": {
+    "fixtureBackedPersonalFlowCertified": true,
+    "physicalDualScreenCertified": false,
+    "liveNetworkAuthorizationCertified": false,
+    "referenceDemoReceiptValidated": true,
+    "referenceDemoFreshSourceRunCertified": false
+  },
+  "adaptiveModelRouter": {
+    "actualRootModel": "GPT-5 Codex; mid-task root-model switching was unavailable",
+    "evaluatedUnits": [
+      {
+        "unit": "focused personal-course regression gates",
+        "profile": "P1 Standard",
+        "firstPass": "passed",
+        "reworkCount": 0,
+        "focusedGate": "19 backend and 42 frontend tests passed",
+        "laterHighOrMediumDefects": 0
+      },
+      {
+        "unit": "cross-system release verification and evidence stabilization",
+        "profile": "P2 Deep",
+        "firstPass": "blocked by machine pytest Temp ACLs and two stale migration-version assertions",
+        "reworkCount": 2,
+        "focusedGate": "root causes isolated; 926 Helper, 176 QA, 329 Web, 42 Windows Host, build, and repeated Chrome E2E passed",
+        "failureAttribution": "environment/input drift and stale test contract, not model-reasoning failure",
+        "laterHighOrMediumDefects": 0
+      }
+    ],
+    "assessment": "The router usefully kept focused deterministic work at P1 and raised only cross-system debugging to P2. This is a useful two-unit sample, not proof that the router is optimal.",
+    "nextProfile": "Use P3 xhigh for the bounded attended hardware-control certification. Do not use sol ultra unless two evidence-based hardware attempts fail for different nondeterministic or timing-related reasons."
+  },
+  "remainingBlockers": [
+    "Attended Win11 verification on a real two-monitor machine is still required before physical dual-screen and fullscreen certification can become true.",
+    "Live network visual acquisition and authorization remain explicitly uncertified.",
+    "The current shell cannot access the machine default pytest root or nine ignored workspace pytest cache directories because of Windows ACLs."
+  ],
+  "singleNextAction": "Run the attended Win11 two-monitor assignment and fullscreen certification workflow on real hardware, preserving the resulting evidence receipt."
+}

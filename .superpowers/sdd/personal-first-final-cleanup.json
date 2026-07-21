@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "task": "personal-first-task9-final-cleanup",
+  "recordedAt": "2026-07-21T14:57:22+08:00",
+  "status": "completed-with-acl-residue",
+  "workspaceCleanup": {
+    "removedDirectories": 15,
+    "removedFiles": 578,
+    "removedBytes": 32481747,
+    "removedClasses": [
+      "platform/web/dist",
+      "platform/web/.e2e-runtime",
+      "Python __pycache__ directories",
+      "Windows ProjectionHost bin and obj directories"
+    ]
+  },
+  "temporaryCleanup": {
+    "removedDirectories": 6,
+    "blockedDirectories": 3,
+    "blockedPaths": [
+      "D:/AppData/Temp/course-studio-qa-all-0721",
+      "D:/AppData/Temp/course-studio-qa-final-0721",
+      "C:/Users/alvin/.codex/visualizations/2026/07/14/019f6044-9ca3-7512-b7b7-8904f203be35/pytest-focused-final-0721"
+    ],
+    "reason": "Windows ACL denied recursive deletion under both normal and explicitly elevated attempts."
+  },
+  "workspaceAclResidue": {
+    "ignoredDirectories": 9,
+    "paths": [
+      "platform/.pytest-personal-final-focus-0721",
+      "platform/.pytest-task8-api-red-0721",
+      "platform/.pytest-task8-green-0721",
+      "platform/.pytest-task8-qa-final-0721",
+      "platform/.pytest-task8-qa-meta-0721",
+      "platform/.pytest-task8-qa-red-0721",
+      "platform/.pytest-task8-red-0721",
+      "platform/helper/.pytest_cache",
+      ".pytest_cache"
+    ],
+    "reason": "Windows ACL denied enumeration or deletion; earlier ownership and ACL-reset attempts also failed. These ignored directories contain no product source or accepted evidence."
+  },
+  "preserved": [
+    "platform source and current versioned evidence",
+    "platform/web/node_modules",
+    ".tools",
+    "embedding model caches",
+    "runtime user data",
+    "all protected source boundaries"
+  ],
+  "gitAfterFinalCommitGc": {
+    "expectedPacks": 1,
+    "expectedLooseObjects": 0,
+    "expectedGarbageObjects": 0,
+    "verificationCommand": "git count-objects -v"
+  }
+}

@@ -27,6 +27,7 @@ import {
   type WorkflowStep,
 } from "../domain/course";
 import type { CourseAgent } from "../domain/course-agent";
+import type { PersonalCourseView } from "../domain/personal-course-schema";
 import { readSourceFiles } from "../domain/source-import";
 import { validateCourse } from "../domain/validation";
 import {
@@ -61,10 +62,14 @@ export interface WorkspaceState {
   assistantReceiptId?: string;
   operationError?: string;
   persistenceWarning?: string;
+  personalRunId?: string;
+  personalView?: PersonalCourseView;
 }
 
 export type WorkspaceAction =
   | { type: "START_NEW" }
+  | { type: "PERSONAL_COURSE_TRACKED"; runId: string; view: PersonalCourseView }
+  | { type: "PERSONAL_COURSE_OPENED"; course: CourseDocument; receipt: EvidenceReceipt; target: "edit" | "teach" }
   | { type: "ADD_SOURCES"; sources: SourceAsset[] }
   | { type: "REMOVE_SOURCE"; sourceId: string }
   | { type: "SET_BRIEF"; patch: Partial<CourseBrief> }
@@ -170,6 +175,7 @@ export function hydrateWorkspaceState(result: LoadWorkspaceResult): WorkspaceSta
           ? "edit"
           : result.snapshot.view.step,
       governed: result.snapshot.governed,
+      personalRunId: result.snapshot.personalRunId,
       legacyUnlinked: result.snapshot.legacyUnlinked,
       selectedChapterId: result.snapshot.view.selectedChapterId,
       selectedLessonId: result.snapshot.view.selectedLessonId,
@@ -220,6 +226,8 @@ function courseMutationWillApply(
   action: WorkspaceAction,
 ): boolean {
   switch (action.type) {
+    case "PERSONAL_COURSE_OPENED":
+      return true;
     case "ADD_SOURCES": {
       if (action.sources.length === 0) {
         return false;
@@ -342,6 +350,36 @@ export function workspaceReducer(
   switch (action.type) {
     case "START_NEW":
       return createFreshWorkspaceState();
+
+    case "PERSONAL_COURSE_TRACKED":
+      return {
+        ...state,
+        personalRunId: action.runId,
+        personalView: action.view,
+        operationError: undefined,
+      };
+
+    case "PERSONAL_COURSE_OPENED": {
+      const firstChapter = action.course.chapters[0];
+      return {
+        ...state,
+        course: action.course,
+        brief: {
+          title: action.course.title,
+          audience: action.course.audience,
+          goal: action.course.goal,
+          durationMinutes: action.course.durationMinutes,
+        },
+        receipts: [...state.receipts, action.receipt],
+        validation: "success",
+        validationWarningsAcknowledged: true,
+        courseRevision: nextCourseRevision(state),
+        selectedChapterId: firstChapter?.id,
+        selectedLessonId: firstChapter?.lessons[0]?.id,
+        step: action.target,
+        operationError: undefined,
+      };
+    }
 
     case "ADD_SOURCES": {
       if (action.sources.length === 0) {
@@ -977,6 +1015,9 @@ function workspaceSnapshot(state: WorkspaceState): WorkspaceSnapshot {
   return {
     version: 2,
     governed: state.governed,
+    ...(state.personalRunId === undefined
+      ? null
+      : { personalRunId: state.personalRunId }),
     view: {
       step: state.step,
       ...(state.selectedChapterId === undefined

@@ -1,10 +1,15 @@
 import { useEffect, useLayoutEffect, useMemo, useState, type JSX } from "react";
+import { House, Plus, Sparkle } from "@phosphor-icons/react";
 
 import { CourseEditor } from "../components/CourseEditor";
 import { GenerateStep } from "../components/GenerateStep";
 import { HelperRequiredScreen } from "../components/HelperRequiredScreen";
 import { ImportStep } from "../components/ImportStep";
 import { PresenterView } from "../components/PresenterView";
+import { PersonalCourseAttention } from "../components/PersonalCourseAttention";
+import { PersonalCourseCreate } from "../components/PersonalCourseCreate";
+import { PersonalCourseHome } from "../components/PersonalCourseHome";
+import { PersonalCourseProgress } from "../components/PersonalCourseProgress";
 import { StageView } from "../components/StageView";
 import {
   TeachingSetup,
@@ -34,6 +39,14 @@ import {
 } from "../services/native-projection";
 import { requestTeachingProjection, type TeachingProjectionSnapshot } from "../domain/projection-bus";
 import { projectReopenedCourse } from "../domain/course-agent";
+import type { PersonalCourseResponse, PersonalCourseView } from "../domain/personal-course-schema";
+import type { PersonalCourseResolveJob } from "../domain/helper-contracts-schema";
+import {
+  createImportStartJob,
+  createPersonalCourseJob,
+  createPersonalCourseResolveJob,
+  createPersonalCourseStatusJob,
+} from "../domain/governed-job-factory";
 import "./tokens.css";
 import "./app.css";
 
@@ -278,6 +291,17 @@ function StudioWorkflow({
     return <HelperRequiredScreen />;
   }
 
+  if (!hasExplicitAgent && knowledgeClient !== undefined) {
+    return (
+      <PersonalStudioWorkflow
+        knowledgeClient={knowledgeClient}
+        artifactClient={artifactClient}
+        projectionClient={projectionClient}
+        teachingRuntime={teachingRuntime}
+      />
+    );
+  }
+
   const projectionIdentity =
     state.governed.courseVersionId !== undefined &&
     state.governed.slideDeckId !== undefined &&
@@ -333,6 +357,202 @@ function StudioWorkflow({
         <p>请在桌面尺寸编辑课程</p>
       </main>
     </div>
+  );
+}
+
+function PersonalStudioWorkflow({
+  knowledgeClient,
+  artifactClient,
+  projectionClient,
+  teachingRuntime,
+}: {
+  knowledgeClient: KnowledgeClient;
+  artifactClient?: ArtifactClient;
+  projectionClient?: HelperProjectionClient;
+  teachingRuntime?: TeachingRuntime;
+}): JSX.Element {
+  const { state, dispatch } = useWorkspace();
+  const [response, setResponse] = useState<PersonalCourseResponse | undefined>(
+    state.personalRunId !== undefined && state.personalView !== undefined
+      ? { runId: state.personalRunId, view: state.personalView }
+      : undefined,
+  );
+  type PersonalAttentionAction = PersonalCourseResolveJob["action"];
+  const attentionActions: PersonalAttentionAction[] = [
+    "retry",
+    "exclude-source",
+    "approve",
+    "reject",
+    "use-source-visual",
+    "use-network-visual",
+    "continue-without-visual",
+  ];
+  const [resolution, setResolution] = useState<{
+    digest: string;
+    action: PersonalAttentionAction;
+  }>();
+
+  const remember = (
+    next: PersonalCourseResponse,
+    outputSummary?: Record<string, unknown>,
+  ) => {
+    setResponse(next);
+    dispatch({ type: "PERSONAL_COURSE_TRACKED", runId: next.runId, view: next.view });
+    const digest = outputSummary?.attentionDigest;
+    const action = outputSummary?.recommendedAction;
+    if (
+      typeof digest === "string" &&
+      typeof action === "string" &&
+      attentionActions.includes(action as PersonalAttentionAction)
+    ) {
+      setResolution({ digest, action: action as PersonalAttentionAction });
+    } else {
+      setResolution(undefined);
+    }
+  };
+
+  useEffect(() => {
+    if (response !== undefined || state.personalRunId === undefined) return;
+    let current = true;
+    void knowledgeClient.getPersonalCourse(
+      createPersonalCourseStatusJob(state.personalRunId),
+    ).then((value) => {
+      if (current) remember(value.result, value.evidence.outputSummary);
+    }, () => undefined);
+    return () => { current = false; };
+  }, [knowledgeClient, response, state.personalRunId]);
+
+  useEffect(() => {
+    if (response?.view.status !== "creating") return;
+    let current = true;
+    const timer = globalThis.setTimeout(() => {
+      void knowledgeClient.getPersonalCourse(
+        createPersonalCourseStatusJob(response.runId),
+      ).then((value) => {
+        if (current) remember(value.result, value.evidence.outputSummary);
+      }, () => undefined);
+    }, 900);
+    return () => { current = false; globalThis.clearTimeout(timer); };
+  }, [knowledgeClient, response]);
+
+  const openCourse = (target: "edit" | "teach") => {
+    const course = response?.view.course;
+    if (course === null || course === undefined) return;
+    dispatch({
+      type: "PERSONAL_COURSE_OPENED",
+      course,
+      target,
+      receipt: {
+        id: "personal-course-validation",
+        courseId: course.id,
+        kind: "validation",
+        createdAt: course.updatedAt,
+        inputDigest: "local-helper-verified",
+        summary: "本地 Helper 已完成课程、来源与运行清单验证。",
+        checks: [{ id: "personal-course-ready", level: "pass", message: "课程可以预览、编辑或授课。" }],
+      },
+    });
+  };
+
+  const startNew = () => {
+    setResponse(undefined);
+    setResolution(undefined);
+    dispatch({ type: "START_NEW" });
+  };
+
+  const courseBar = (
+    <header className="personal-product-bar">
+      <div className="personal-product-brand">
+        <span aria-hidden="true"><Sparkle size={19} weight="fill" /></span>
+        <strong>个人课程工作台</strong>
+      </div>
+      <nav aria-label="个人课程">
+        <button type="button" className="secondary-button" onClick={() => dispatch({ type: "GO_TO_STEP", step: "import" })}>
+          <House size={18} weight="bold" aria-hidden="true" />课程首页
+        </button>
+        <button type="button" className="secondary-button" onClick={startNew}>
+          <Plus size={18} weight="bold" aria-hidden="true" />新建课程
+        </button>
+      </nav>
+    </header>
+  );
+
+  if (state.step === "edit" && state.course.chapters.length > 0) {
+    return <div className="app-shell personal-editor-shell">{courseBar}<CourseEditor knowledgeClient={knowledgeClient} artifactClient={artifactClient} /></div>;
+  }
+  if (state.step === "teach" && state.course.chapters.length > 0) {
+    return (
+      <TeachingSetup
+        course={state.course}
+        selectedLessonId={state.selectedLessonId}
+        runtime={teachingRuntime}
+        slideDeck={state.governedProjection?.slideDeck}
+        projectionClient={projectionClient}
+        onReturnToEdit={() => dispatch({ type: "GO_TO_STEP", step: "edit" })}
+      />
+    );
+  }
+
+  const start = async (files: File[], prompt: string) => {
+    const imported = await Promise.all(files.map(async (file) => {
+      const extension = file.name.split(".").pop()?.toLowerCase();
+      const mediaType = file.type.trim() || ({
+        md: "text/markdown",
+        markdown: "text/markdown",
+        pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        csv: "text/csv",
+        parquet: "application/vnd.apache.parquet",
+        xls: "application/vnd.ms-excel",
+        xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }[extension ?? ""] ?? "application/octet-stream");
+      const typed = file.type.trim() ? file : file.slice(0, file.size, mediaType);
+      const upload = await knowledgeClient.uploadSource(typed, file.name);
+      return knowledgeClient.startImport(await createImportStartJob(upload));
+    }));
+    const created = await knowledgeClient.createPersonalCourse(
+      await createPersonalCourseJob({
+        requestId: `personal-request-${crypto.randomUUID().replaceAll("-", "").slice(0, 32)}`,
+        prompt,
+        sourceVersionIds: imported.map((item) => item.result.sourceVersionId),
+      }),
+    );
+    remember(created.result, created.evidence.outputSummary);
+  };
+
+  const accept = async () => {
+    if (response === undefined) return;
+    let currentResolution = resolution;
+    if (currentResolution === undefined) {
+      const refreshed = await knowledgeClient.getPersonalCourse(
+        createPersonalCourseStatusJob(response.runId),
+      );
+      remember(refreshed.result, refreshed.evidence.outputSummary);
+      const digest = refreshed.evidence.outputSummary.attentionDigest;
+      const action = refreshed.evidence.outputSummary.recommendedAction;
+      if (
+        typeof digest !== "string" ||
+        typeof action !== "string" ||
+        !attentionActions.includes(action as PersonalAttentionAction)
+      ) return;
+      currentResolution = { digest, action: action as PersonalAttentionAction };
+    }
+    const resolved = await knowledgeClient.resolvePersonalCourseAttention(
+      await createPersonalCourseResolveJob({
+        runId: response.runId,
+        expectedAttentionDigest: currentResolution.digest,
+        action: currentResolution.action,
+      }),
+    );
+    remember(resolved.result, resolved.evidence.outputSummary);
+  };
+
+  const view: PersonalCourseView | undefined = response?.view;
+  if (view === undefined) return <PersonalCourseCreate onStart={start} />;
+  if (view.status === "creating") return <PersonalCourseProgress view={view} />;
+  if (view.status === "needs-attention") return <PersonalCourseAttention count={view.attentionCount} onAccept={accept} />;
+  if (view.status === "ready") return <PersonalCourseHome view={view} onEdit={() => openCourse("edit")} onTeach={() => openCourse("teach")} />;
+  return (
+    <main className="personal-page"><section className="personal-status-card"><p className="eyebrow">创建未完成</p><h1>{view.phaseLabel}</h1><p>资料仍保留在本地，可以重新开始并调整课程要求。</p><button className="primary-button" onClick={startNew}>重新开始</button></section></main>
   );
 }
 

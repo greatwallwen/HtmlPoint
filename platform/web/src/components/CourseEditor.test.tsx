@@ -557,7 +557,7 @@ describe("轻量课程编辑器", () => {
 
   it("preserves blank and unrecognized assistant input with actionable alerts", async () => {
     const user = userEvent.setup();
-    renderEditor();
+    renderEditor(editorState(), new LocalCourseAgent());
     const assistant = screen.getByRole("region", { name: "课程助手" });
     const input = within(assistant).getByLabelText("向课程助手说明调整需求");
     const send = within(assistant).getByRole("button", {
@@ -741,7 +741,7 @@ describe("轻量课程编辑器", () => {
 
   it("turns the source-coverage assistant intent into the same visible validation evidence", async () => {
     const user = userEvent.setup();
-    renderEditor(warningEditorState());
+    renderEditor(warningEditorState(), new LocalCourseAgent());
     const assistant = screen.getByRole("region", { name: "课程助手" });
     await user.click(
       within(assistant).getByRole("button", { name: "检查来源覆盖" }),

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "task": "personal-first-task7-default-ui",
+  "recordedAt": "2026-07-21T11:38:47+08:00",
+  "status": "passed",
+  "productDirection": {
+    "assessment": "aligned",
+    "reason": "The product now opens on one personal action: select files or a directory, state one course need, and start. Persisted Helper phases drive progress, attention is compressed to one recommended decision, and the ready view exposes only preview, edit, and teach actions with governed evidence collapsed.",
+    "majorDivergence": false,
+    "supergrillRequired": false
+  },
+  "decisions": [
+    "Use the existing light page, surface, border, brand, radius, typography, and Phosphor icon system without introducing another visual language.",
+    "Keep the former four-step workflow reachable only through the explicit legacy agent used by compatibility tests; the real Helper entry always uses the personal flow.",
+    "Persist the personal run alias and restore its current public view from the Helper instead of fabricating browser progress.",
+    "Keep internal run, source-version, card, outline, deck, manifest, and evidence identifiers out of the ready course page.",
+    "Keep edit and teach as downstream projections and provide clear Course Home and New Course navigation from the editor.",
+    "Keep dual-screen optional at course creation and leave physical certification false until attended Win11 hardware verification."
+  ],
+  "verification": [
+    {
+      "command": "npm.cmd --prefix platform/web test -- --run src/components/PersonalCourseCreate.test.tsx src/components/PersonalCourseProgress.test.tsx src/components/PersonalCourseAttention.test.tsx src/components/PersonalCourseHome.test.tsx src/app/App.test.tsx src/components/CourseEditor.test.tsx src/components/TeachingSetup.test.tsx src/state/workspace.test.tsx src/state/storage.test.ts",
+      "result": "138 passed"
+    },
+    {
+      "command": "npm.cmd --prefix platform/web run typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd --prefix platform/web run build",
+      "result": "passed; 4686 modules transformed"
+    },
+    {
+      "command": "python -m pytest platform/helper/tests/test_personal_jobs.py platform/helper/tests/test_api.py platform/helper/tests/test_projection_jobs.py -q",
+      "result": "125 passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "artifactHashes": [
+    {
+      "path": "platform/helper/course_helper/personal_jobs.py",
+      "sha256": "36155B4092BDBD0AC0E9D05B19039F4C3AD9B4AD013FCE1478359D2542D719C7"
+    },
+    {
+      "path": "platform/web/src/app/App.tsx",
+      "sha256": "448179756CC92633022F040A760012A7145151193932F34A413A058DA63E8D01"
+    },
+    {
+      "path": "platform/web/src/app/app.css",
+      "sha256": "CE6AFB813479D96FDE9B208AACB7D65876E263BBCA0012BA95EE22460BA38733"
+    },
+    {
+      "path": "platform/web/src/components/PersonalCourseCreate.tsx",
+      "sha256": "B93CCF4472CAED4A2F51F4493E919DA50D2759CFB152A18EECF3CF5A86660963"
+    },
+    {
+      "path": "platform/web/src/components/PersonalCourseHome.tsx",
+      "sha256": "7CB92E1311363C0C7F02018DA7DC0AFB8CF882893EC1DB6727FB3E51305F8FAA"
+    },
+    {
+      "path": "platform/web/src/state/workspace.tsx",
+      "sha256": "E514466BFAB1C169229683B95FD48312343F55345DEB771E0FB696A68AF27344"
+    }
+  ],
+  "cleanup": {
+    "scope": "platform reproducible caches only",
+    "removedDirectories": 7,
+    "removedFiles": 67,
+    "removedBytes": 2856612,
+    "preservedLockedModelRuntimeFiles": 10,
+    "note": "The legacy embedding runtime bin was detected by an over-broad first filter, but all 10 locked files remained; the corrected filter excludes every .embedding-model* path."
+  },
+  "certification": {
+    "physicalDualScreenCertified": false,
+    "releaseSignatureCertified": false
+  },
+  "residualRisk": "The primary flow is green at component, application, contract, type, and production-build levels, but the real browser fixture path and refreshed visual evidence remain Task 8 acceptance work.",
+  "nextAction": "Task 8: run the real one-click browser fixture, refresh visual evidence, and remove obsolete four-step screenshots only after replacement proof is green."
+}

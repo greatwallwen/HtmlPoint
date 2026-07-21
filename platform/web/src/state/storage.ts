@@ -25,6 +25,7 @@ export interface WorkspaceViewPreferences {
 export interface PersistedWorkspaceV2 {
   version: 2;
   governed: GovernedWorkspaceBindings;
+  personalRunId?: string;
   view: WorkspaceViewPreferences;
   legacyUnlinked?: LegacyUnlinkedSummary;
   savedAt: string;
@@ -62,6 +63,7 @@ export const persistedWorkspaceV2Schema = z
   .object({
     version: z.literal(2),
     governed: governedWorkspaceBindingsSchema,
+    personalRunId: z.string().regex(/^personal-run-[0-9a-f]{32}$/).optional(),
     view: workspaceViewPreferencesSchema,
     legacyUnlinked: legacyUnlinkedSummarySchema.optional(),
     savedAt: z.string().datetime({ offset: true }),

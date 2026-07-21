@@ -16,4 +16,5 @@
   --radius-control: 8px;
   --radius-card: 12px;
   --radius-panel: 14px;
+  --shadow-card: 0 24px 72px rgba(36, 51, 77, 0.1);
 }

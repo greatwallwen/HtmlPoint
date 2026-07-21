@@ -275,26 +275,14 @@ describe("课程工作台", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("renders the ordered workflow header and accessible icon control", () => {
+  it("uses the concise personal course flow by default", () => {
     render(<App storage={new TestStorage()} />);
 
-    const workflow = screen.getByRole("navigation", { name: "课程工作流" });
-    const steps = within(workflow).getAllByRole("button");
-    expect(steps.map((button) => button.getAttribute("aria-label"))).toEqual([
-      "导入资料",
-      "生成课程",
-      "编辑验证",
-      "双屏授课",
-    ]);
-    expect(steps[0]).toHaveAttribute("aria-current", "step");
-    expect(steps.slice(1).every((button) => !button.hasAttribute("aria-current"))).toBe(
-      true,
-    );
-    expect(steps[2]).toBeDisabled();
-    expect(steps[3]).toBeDisabled();
-
-    const newCourse = screen.getByRole("button", { name: "新建课程" });
-    expectIconButton(newCourse, "新建课程");
+    expect(screen.getByRole("heading", { name: "把资料变成一门可直接使用的课" })).toBeVisible();
+    expect(screen.getByLabelText("选择课程资料")).toBeInTheDocument();
+    expect(screen.getByLabelText("选择资料目录")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "开始组课" })).toBeDisabled();
+    expect(screen.queryByRole("navigation", { name: "课程工作流" })).toBeNull();
     expect(document.documentElement).toHaveAttribute("lang", "zh-CN");
   });
 
@@ -322,8 +310,7 @@ describe("课程工作台", () => {
     expect(screen.queryByRole("region", { name: "知识准备" })).toBeNull();
   });
 
-  it("reuses the scrubbed helper session when navigation returns to import", async () => {
-    const user = userEvent.setup();
+  it("reuses the scrubbed helper session on the personal entry", async () => {
     const helperOrigin = "http://127.0.0.1:8765";
     const nonce = "n".repeat(43);
     const token = "t".repeat(43);
@@ -363,9 +350,7 @@ describe("课程工作台", () => {
       ).toHaveLength(1),
     );
 
-    await user.click(screen.getByRole("button", { name: "导入资料" }));
-
-    expect(await screen.findByText("4 张已发布知识卡")).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "把资料变成一门可直接使用的课" })).toBeVisible();
     expect(
       fetchMock.mock.calls.filter(
         ([url]) => url === `${helperOrigin}/v1/session/exchange`,
@@ -410,7 +395,7 @@ describe("课程工作台", () => {
     );
 
     expect(window.location.hash).toBe("");
-    expect(await screen.findByText("4 张已发布知识卡")).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "把资料变成一门可直接使用的课" })).toBeVisible();
     expect(
       fetchMock.mock.calls.filter(
         ([url]) => url === `${helperOrigin}/v1/session/exchange`,
@@ -469,7 +454,8 @@ describe("课程工作台", () => {
 
     expect((await screen.findAllByText("恢复章节")).length).toBeGreaterThanOrEqual(1);
     expect(fetchMock).toHaveBeenCalledWith(projectionPath, expect.objectContaining({ method: "GET" }));
-    expect(screen.getByRole("button", { name: "双屏授课" })).toBeEnabled();
+    expect(screen.getByRole("navigation", { name: "个人课程" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "课程首页" })).toBeEnabled();
   });
 
   it("shows pending import state, renders a ready source, clears the input, and removes it", async () => {
@@ -535,7 +521,7 @@ describe("课程工作台", () => {
   });
 
   it("keeps unsupported and failed sources visible without blocking a ready sibling", async () => {
-    render(<App storage={new TestStorage()} />);
+    render(<App storage={new TestStorage()} agent={new LocalCourseAgent()} />);
     const dropTarget = screen.getByLabelText("资料拖放区");
 
     fireEvent.drop(dropTarget, {
@@ -563,7 +549,7 @@ describe("课程工作台", () => {
     const user = userEvent.setup();
     const retryable = retryableTextFile("retry.md", "# recovered source");
     const storage = new TestStorage();
-    render(<App storage={storage} />);
+    render(<App storage={storage} agent={new LocalCourseAgent()} />);
 
     await user.upload(
       screen.getByLabelText("导入资料", { selector: 'input[type="file"]' }),
@@ -614,6 +600,7 @@ describe("课程工作台", () => {
     render(
       <App
         storage={new TestStorage()}
+        agent={new LocalCourseAgent()}
         initialState={{
           ...fresh,
           course: { ...fresh.course, sources: [failedSource] },
@@ -787,6 +774,7 @@ describe("课程工作台", () => {
     render(
       <App
         storage={new TestStorage()}
+        agent={new LocalCourseAgent()}
         initialState={validatedEditState("error")}
       />,
     );
@@ -805,6 +793,7 @@ describe("课程工作台", () => {
     render(
       <App
         storage={new TestStorage()}
+        agent={new LocalCourseAgent()}
         initialState={validatedEditState("warning")}
       />,
     );
@@ -824,6 +813,7 @@ describe("课程工作台", () => {
     render(
       <App
         storage={new TestStorage()}
+        agent={new LocalCourseAgent()}
         initialState={validatedEditState("pass")}
       />,
     );
@@ -860,7 +850,7 @@ describe("课程工作台", () => {
       "/?view=stage&session=session-query-role",
     );
     const { unmount } = render(
-      <App initialState={state} storage={new TestStorage()} teachingRuntime={runtime} />,
+      <App initialState={state} storage={new TestStorage()} agent={new LocalCourseAgent()} teachingRuntime={runtime} />,
     );
 
     expect(screen.getByText("学员屏")).toBeVisible();
@@ -913,7 +903,12 @@ describe("课程工作台", () => {
     const runtime = projectionRuntime();
 
     const { unmount } = render(
-      <App initialState={state} storage={new TestStorage()} teachingRuntime={runtime} />,
+      <App
+        initialState={state}
+        storage={new TestStorage()}
+        agent={new LocalCourseAgent()}
+        teachingRuntime={runtime}
+      />,
     );
     expect(screen.getByRole("navigation", { name: "课程工作流" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "双屏授课" })).toBeVisible();
@@ -981,7 +976,7 @@ describe("课程工作台", () => {
       },
     });
 
-    render(<App storage={new TestStorage()} initialState={initialState} />);
+    render(<App storage={new TestStorage()} agent={new LocalCourseAgent()} initialState={initialState} />);
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "课程生成失败：服务暂不可用",

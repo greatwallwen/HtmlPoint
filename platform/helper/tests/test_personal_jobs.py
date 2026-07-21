@@ -98,6 +98,10 @@ def test_personal_create_is_exact_scheduled_and_projects_only_public_fields(
         "course",
     }
     assert outcome.result["view"]["status"] == "creating"
+    assert outcome.evidence.output_summary == {
+        "publicStatus": "creating",
+        "attentionCount": 0,
+    }
     assert supervisor.started[0][0] == outcome.result["runId"]
     assert "source-personal-job-v1" not in json.dumps(outcome.result["view"])
 

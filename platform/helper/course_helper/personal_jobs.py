@@ -79,6 +79,17 @@ def run_personal_job(
             "view": _public_view(catalog, run),
         }
     finished_at = datetime.now(timezone.utc)
+    job_output: dict[str, ImmutableJsonValue] = {
+        "publicStatus": cast(str, result["view"]["status"]),
+        "attentionCount": cast(int, result["view"]["attentionCount"]),
+    }
+    if run.attention_bundle is not None:
+        job_output.update(
+            {
+                "attentionDigest": canonical_digest(run.attention_bundle),
+                "recommendedAction": run.attention_bundle.items[0].recommended_action,
+            }
+        )
     evidence = EvidenceObject(
         evidence_id="personal-job-"
         + canonical_digest(
@@ -92,10 +103,7 @@ def run_personal_job(
         kind="runtime",
         status="verified",
         input_summary={"action": action},
-        output_summary={
-            "public_status": result["view"]["status"],
-            "attention_count": result["view"]["attentionCount"],
-        },
+        output_summary=job_output,
         producer="course-helper/personal-jobs",
         producer_version="1",
         started_at=started_at,

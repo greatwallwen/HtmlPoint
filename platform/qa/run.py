@@ -64,7 +64,7 @@ WORKFLOW_LABELS = (
     "双屏授课",
 )
 
-SOURCE_IMAGE = Path("docs/product/assets/course-studio-light-reference.png")
+SOURCE_IMAGE = Path("platform/docs/course-studio-light-reference.png")
 SOURCE_IMAGE_SHA256 = (
     "36A5A9E54C863A326B98CA7082ACF16293EA423D442495E0317D85E91121B3B3"
 )
@@ -75,14 +75,14 @@ REQUIRED_DOMAIN_FILES = (
     Path("platform/web/src/domain/teaching.ts"),
 )
 
-DESIGN_QA_REPORT = Path("platform/web/design-qa.md")
+DESIGN_QA_REPORT = Path("platform/docs/README.md")
 KNOWLEDGE_DEMO_RECEIPT = Path(
     "platform/helper/evidence/reference-demo-receipt.json"
 )
 KNOWLEDGE_DEMO_RECEIPT_SHA256 = (
     "80DA851DF173F14972D0BF07F76FC334B0D735257CABCCA4403FD5DD568385C1"
 )
-HELPER_DESIGN_QA_REPORT = Path("platform/helper/design-qa.md")
+HELPER_DESIGN_QA_REPORT = Path("platform/docs/README.md")
 EMBEDDING_MODEL_MANIFEST = Path(
     "platform/helper/model-manifests/bge-small-zh-v1.5.json"
 )
@@ -1280,13 +1280,13 @@ def check_design_qa(repo_root: Path) -> CheckResult:
         return CheckResult(
             "design QA",
             True,
-            "PENDING: platform/web/design-qa.md is not present before Task 7",
+            "PENDING: consolidated platform documentation is not present",
         )
     if not report_path.is_file():
         return CheckResult(
             "design QA",
             False,
-            "platform/web/design-qa.md exists but is not a file",
+            "consolidated platform documentation exists but is not a file",
         )
 
     try:

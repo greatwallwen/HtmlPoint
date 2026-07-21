@@ -1,70 +1,47 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-.Python
 .venv/
 venv/
-env/
-ENV/
-pip-wheel-metadata/
+*.egg-info/
 .pytest_cache/
 .pytest-*/
 .mypy_cache/
 .ruff_cache/
 
-# Jupyter
-.ipynb_checkpoints/
+# Web
+node_modules/
+dist/
+build/
+out/
+.vite/
+test-results/
+playwright-report/
 
-# Environment files
+# Local configuration and editor state
 .env
 .env.*
 !.env.example
-
-# Build and packaging
-build/
-dist/
-node_modules/
-.next/
-.next*/
-out/
-*.egg-info/
-
-# OS and editor files
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
 desktop.ini
-.vscode/
-.idea/
-
-# Logs and temporary files
 *.log
 *.tmp
 *.temp
-.playwright-cli/
-platform/web/.e2e-runtime/
-platform/web/output/playwright/
-.tmp/
+
+# Workspace-managed local directories
+.agents/
 .tools/
 .worktrees/
-
-# Protected external sources and delivery archives
+dataset/
 Course_AIProduct/
 references/
-deliverables/
-work/
-dataset/
-content/sources/assets/
-content/sources/datasets/
-content/sources/data/local/
-content/sources/data/processed/
-content/sources/data/raw/
-evidence/archive/
-evidence/current/*.zip
-evidence/current/screen-helper-package/
-platform/playback/web-standalone/
-platform/playback/web-standalone.zip
+
+# Platform runtime and model data
+platform/web/.e2e-runtime/
+platform/web/output/
 platform/helper/.artifacts/
 platform/helper/.embedding-model/
 platform/helper/.embedding-model-legacy-acl/
@@ -73,12 +50,6 @@ platform/helper/.embedding-quarantine/
 platform/helper/.network-visual-live/
 platform/helper/*.db
 platform/helper/*.db-*
-platform/helper/course_studio_helper.egg-info/
-platform/helper/**/__pycache__/
-platform/projection/**/bin/
-platform/projection/**/obj/
-platform/projection/publish/
-platform/projection/udf/
 platform/windows/**/bin/
 platform/windows/**/obj/
 platform/windows/publish/

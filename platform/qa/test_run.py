@@ -275,7 +275,7 @@ def write_demo_receipt(repo_root: Path, receipt: dict[str, Any]) -> Path:
 
 
 def write_helper_design_qa(repo_root: Path, text: str) -> Path:
-    path = repo_root / "platform/helper/design-qa.md"
+    path = repo_root / qa.HELPER_DESIGN_QA_REPORT
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
     return path
@@ -570,7 +570,7 @@ def test_design_qa_rejects_a_directory_at_the_report_path(tmp_path: Path) -> Non
 
 
 def test_design_qa_requires_final_result_and_evidence(tmp_path: Path) -> None:
-    report = tmp_path / "platform" / "web" / "design-qa.md"
+    report = tmp_path / qa.DESIGN_QA_REPORT
     report.parent.mkdir(parents=True)
     report.write_text("checked\n\nfinal result: passed\n", encoding="utf-8")
 

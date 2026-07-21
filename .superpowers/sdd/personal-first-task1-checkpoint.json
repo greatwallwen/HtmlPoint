@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "task": "preserve-non-certifying-dual-screen-checkpoint",
+  "status": "passed",
+  "date": "2026-07-21",
+  "commit": "26a4026",
+  "verification": [
+    {
+      "command": "python -m pytest platform/helper/tests/test_projection_bundle.py platform/helper/tests/test_projection_jobs.py -q",
+      "result": "78 passed"
+    },
+    {
+      "command": ".tools/dotnet/dotnet.exe test platform/windows/CourseStudio.ProjectionHost.slnx --no-restore --filter TestCategory!=projection_integration",
+      "result": "42 passed"
+    },
+    {
+      "command": "npm.cmd --prefix platform/web test -- --run src/services/native-projection.test.ts src/components/TeachingSetup.test.tsx",
+      "result": "30 passed"
+    },
+    {
+      "command": "COURSE_PROJECTION_INTEGRATION_TEST=1 python platform/qa/run.py projection-integration",
+      "result": "Helper Host WebView2 Python .NET and Web integration passed; temporary runtime removed"
+    }
+  ],
+  "certification": {
+    "physicalDualScreenCertified": false,
+    "releaseSignatureCertified": false
+  },
+  "cleanup": {
+    "removedGeneratedDirectories": 14,
+    "gitPacks": 1,
+    "gitLooseObjects": 0,
+    "gitGarbageObjects": 0
+  },
+  "reflection": "The native pipeline is safe to preserve as an optional teaching capability. The first failed verification was caused by missing explicit integration gates and deleted restore assets, not a code regression; the implementation plan was corrected before proceeding."
+}

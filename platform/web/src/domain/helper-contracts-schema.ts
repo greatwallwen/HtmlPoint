@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { personalCourseResponseSchema } from "./personal-course-schema";
+
 export const opaqueIdSchema = z
   .string()
   .regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/);
@@ -770,6 +772,26 @@ export const cardPublishJobSchema = z.object({ type: z.literal("knowledge_card_p
 export const upgradeResolveJobSchema = z.object({ type: z.literal("knowledge_upgrade_resolve"), ...resolutionBase, suggestionId: opaqueIdSchema, expectedSuggestionDigest: digestSchema, expectedReviewDigest: digestSchema, expectedCardDigest: digestSchema }).strict();
 export const knowledgeIndexJobSchema = z.object({ type: z.literal("knowledge_index"), operationId: opaqueIdSchema, requestDigest: digestSchema, actor: actorSchema, expectedOutboxId: opaqueIdSchema }).strict();
 
+export const personalCourseRequestSchema = z.object({
+  requestId: z.string().regex(/^personal-request-[0-9a-f]{32}$/),
+  prompt: z.string().min(1).max(4_000),
+  sourceVersionIds: uniqueArray(opaqueIdSchema, 50).min(1),
+  titleHint: z.string().min(1).max(200).nullable(),
+  createdAt: timestampSchema,
+}).strict();
+export const personalCourseCreateJobSchema = z.object({ type: z.literal("personal_course_create"), operationId: opaqueIdSchema, requestDigest: digestSchema, actor: actorSchema, request: personalCourseRequestSchema }).strict();
+export const personalCourseStatusJobSchema = z.object({ type: z.literal("personal_course_status"), runId: z.string().regex(/^personal-run-[0-9a-f]{32}$/), actor: actorSchema }).strict();
+export const personalCourseResolveJobSchema = z.object({
+  type: z.literal("personal_course_resolve"),
+  operationId: opaqueIdSchema,
+  requestDigest: digestSchema,
+  actor: actorSchema,
+  runId: z.string().regex(/^personal-run-[0-9a-f]{32}$/),
+  expectedAttentionDigest: digestSchema,
+  action: z.enum(["retry", "exclude-source", "approve", "reject", "use-source-visual", "use-network-visual", "continue-without-visual"]),
+}).strict();
+export const personalCourseResultSchema = personalCourseResponseSchema;
+
 export const courseRequirementSchema = z.object({ requirementId: opaqueIdSchema, title: z.string().min(1).max(200), audience: z.string().min(1).max(500), learningGoals: uniqueArray(z.string().min(1).max(500), 20).min(1), durationMinutes: z.number().int().min(5).max(480), requiredTagIds: uniqueArray(opaqueIdSchema, 50), excludedTagIds: uniqueArray(opaqueIdSchema, 50), usageScope: z.enum(["private-training", "internal", "public"]) }).strict().refine((value) => value.durationMinutes % 5 === 0 && value.requiredTagIds.every((item) => !value.excludedTagIds.includes(item)));
 const persistedCourseRequirementSchema = z.object({ schemaVersion: z.literal(1), requirementId: opaqueIdSchema, title: z.string().min(1).max(200), audience: z.string().min(1).max(500), learningGoals: uniqueArray(z.string().min(1).max(500), 20).min(1), durationMinutes: z.number().int().min(5).max(480), requiredTagIds: uniqueArray(opaqueIdSchema, 50), excludedTagIds: uniqueArray(opaqueIdSchema, 50), usageScope: z.enum(["private-training", "internal", "public"]) }).strict().refine((value) => value.durationMinutes % 5 === 0 && value.requiredTagIds.every((item) => !value.excludedTagIds.includes(item)));
 const compositionOptionsSchema = z.object({ audienceTagId: opaqueIdSchema.nullable(), difficultyTagId: opaqueIdSchema.nullable(), indexSnapshotId: opaqueIdSchema, includeCardVersionIds: uniqueArray(opaqueIdSchema, 100), excludeCardVersionIds: uniqueArray(opaqueIdSchema, 100), requireVisualRefs: z.boolean(), requireDatasetRefs: z.boolean() }).strict().refine((value) => value.includeCardVersionIds.every((item) => !value.excludeCardVersionIds.includes(item)));
@@ -826,6 +848,9 @@ export type ReviewResolveJob = z.infer<typeof reviewResolveJobSchema>;
 export type CardPublishJob = z.infer<typeof cardPublishJobSchema>;
 export type UpgradeResolveJob = z.infer<typeof upgradeResolveJobSchema>;
 export type KnowledgeIndexJob = z.infer<typeof knowledgeIndexJobSchema>;
+export type PersonalCourseCreateJob = z.infer<typeof personalCourseCreateJobSchema>;
+export type PersonalCourseStatusJob = z.infer<typeof personalCourseStatusJobSchema>;
+export type PersonalCourseResolveJob = z.infer<typeof personalCourseResolveJobSchema>;
 export type CourseComposeJob = z.infer<typeof courseComposeJobSchema>;
 export type OutlineConfirmJob = z.infer<typeof outlineConfirmJobSchema>;
 export type ChartBuildJob = z.infer<typeof chartBuildJobSchema>;

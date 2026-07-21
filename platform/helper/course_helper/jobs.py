@@ -58,6 +58,7 @@ from course_helper.domain.composition import (
     course_version_content_digest,
 )
 from course_helper.domain.evidence import EvidenceCheck, EvidenceError, EvidenceObject
+from course_helper.domain.personal_course import AttentionAction, PersonalCourseRequest
 from course_helper.domain.projection import ProjectionCommand
 from course_helper.domain.visual_policy import (
     AttributionBlock,
@@ -243,6 +244,47 @@ class HttpActor(HttpRequestModel):
 
     def as_domain(self) -> ActorRef:
         return ActorRef(actor_type=self.actor_type, actor_id=self.actor_id)
+
+
+class HttpPersonalCourseRequest(HttpRequestModel):
+    request_id: str = Field(pattern=r"^personal-request-[0-9a-f]{32}$")
+    prompt: str = Field(min_length=1, max_length=4000)
+    source_version_ids: tuple[str, ...] = Field(min_length=1, max_length=50)
+    title_hint: str | None = Field(default=None, min_length=1, max_length=200)
+    created_at: datetime
+
+    @field_validator("source_version_ids")
+    @classmethod
+    def unique_source_ids(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        if len(set(value)) != len(value):
+            raise ValueError("personal course source IDs must be unique")
+        if any(re.fullmatch(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$", item) is None for item in value):
+            raise ValueError("personal course source ID is invalid")
+        return value
+
+    @field_validator("prompt", "title_hint")
+    @classmethod
+    def clean_human_text(cls, value: str | None) -> str | None:
+        if value is not None and (not value.strip() or value != value.strip()):
+            raise ValueError("personal course text must be canonical")
+        return value
+
+    @field_validator("created_at")
+    @classmethod
+    def aware_created_at(cls, value: datetime) -> datetime:
+        if value.utcoffset() is None:
+            raise ValueError("personal course createdAt must be timezone-aware")
+        return value
+
+    def as_domain(self, actor: ActorRef) -> PersonalCourseRequest:
+        return PersonalCourseRequest(
+            request_id=self.request_id,
+            prompt=self.prompt,
+            source_version_ids=self.source_version_ids,
+            title_hint=self.title_hint,
+            created_at=self.created_at,
+            requested_by=actor,
+        )
 
 
 class HttpCourseRequirement(HttpRequestModel):
@@ -495,6 +537,37 @@ def knowledge_index_request_digest(expected_outbox_id: str) -> str:
     )
 
 
+def personal_course_create_request_digest(
+    request: Mapping[str, Any] | HttpPersonalCourseRequest,
+) -> str:
+    payload = (
+        request.model_dump(mode="json", by_alias=True)
+        if isinstance(request, HttpPersonalCourseRequest)
+        else HttpPersonalCourseRequest.model_validate(dict(request)).model_dump(
+            mode="json", by_alias=True
+        )
+    )
+    return _knowledge_mutation_request_digest(
+        "personal_course_create", {"request": payload}
+    )
+
+
+def personal_course_resolve_request_digest(
+    *,
+    run_id: str,
+    expected_attention_digest: str,
+    action: AttentionAction,
+) -> str:
+    return _knowledge_mutation_request_digest(
+        "personal_course_resolve",
+        {
+            "action": action,
+            "expectedAttentionDigest": expected_attention_digest,
+            "runId": run_id,
+        },
+    )
+
+
 def course_compose_request_digest(
     *,
     requirement: Mapping[str, Any] | HttpCourseRequirement,
@@ -609,6 +682,40 @@ class _KnowledgeMutationJob(HttpRequestModel):
     operation_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
     request_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     actor: HttpActor
+
+
+class PersonalCourseCreateJob(_KnowledgeMutationJob):
+    type: Literal["personal_course_create"]
+    request: HttpPersonalCourseRequest
+
+    @model_validator(mode="after")
+    def exact_request_digest(self) -> PersonalCourseCreateJob:
+        if self.request_digest != personal_course_create_request_digest(self.request):
+            raise ValueError("personal course create request digest is invalid")
+        return self
+
+
+class PersonalCourseStatusJob(HttpRequestModel):
+    type: Literal["personal_course_status"]
+    run_id: str = Field(pattern=r"^personal-run-[0-9a-f]{32}$")
+    actor: HttpActor
+
+
+class PersonalCourseResolveJob(_KnowledgeMutationJob):
+    type: Literal["personal_course_resolve"]
+    run_id: str = Field(pattern=r"^personal-run-[0-9a-f]{32}$")
+    expected_attention_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
+    action: AttentionAction
+
+    @model_validator(mode="after")
+    def exact_request_digest(self) -> PersonalCourseResolveJob:
+        if self.request_digest != personal_course_resolve_request_digest(
+            run_id=self.run_id,
+            expected_attention_digest=self.expected_attention_digest,
+            action=self.action,
+        ):
+            raise ValueError("personal course resolution request digest is invalid")
+        return self
 
 
 class KnowledgeIndexJob(_KnowledgeMutationJob):
@@ -1071,6 +1178,9 @@ JobSpec = Annotated[
     | CourseVisualDetachJob
     | CourseValidateJob
     | CoursePublishJob
+    | PersonalCourseCreateJob
+    | PersonalCourseStatusJob
+    | PersonalCourseResolveJob
     | ProjectionJob,
     Field(discriminator="type"),
 ]

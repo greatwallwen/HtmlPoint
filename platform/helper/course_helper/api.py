@@ -34,6 +34,9 @@ from course_helper.domain.slide_ast import (
 from course_helper.jobs import (
     JobOutcome,
     JobSpec,
+    PersonalCourseCreateJob,
+    PersonalCourseResolveJob,
+    PersonalCourseStatusJob,
     ProjectionAssignWindowJob,
     ProjectionCloseSessionJob,
     ProjectionDetectDisplaysJob,
@@ -47,6 +50,7 @@ from course_helper.jobs import (
     projection_job_command,
     projection_job_timeout_seconds,
 )
+from course_helper.personal_jobs import PersonalJobError, PersonalSupervisor, run_personal_job
 from course_helper.projection_host import ProjectionHostError
 from course_helper.index_outbox import reopen_index_snapshot
 from course_helper.session import LaunchSession, SessionRejected
@@ -274,6 +278,7 @@ class HelperRuntime:
     launch_session: LaunchSession
     job_runner: JobRunner
     projection_supervisor: ProjectionSupervisor | None = None
+    personal_course_supervisor: PersonalSupervisor | None = None
     web_root: Path | None = None
 
 
@@ -565,7 +570,31 @@ def create_app(runtime: HelperRuntime) -> FastAPI:
         request: Request,
         _authenticated: str = Depends(require_session),
     ) -> JSONResponse:
-        if isinstance(job, ProjectionJob):
+        if isinstance(
+            job,
+            (PersonalCourseCreateJob, PersonalCourseStatusJob, PersonalCourseResolveJob),
+        ):
+            try:
+                outcome = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        run_personal_job,
+                        job,
+                        runtime.config,
+                        runtime.personal_course_supervisor,
+                    ),
+                    timeout=5.0,
+                )
+            except TimeoutError:
+                raise HTTPException(
+                    status_code=504,
+                    detail="personal course request timed out",
+                ) from None
+            except PersonalJobError:
+                raise HTTPException(
+                    status_code=409,
+                    detail="personal course request was rejected",
+                ) from None
+        elif isinstance(job, ProjectionJob):
             while not projection_command_gate.acquire(blocking=False):
                 await asyncio.sleep(0.01)
             try:

@@ -60,6 +60,9 @@ describe("KnowledgeClient governed surface", () => {
       "publishCard",
       "resolveUpgrade",
       "indexKnowledge",
+      "createPersonalCourse",
+      "getPersonalCourse",
+      "resolvePersonalCourseAttention",
       "composeCourse",
       "confirmOutline",
       "buildCharts",
@@ -221,5 +224,35 @@ describe("KnowledgeClient governed surface", () => {
       target: "_blank",
       rel: "noopener noreferrer external",
     });
+  });
+
+  it("posts and parses the exact personal course projection", async () => {
+    const runId = `personal-run-${"c".repeat(32)}`;
+    const result = {
+      runId,
+      view: {
+        status: "creating" as const,
+        phaseLabel: "准备创建课程",
+        title: null,
+        chapterCount: 0,
+        attentionCount: 0,
+        canResume: false,
+        course: null,
+      },
+    };
+    const fetchMock = vi.fn().mockResolvedValue(response({ result, evidence }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new KnowledgeClient(session);
+    const job = {
+      type: "personal_course_status" as const,
+      runId,
+      actor: { actorType: "human" as const, actorId: "local-user" },
+    };
+
+    await expect(client.getPersonalCourse(job)).resolves.toMatchObject({ result });
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1].body))).toEqual(job);
+
+    fetchMock.mockResolvedValueOnce(response({ result: { ...result, internalId: "leak" }, evidence }));
+    await expect(client.getPersonalCourse(job)).rejects.toThrow(SAFE_HELPER_FAILURE_MESSAGE);
   });
 });

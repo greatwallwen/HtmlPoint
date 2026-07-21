@@ -5,6 +5,9 @@ import {
   type CourseValidateJob,
   type ImportStartJob,
   type KnowledgeIndexJob,
+  type PersonalCourseCreateJob,
+  type PersonalCourseResolveJob,
+  type PersonalCourseStatusJob,
   type ReviewResolveJob,
   type UploadResponse,
   type VisualAcquireJob,
@@ -88,6 +91,55 @@ export async function createKnowledgeIndexJob(
     }),
     actor: ACTOR,
     expectedOutboxId,
+  };
+}
+
+export async function createPersonalCourseJob(input: {
+  requestId: string;
+  prompt: string;
+  sourceVersionIds: string[];
+  titleHint?: string | null;
+  createdAt?: string;
+}): Promise<PersonalCourseCreateJob> {
+  const request = {
+    requestId: input.requestId,
+    prompt: input.prompt,
+    sourceVersionIds: input.sourceVersionIds,
+    titleHint: input.titleHint ?? null,
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  };
+  return {
+    type: "personal_course_create",
+    operationId: createId("personal-create-operation"),
+    requestDigest: await stableDigest({
+      kind: "personal_course_create",
+      request,
+    }),
+    actor: ACTOR,
+    request,
+  };
+}
+
+export function createPersonalCourseStatusJob(runId: string): PersonalCourseStatusJob {
+  return { type: "personal_course_status", runId, actor: ACTOR };
+}
+
+export async function createPersonalCourseResolveJob(input: {
+  runId: string;
+  expectedAttentionDigest: string;
+  action: PersonalCourseResolveJob["action"];
+}): Promise<PersonalCourseResolveJob> {
+  return {
+    type: "personal_course_resolve",
+    operationId: createId("personal-resolve-operation"),
+    requestDigest: await stableDigest({
+      kind: "personal_course_resolve",
+      action: input.action,
+      expectedAttentionDigest: input.expectedAttentionDigest,
+      runId: input.runId,
+    }),
+    actor: ACTOR,
+    ...input,
   };
 }
 

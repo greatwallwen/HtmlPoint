@@ -25,6 +25,7 @@ from course_helper.projection_host import (
     InstalledHostTransportFactory,
     ProjectionHostSupervisor,
 )
+from course_helper.personal_supervisor import PersonalCourseSupervisor
 from course_helper.session import BrowserLaunchError, LaunchSession
 from course_helper.static_web import validate_web_root
 
@@ -43,6 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     projection_supervisor: ProjectionHostSupervisor | None = None
+    personal_course_supervisor: PersonalCourseSupervisor | None = None
     try:
         web_origin = _exact_loopback_origin(args.web_origin)
         helper_origin = f"http://127.0.0.1:{args.port}"
@@ -72,11 +74,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             source_roots=(("reference", str(reference_root)),),
         )
         launch_session = LaunchSession.create(allowed_origin=web_origin)
+        personal_course_supervisor = PersonalCourseSupervisor(config)
+        personal_course_supervisor.resume_pending()
         runtime = HelperRuntime(
             config=config,
             launch_session=launch_session,
             job_runner=BoundedJobRunner(config),
             projection_supervisor=projection_supervisor,
+            personal_course_supervisor=personal_course_supervisor,
             web_root=web_root,
         )
         app = create_app(runtime)
@@ -86,10 +91,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             opener=webbrowser.open,
         )
     except BrowserLaunchError:
+        _shutdown_personal_courses(personal_course_supervisor)
         _shutdown_projection(projection_supervisor)
         print("course-helper: browser launch failed", file=sys.stderr)
         return 1
     except (OSError, RuntimeError, ValueError):
+        _shutdown_personal_courses(personal_course_supervisor)
         _shutdown_projection(projection_supervisor)
         print("course-helper: runtime configuration is invalid", file=sys.stderr)
         return 1
@@ -103,10 +110,26 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("course-helper: local server failed", file=sys.stderr)
             server_failed = True
     finally:
-        shutdown_ok = _shutdown_projection(projection_supervisor)
+        personal_shutdown_ok = _shutdown_personal_courses(
+            personal_course_supervisor
+        )
+        projection_shutdown_ok = _shutdown_projection(projection_supervisor)
+        shutdown_ok = personal_shutdown_ok and projection_shutdown_ok
     if not shutdown_ok:
         print("course-helper: projection shutdown failed", file=sys.stderr)
     return 0 if not server_failed and shutdown_ok else 1
+
+
+def _shutdown_personal_courses(
+    supervisor: PersonalCourseSupervisor | None,
+) -> bool:
+    if supervisor is None:
+        return True
+    try:
+        supervisor.shutdown()
+    except Exception:
+        return False
+    return True
 
 
 def _projection_policy_from_app_data(app_data: Path) -> HostExecutablePolicy | None:

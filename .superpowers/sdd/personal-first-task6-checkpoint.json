@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "task": "personal-first-task6-typed-jobs-and-client",
+  "recordedAt": "2026-07-21T11:14:19+08:00",
+  "status": "passed",
+  "productDirection": {
+    "assessment": "aligned",
+    "reason": "The resumable personal course workflow is now reachable through authenticated, exact typed jobs and a strict Web client while the default response remains a small human-facing projection with no source, card, outline, deck, manifest, or evidence identifiers.",
+    "majorDivergence": false,
+    "supergrillRequired": false
+  },
+  "decisions": [
+    "Dispatch personal create, status, and resolution jobs in the authenticated main Helper process so background scheduling is never delegated to an orphan worker process.",
+    "Keep create and resolution to persistence plus scheduling and keep status read-only, each behind a five-second server ceiling.",
+    "Return exactly runId plus the seven-field public view; build a friendly ready-course projection with numbered chapter, lesson, and source aliases instead of opaque storage identities.",
+    "Start recovery of persisted nonterminal runs at product startup and join the personal supervisor on every server exit path.",
+    "Use matching strict Pydantic and Zod contracts and parse every Helper result before the Web client returns it.",
+    "Correct the API health regression expectation to schema version 8, the contiguous migration already established in Task 3."
+  ],
+  "verification": [
+    {
+      "command": "python -m pytest platform/helper/tests/test_personal_jobs.py platform/helper/tests/test_api.py platform/helper/tests/test_projection_jobs.py -q",
+      "result": "125 passed"
+    },
+    {
+      "command": "python -m pytest platform/helper/tests/test_server.py -q",
+      "result": "17 passed"
+    },
+    {
+      "command": "npm.cmd --prefix platform/web test -- --run src/domain/helper-contracts-schema.test.ts src/services/knowledge-client.test.ts",
+      "result": "13 passed"
+    },
+    {
+      "command": "npm.cmd --prefix platform/web run typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "artifactHashes": [
+    {
+      "path": "platform/helper/course_helper/jobs.py",
+      "sha256": "E4766CE38B02F3AD5D768A59CD9602BDFCCADCDC211EC23C86CE69E5764FE129"
+    },
+    {
+      "path": "platform/helper/course_helper/personal_jobs.py",
+      "sha256": "09DB90C7A8C605B870F8B14E24F760121D53FD65F895BE56D6883887B9A9EC87"
+    },
+    {
+      "path": "platform/helper/course_helper/api.py",
+      "sha256": "491726B2F4ED7D1F5E0A17FDB616E37B3993352E388CBEAF6D3435766CF61CCF"
+    },
+    {
+      "path": "platform/helper/course_helper/server.py",
+      "sha256": "048525F1C81A6F6CAFE56AF739CF2C4250B5BA514EB0B952F15D5A13EDC81CF7"
+    },
+    {
+      "path": "platform/web/src/domain/helper-contracts-schema.ts",
+      "sha256": "53C02C848C6894A07606D0657582E981EB926FDF658F7139F1DE18F05697111A"
+    },
+    {
+      "path": "platform/web/src/services/knowledge-client.ts",
+      "sha256": "3ED9E294F4A574FB2DA27EFF41525ABEBAF297AEDDD81E728D729384B74FD6E3"
+    }
+  ],
+  "cleanup": {
+    "scope": "platform only",
+    "removedDirectories": 4,
+    "removedFiles": 52,
+    "removedBytes": 2142160
+  },
+  "certification": {
+    "physicalDualScreenCertified": false,
+    "releaseSignatureCertified": false
+  },
+  "residualRisk": "The typed workflow is not yet the default visible product flow; Task 7 must replace the four-step authoring entry with the concise light personal experience and keep governed internals behind progressive disclosure.",
+  "nextAction": "Task 7: implement the personal-first light UI using the existing design tokens and components."
+}

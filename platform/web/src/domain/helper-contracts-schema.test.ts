@@ -6,6 +6,8 @@ import {
   courseOutlineSchema,
   courseValidateResultSchema,
   knowledgeIndexResultSchema,
+  personalCourseCreateJobSchema,
+  personalCourseResultSchema,
   slideDeckSchema,
   trustedExternalLinkSchema,
   visualDetachJobSchema,
@@ -218,5 +220,38 @@ describe("governed web contracts", () => {
     expect(visualDetachJobSchema.parse(request)).toEqual(request);
     expect(() => visualDetachJobSchema.parse({ ...request, activePlacementIds: ["visual-placement-1", "visual-placement-1"] })).toThrow();
     expect(() => visualDetachJobSchema.parse({ ...request, activePlacementIds: ["visual-placement-2"] })).toThrow();
+  });
+
+  it("keeps personal course jobs exact and their result free of workflow internals", () => {
+    const request = {
+      type: "personal_course_create" as const,
+      operationId: "personal-create-operation",
+      requestDigest: digest,
+      actor: { actorType: "human" as const, actorId: "local-user" },
+      request: {
+        requestId: `personal-request-${"b".repeat(32)}`,
+        prompt: "制作个人 AI 工作流课程",
+        sourceVersionIds: ["source-v1"],
+        titleHint: null,
+        createdAt: timestamp,
+      },
+    };
+    expect(personalCourseCreateJobSchema.parse(request)).toEqual(request);
+    expect(() => personalCourseCreateJobSchema.parse({ ...request, internalId: "leak" })).toThrow();
+
+    const result = {
+      runId: `personal-run-${"c".repeat(32)}`,
+      view: {
+        status: "creating" as const,
+        phaseLabel: "正在整理知识",
+        title: null,
+        chapterCount: 0,
+        attentionCount: 0,
+        canResume: false,
+        course: null,
+      },
+    };
+    expect(personalCourseResultSchema.parse(result)).toEqual(result);
+    expect(() => personalCourseResultSchema.parse({ ...result, internalId: "leak" })).toThrow();
   });
 });

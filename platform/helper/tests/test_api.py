@@ -930,7 +930,7 @@ def test_health_and_authenticated_summary_are_path_and_secret_free(tmp_path: Pat
     assert health.status_code == 200
     assert health.json() == {
         "serviceVersion": "0.1.0",
-        "schemaVersion": 7,
+        "schemaVersion": 8,
         "databaseReady": True,
     }
     assert summary.status_code == 200
@@ -941,6 +941,31 @@ def test_health_and_authenticated_summary_are_path_and_secret_free(tmp_path: Pat
     serialized = health.text + summary.text + path_injection.text
     assert str(tmp_path) not in serialized
     assert nonce not in serialized
+
+
+def test_personal_course_job_rejects_extra_fields_before_dispatch(tmp_path: Path) -> None:
+    client, nonce = _api_client(tmp_path)
+    headers = _authenticated_headers(client, nonce)
+    response = client.post(
+        "/v1/jobs",
+        headers=headers,
+        json={
+            "type": "personal_course_create",
+            "operationId": "personal-create-operation",
+            "requestDigest": "a" * 64,
+            "actor": {"actorType": "human", "actorId": "local-user"},
+            "request": {
+                "requestId": "personal-request-" + "b" * 32,
+                "prompt": "制作一门个人课程",
+                "sourceVersionIds": ["source-v1"],
+                "titleHint": None,
+                "createdAt": "2026-07-21T04:00:00Z",
+            },
+            "internalId": "must-not-cross-boundary",
+        },
+    )
+
+    assert response.status_code == 422
 
 
 def test_authenticated_summary_counts_only_unsuspended_projected_publications(

@@ -14,6 +14,9 @@ import type {
   KnowledgeIndexJob,
   OperationStatusJob,
   OutlineConfirmJob,
+  PersonalCourseCreateJob,
+  PersonalCourseResolveJob,
+  PersonalCourseStatusJob,
   ReviewDetailJob,
   ReviewListJob,
   ReviewResolveJob,
@@ -52,6 +55,10 @@ import {
   operationStatusResultSchema,
   outlineConfirmJobSchema,
   outlineConfirmResultSchema,
+  personalCourseCreateJobSchema,
+  personalCourseResolveJobSchema,
+  personalCourseResultSchema,
+  personalCourseStatusJobSchema,
   reviewDetailJobSchema,
   reviewDetailResultSchema,
   reviewListJobSchema,
@@ -310,6 +317,18 @@ export class KnowledgeClient implements KnowledgeSummaryClient {
 
   indexKnowledge(job: KnowledgeIndexJob) {
     return this.#runJob(job, knowledgeIndexJobSchema, knowledgeIndexResultSchema);
+  }
+
+  createPersonalCourse(job: PersonalCourseCreateJob) {
+    return this.#runJob(job, personalCourseCreateJobSchema, personalCourseResultSchema);
+  }
+
+  getPersonalCourse(job: PersonalCourseStatusJob) {
+    return this.#runJob(job, personalCourseStatusJobSchema, personalCourseResultSchema);
+  }
+
+  resolvePersonalCourseAttention(job: PersonalCourseResolveJob) {
+    return this.#runJob(job, personalCourseResolveJobSchema, personalCourseResultSchema);
   }
 
   composeCourse(job: CourseComposeJob) {

@@ -41,6 +41,48 @@ button {
   background: var(--color-page);
 }
 
+.helper-required-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: var(--color-page);
+}
+
+.helper-required-card {
+  width: min(100%, 560px);
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-surface);
+  box-shadow: 0 20px 60px rgba(36, 51, 77, 0.08);
+}
+
+.helper-required-card h1 {
+  margin: 4px 0 10px;
+}
+
+.helper-required-card p:last-child {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.helper-required-mark {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--color-brand);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
 .desktop-workflow,
 .workflow-header {
   min-width: 820px;

@@ -57,6 +57,102 @@ def test_module_and_console_target_help_share_the_restricted_cli() -> None:
     assert module_help.stderr == console_target_help.stderr == ""
 
 
+def test_cli_exposes_validated_product_web_root() -> None:
+    from course_helper.server import build_parser
+
+    help_text = build_parser().format_help()
+
+    assert "--web-root" in help_text
+
+
+def test_product_mode_uses_one_helper_origin_and_mounts_built_web(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from course_helper import server
+
+    reference_root = tmp_path / "references"
+    reference_root.mkdir()
+    web_root = tmp_path / "dist"
+    (web_root / ".vite").mkdir(parents=True)
+    (web_root / "index.html").write_text("Course Studio", encoding="utf-8")
+    (web_root / ".vite" / "manifest.json").write_text("{}", encoding="utf-8")
+    opened: list[str] = []
+
+    monkeypatch.setattr(server.webbrowser, "open", lambda url: opened.append(url) or True)
+
+    def inspect_server(app: object, **kwargs: object) -> None:
+        assert kwargs == {"host": "127.0.0.1", "port": 8765}
+        assert app.state.runtime.web_root == web_root.resolve()
+        assert any(getattr(route, "name", None) == "web" for route in app.routes)
+
+    monkeypatch.setattr(server.uvicorn, "run", inspect_server)
+
+    result = server.main(
+        [
+            "--database",
+            str(tmp_path / "knowledge.db"),
+            "--app-data",
+            str(tmp_path / "app-data"),
+            "--reference-root",
+            str(reference_root),
+            "--web-origin",
+            "http://127.0.0.1:8765",
+            "--web-root",
+            str(web_root),
+            "--port",
+            "8765",
+        ]
+    )
+
+    assert result == 0
+    assert len(opened) == 1
+    assert opened[0].startswith("http://127.0.0.1:8765/#helper=")
+
+
+def test_product_mode_rejects_a_separate_web_origin(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from course_helper import server
+
+    reference_root = tmp_path / "references"
+    reference_root.mkdir()
+    web_root = tmp_path / "dist"
+    (web_root / ".vite").mkdir(parents=True)
+    (web_root / "index.html").write_text("Course Studio", encoding="utf-8")
+    (web_root / ".vite" / "manifest.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(
+        server.uvicorn,
+        "run",
+        lambda *_args, **_kwargs: pytest.fail("invalid product mode must not start"),
+    )
+    monkeypatch.setattr(
+        server.webbrowser,
+        "open",
+        lambda _url: pytest.fail("invalid product mode must not open a browser"),
+    )
+
+    result = server.main(
+        [
+            "--database",
+            str(tmp_path / "knowledge.db"),
+            "--app-data",
+            str(tmp_path / "app-data"),
+            "--reference-root",
+            str(reference_root),
+            "--web-origin",
+            "http://127.0.0.1:4173",
+            "--web-root",
+            str(web_root),
+            "--port",
+            "8765",
+        ]
+    )
+
+    assert result == 1
+
+
 def test_server_fixes_loopback_host_and_opens_fragment_with_only_helper_and_nonce(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

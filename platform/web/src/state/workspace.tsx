@@ -26,7 +26,7 @@ import {
   type SourceAsset,
   type WorkflowStep,
 } from "../domain/course";
-import { LocalCourseAgent, type CourseAgent } from "../domain/course-agent";
+import type { CourseAgent } from "../domain/course-agent";
 import { readSourceFiles } from "../domain/source-import";
 import { validateCourse } from "../domain/validation";
 import {
@@ -1000,11 +1000,7 @@ export function WorkspaceProvider({
   agent,
 }: WorkspaceProviderProps): JSX.Element {
   const resolvedStorage = storage ?? window.localStorage;
-  const defaultAgent = useRef<CourseAgent | null>(null);
-  if (defaultAgent.current === null) {
-    defaultAgent.current = new LocalCourseAgent();
-  }
-  const resolvedAgent = agent ?? defaultAgent.current;
+  const resolvedAgent = agent;
 
   const [state, rawDispatch] = useReducer(
     workspaceReducer,
@@ -1053,6 +1049,9 @@ export function WorkspaceProvider({
     const generationEpoch = ++generationRunEpoch.current;
     dispatch({ type: "GENERATION_STARTED" });
     try {
+      if (resolvedAgent === undefined) {
+        throw new Error("课程服务未连接，请从课程工作台启动。");
+      }
       const result = await resolvedAgent.generate(state.brief, state.course.sources);
       if (
         epoch === operationEpoch.current &&
@@ -1135,6 +1134,9 @@ export function WorkspaceProvider({
       }
       dispatch({ type: "ASSISTANT_STARTED" });
       try {
+        if (resolvedAgent === undefined) {
+          throw new Error("课程服务未连接，请从课程工作台启动。");
+        }
         const result = await resolvedAgent.applyIntent(
           state.course,
           trimmedIntent,

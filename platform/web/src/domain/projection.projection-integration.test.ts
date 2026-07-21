@@ -47,7 +47,12 @@ const apply = (
 
 describe("published native integration lifecycle", () => {
   it("keeps fullscreen explicitly non-certified until attended verify succeeds", () => {
-    expect(process.env.COURSE_PROJECTION_INTEGRATION_TEST).toBe("1");
+    const processEnvironment = (
+      globalThis as typeof globalThis & {
+        process?: { env?: Record<string, string | undefined> };
+      }
+    ).process?.env;
+    expect(processEnvironment?.COURSE_PROJECTION_INTEGRATION_TEST).toBe("1");
     const sessionId = "11111111-1111-4111-8111-111111111111";
     let state = initialProjectionSetup(identity);
     state = apply(state, {

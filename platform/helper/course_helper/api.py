@@ -56,6 +56,7 @@ from course_helper.source_inventory import (
     SourceInventoryPage,
     list_source_inventory,
 )
+from course_helper.static_web import mount_static_web
 from course_helper.uploads import UploadError, UploadRecord, UploadStore
 
 
@@ -273,6 +274,7 @@ class HelperRuntime:
     launch_session: LaunchSession
     job_runner: JobRunner
     projection_supervisor: ProjectionSupervisor | None = None
+    web_root: Path | None = None
 
 
 async def _run_projection_job(
@@ -802,6 +804,9 @@ def create_app(runtime: HelperRuntime) -> FastAPI:
                 "X-Content-Type-Options": "nosniff",
             },
         )
+
+    if runtime.web_root is not None:
+        mount_static_web(app, runtime.web_root)
 
     return app
 

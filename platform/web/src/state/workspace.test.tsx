@@ -8,7 +8,11 @@ import type {
   EvidenceReceipt,
   SourceAsset,
 } from "../domain/course";
-import type { CourseAgent, GeneratedCourse } from "../domain/course-agent";
+import {
+  LocalCourseAgent,
+  type CourseAgent,
+  type GeneratedCourse,
+} from "../domain/course-agent";
 import { stableDigest } from "../domain/validation";
 import * as workspaceModule from "./workspace";
 import {
@@ -1186,6 +1190,25 @@ describe("workspace v2 hydration", () => {
 });
 
 describe("WorkspaceProvider", () => {
+  it("fails closed when no course agent is explicitly connected", async () => {
+    const storage = new MapStorage();
+    let current!: WorkspaceContextValue;
+    render(
+      <WorkspaceProvider initialState={state()} storage={storage}>
+        <CaptureWorkspace onValue={(value) => { current = value; }} />
+      </WorkspaceProvider>,
+    );
+
+    await act(async () => {
+      await current.generateCourse();
+    });
+
+    expect(current.state.generation).toBe("error");
+    expect(current.state.operationError).toBe(
+      "课程生成失败：课程服务未连接，请从课程工作台启动。",
+    );
+  });
+
   it("imports files through the real source reader and exposes the updated state", async () => {
     const storage = new MapStorage();
     let current!: WorkspaceContextValue;
@@ -1593,6 +1616,7 @@ describe("WorkspaceProvider", () => {
           selectedLessonId: "lesson-2",
         })}
         storage={storage}
+        agent={new LocalCourseAgent()}
       >
         <CaptureWorkspace onValue={capture} />
       </WorkspaceProvider>,
@@ -1628,6 +1652,7 @@ describe("WorkspaceProvider", () => {
           selectedLessonId: "lesson-1",
         })}
         storage={storage}
+        agent={new LocalCourseAgent()}
       >
         <CaptureWorkspace onValue={capture} />
       </WorkspaceProvider>,
@@ -1660,7 +1685,11 @@ describe("WorkspaceProvider", () => {
       current = value;
     };
     render(
-      <WorkspaceProvider initialState={initialState} storage={storage}>
+      <WorkspaceProvider
+        initialState={initialState}
+        storage={storage}
+        agent={new LocalCourseAgent()}
+      >
         <CaptureWorkspace onValue={capture} />
       </WorkspaceProvider>,
     );

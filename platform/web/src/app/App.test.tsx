@@ -27,7 +27,10 @@ import {
   createFreshWorkspaceState,
   type WorkspaceState,
 } from "../state/workspace";
-import { resetHelperSessionBootstrapForTests } from "../services/helper-session";
+import {
+  HELPER_SESSION_STORAGE_KEY,
+  resetHelperSessionBootstrapForTests,
+} from "../services/helper-session";
 import { App } from "./App";
 
 class TestStorage implements Pick<Storage, "getItem" | "setItem"> {
@@ -233,6 +236,13 @@ beforeEach(() => {
   document.documentElement.lang = "zh-CN";
   window.history.replaceState(null, "", "/");
   window.sessionStorage.clear();
+  window.sessionStorage.setItem(
+    HELPER_SESSION_STORAGE_KEY,
+    JSON.stringify({
+      helperOrigin: "http://127.0.0.1:8765",
+      sessionToken: "t".repeat(43),
+    }),
+  );
   window.localStorage.clear();
 });
 
@@ -249,6 +259,22 @@ afterEach(() => {
 });
 
 describe("课程工作台", () => {
+  it("does not expose template generation without a verified Helper", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    window.sessionStorage.clear();
+
+    render(<App storage={new TestStorage()} />);
+
+    expect(
+      await screen.findByRole("heading", { name: "请从课程工作台启动" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "生成课程结构" }),
+    ).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("renders the ordered workflow header and accessible icon control", () => {
     render(<App storage={new TestStorage()} />);
 
@@ -270,17 +296,6 @@ describe("课程工作台", () => {
     const newCourse = screen.getByRole("button", { name: "新建课程" });
     expectIconButton(newCourse, "新建课程");
     expect(document.documentElement).toHaveAttribute("lang", "zh-CN");
-  });
-
-  it("stays safely offline without launch material and performs no network request", () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
-
-    render(<App storage={new TestStorage()} />);
-
-    expect(screen.getByRole("region", { name: "知识准备" })).toBeVisible();
-    expect(screen.getByRole("status")).toHaveTextContent("本地知识服务未连接");
-    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -459,7 +474,7 @@ describe("课程工作台", () => {
 
   it("shows pending import state, renders a ready source, clears the input, and removes it", async () => {
     const user = userEvent.setup();
-    render(<App storage={new TestStorage()} />);
+    render(<App storage={new TestStorage()} agent={new LocalCourseAgent()} />);
     const input = screen.getByLabelText("导入资料", {
       selector: 'input[type="file"]',
     }) as HTMLInputElement;
@@ -488,7 +503,7 @@ describe("课程工作台", () => {
   });
 
   it("keeps the reading status visible until all overlapping imports settle", async () => {
-    render(<App storage={new TestStorage()} />);
+    render(<App storage={new TestStorage()} agent={new LocalCourseAgent()} />);
     const input = screen.getByLabelText("导入资料", {
       selector: 'input[type="file"]',
     });
@@ -626,7 +641,7 @@ describe("课程工作台", () => {
 
   it("enters generation with the imported source in context", async () => {
     const user = userEvent.setup();
-    render(<App storage={new TestStorage()} />);
+    render(<App storage={new TestStorage()} agent={new LocalCourseAgent()} />);
     await uploadReadySource(user, "context.md");
 
     await user.click(screen.getByRole("button", { name: "下一步：生成课程" }));

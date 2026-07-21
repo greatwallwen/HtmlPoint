@@ -26,6 +26,7 @@ from course_helper.projection_host import (
     ProjectionHostSupervisor,
 )
 from course_helper.session import BrowserLaunchError, LaunchSession
+from course_helper.static_web import validate_web_root
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -34,6 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--app-data", type=Path, required=True)
     parser.add_argument("--reference-root", type=Path, required=True)
     parser.add_argument("--web-origin", required=True)
+    parser.add_argument("--web-root", type=Path)
     parser.add_argument("--port", type=_port, default=8765)
     return parser
 
@@ -43,6 +45,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     projection_supervisor: ProjectionHostSupervisor | None = None
     try:
         web_origin = _exact_loopback_origin(args.web_origin)
+        helper_origin = f"http://127.0.0.1:{args.port}"
+        web_root = None
+        if args.web_root is not None:
+            if web_origin != helper_origin:
+                raise ValueError("product web origin must match helper origin")
+            web_root = validate_web_root(args.web_root)
         reference_root = args.reference_root.resolve(strict=True)
         if not reference_root.is_dir():
             raise ValueError("reference root must be a directory")
@@ -69,11 +77,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             launch_session=launch_session,
             job_runner=BoundedJobRunner(config),
             projection_supervisor=projection_supervisor,
+            web_root=web_root,
         )
         app = create_app(runtime)
         launch_session.open_browser(
             web_application_url=web_origin,
-            helper_base_url=f"http://127.0.0.1:{args.port}",
+            helper_base_url=helper_origin,
             opener=webbrowser.open,
         )
     except BrowserLaunchError:

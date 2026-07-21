@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useState, type JSX } from "react";
 
 import { CourseEditor } from "../components/CourseEditor";
 import { GenerateStep } from "../components/GenerateStep";
+import { HelperRequiredScreen } from "../components/HelperRequiredScreen";
 import { ImportStep } from "../components/ImportStep";
 import { PresenterView } from "../components/PresenterView";
 import { StageView } from "../components/StageView";
@@ -109,7 +110,8 @@ function NativeTeachingProjection({
 
 function WorkspaceProjection({
   teachingRuntime,
-}: Pick<AppProps, "teachingRuntime">): JSX.Element {
+  hasExplicitAgent,
+}: Pick<AppProps, "teachingRuntime"> & { hasExplicitAgent: boolean }): JSX.Element {
   const { state } = useWorkspace();
   useLayoutEffect(() => {
     prepareHelperSessionLaunch();
@@ -126,7 +128,12 @@ function WorkspaceProjection({
     return <RemoteTeachingProjection role="presenter" local={{ course: state.course, slideDeck: state.governedProjection?.slideDeck }} canRequestRemote={state.governed.courseVersionId !== undefined} sessionId={sessionId} runtime={teachingRuntime} />;
   }
 
-  return <StudioWorkflow teachingRuntime={teachingRuntime} />;
+  return (
+    <StudioWorkflow
+      teachingRuntime={teachingRuntime}
+      hasExplicitAgent={hasExplicitAgent}
+    />
+  );
 }
 
 function RemoteTeachingProjection({
@@ -172,14 +179,28 @@ function RemoteTeachingProjection({
 
 function StudioWorkflow({
   teachingRuntime,
-}: Pick<AppProps, "teachingRuntime">): JSX.Element {
+  hasExplicitAgent,
+}: Pick<AppProps, "teachingRuntime"> & { hasExplicitAgent: boolean }): JSX.Element {
   const { state, dispatch } = useWorkspace();
-  const [knowledgeClient, setKnowledgeClient] = useState<KnowledgeClient>();
-  const [artifactClient, setArtifactClient] = useState<ArtifactClient>();
-  const [projectionClient, setProjectionClient] = useState<HelperProjectionClient>();
+  const restoredSession = useMemo(
+    () => hasExplicitAgent ? undefined : restoreHelperSessionForProjection(),
+    [hasExplicitAgent],
+  );
+  const [helperState, setHelperState] = useState<"checking" | "ready" | "required">(
+    hasExplicitAgent || restoredSession !== undefined ? "ready" : "checking",
+  );
+  const [knowledgeClient, setKnowledgeClient] = useState<KnowledgeClient | undefined>(
+    restoredSession === undefined ? undefined : new KnowledgeClient(restoredSession),
+  );
+  const [artifactClient, setArtifactClient] = useState<ArtifactClient | undefined>(
+    restoredSession === undefined ? undefined : new ArtifactClient(restoredSession),
+  );
+  const [projectionClient, setProjectionClient] = useState<HelperProjectionClient | undefined>(
+    restoredSession === undefined ? undefined : new HelperProjectionClient(restoredSession),
+  );
 
   useEffect(() => {
-    if (knowledgeClient !== undefined) {
+    if (hasExplicitAgent || helperState === "ready") {
       return;
     }
     let current = true;
@@ -188,12 +209,15 @@ function StudioWorkflow({
         setKnowledgeClient(new KnowledgeClient(session));
         setArtifactClient(new ArtifactClient(session));
         setProjectionClient(new HelperProjectionClient(session));
+        setHelperState("ready");
+      } else if (current) {
+        setHelperState("required");
       }
     });
     return () => {
       current = false;
     };
-  }, [knowledgeClient]);
+  }, [hasExplicitAgent, helperState]);
 
   useEffect(() => {
     const courseVersionId = state.governed.courseVersionId;
@@ -239,6 +263,20 @@ function StudioWorkflow({
     );
     return () => { current = false; };
   }, [dispatch, knowledgeClient, state.governed, state.governedProjection]);
+
+  if (helperState === "checking") {
+    return (
+      <main className="helper-required-page">
+        <section className="helper-required-card" role="status">
+          <p>正在连接课程工作台…</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (helperState === "required") {
+    return <HelperRequiredScreen />;
+  }
 
   const projectionIdentity =
     state.governed.courseVersionId !== undefined &&
@@ -309,7 +347,10 @@ export function App(props: AppProps): JSX.Element {
   }
   return (
     <WorkspaceProvider {...workspaceProps}>
-      <WorkspaceProjection teachingRuntime={teachingRuntime} />
+      <WorkspaceProjection
+        teachingRuntime={teachingRuntime}
+        hasExplicitAgent={props.agent !== undefined}
+      />
     </WorkspaceProvider>
   );
 }

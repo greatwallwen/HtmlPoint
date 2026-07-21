@@ -39,6 +39,7 @@ from course_helper.source_roots import candidate_logical_id, candidate_version_i
 
 
 VOCABULARY_VERSION_ID = "knowledge-vocabulary-v1"
+PERSONAL_VOCABULARY_VERSION_ID = "knowledge-vocabulary-v2-personal"
 _ACTOR = ActorRef(actor_type="service", actor_id="course-helper/cards")
 _FIXED_CREATED_AT = datetime(2026, 7, 16, tzinfo=timezone.utc)
 
@@ -128,6 +129,55 @@ def seed_vocabulary(
         content_digest=_json_digest(
             [dimension.model_dump(mode="json") for dimension in dimensions]
         ),
+        created_at=_FIXED_CREATED_AT,
+        created_by=_ACTOR,
+        dimensions=dimensions,
+    )
+    return catalog.insert_vocabulary(vocabulary)
+
+
+def seed_personal_vocabulary(catalog: KnowledgeCatalog) -> TagVocabularyVersion:
+    """Persist the personal-course vocabulary without mutating vocabulary v1."""
+
+    seed_vocabulary(catalog)
+    dimensions = (
+        TagDimension(
+            id="topic",
+            cardinality="many",
+            values=(
+                _tag("topic:ai-foundations", "AI foundations", "AI 基础"),
+                _tag("topic:prompting", "Prompting", "提示工程"),
+                _tag("topic:data-analysis", "Data analysis", "数据分析"),
+            ),
+        ),
+        TagDimension(
+            id="skill",
+            cardinality="many",
+            values=(
+                _tag("skill:explain", "Explain", "讲解"),
+                _tag("skill:practice", "Practice", "实践"),
+                _tag("skill:analyze", "Analyze", "分析"),
+            ),
+        ),
+        TagDimension(
+            id="source-type",
+            cardinality="one",
+            values=(
+                _tag("source-type:markdown", "Markdown", "Markdown"),
+                _tag("source-type:presentation", "Presentation", "演示文稿"),
+                _tag("source-type:dataset", "Dataset", "数据集"),
+                _tag("source-type:mixed", "Mixed sources", "混合来源"),
+            ),
+        ),
+    )
+    vocabulary = TagVocabularyVersion(
+        logical_id="knowledge-vocabulary",
+        version_id=PERSONAL_VOCABULARY_VERSION_ID,
+        revision=2,
+        content_digest=_json_digest(
+            [dimension.model_dump(mode="json") for dimension in dimensions]
+        ),
+        supersedes_version_id=VOCABULARY_VERSION_ID,
         created_at=_FIXED_CREATED_AT,
         created_by=_ACTOR,
         dimensions=dimensions,

@@ -23,6 +23,7 @@ PersonalCourseStatus = Literal[
 ]
 AttentionKind = Literal[
     "source-read",
+    "knowledge-conflict",
     "knowledge-review",
     "visual-license",
     "course-validation",

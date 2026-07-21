@@ -36,14 +36,24 @@
 - [ ] **Step 1: Run focused Task 9 regressions without the attended hardware gate**
 
 ```powershell
-python -m pytest platform/helper/tests/test_projection_bundle.py platform/helper/tests/test_projection_jobs.py platform/helper/tests/test_projection_integration.py -q
-dotnet test platform/windows/CourseStudio.ProjectionHost.slnx --no-restore
-npm --prefix platform/web test -- --run src/services/native-projection.test.ts src/domain/projection.projection-integration.test.ts src/components/TeachingSetup.test.tsx
+.tools/dotnet/dotnet.exe restore platform/windows/CourseStudio.ProjectionHost.slnx --packages .tools/nuget/packages --locked-mode
+python -m pytest platform/helper/tests/test_projection_bundle.py platform/helper/tests/test_projection_jobs.py -q
+.tools/dotnet/dotnet.exe test platform/windows/CourseStudio.ProjectionHost.slnx --no-restore --filter "TestCategory!=projection_integration"
+npm --prefix platform/web test -- --run src/services/native-projection.test.ts src/components/TeachingSetup.test.tsx
 ```
 
 Expected: all automated tests pass; no visible hardware witness is launched.
 
-- [ ] **Step 2: Verify the receipt remains explicitly non-certifying**
+- [ ] **Step 2: Run the explicit non-visible integration gate**
+
+```powershell
+$env:COURSE_PROJECTION_INTEGRATION_TEST='1'
+try { python platform/qa/run.py projection-integration } finally { Remove-Item Env:COURSE_PROJECTION_INTEGRATION_TEST -ErrorAction SilentlyContinue }
+```
+
+Expected: Helper, Host, WebView2, Python, .NET, and Web integration checks pass and cleanup removes the temporary runtime.
+
+- [ ] **Step 3: Verify the receipt remains explicitly non-certifying**
 
 ```powershell
 python -c "import json,pathlib; p=pathlib.Path('platform/windows/evidence/projection-integration.json'); x=json.loads(p.read_text(encoding='utf-8')); assert x['physicalDualScreenCertified'] is False; assert x['releaseSignatureCertified'] is False"
@@ -51,7 +61,7 @@ python -c "import json,pathlib; p=pathlib.Path('platform/windows/evidence/projec
 
 Expected: exit code `0`.
 
-- [ ] **Step 3: Commit only the current Task 9 implementation and checkpoint**
+- [ ] **Step 4: Commit only the current Task 9 implementation and checkpoint**
 
 ```powershell
 git add -- platform/helper/course_helper/jobs.py platform/helper/course_helper/projection_bundle.py platform/helper/course_helper/projection_host.py platform/helper/course_helper/server.py platform/helper/pyproject.toml platform/helper/tests/test_projection_bundle.py platform/helper/tests/test_projection_jobs.py platform/helper/tests/test_projection_hardware.py platform/helper/tests/test_projection_integration.py platform/qa/run.py platform/qa/test_run.py platform/web/src/components/PresenterView.tsx platform/web/src/components/TeachingSetup.test.tsx platform/web/src/domain/projection.projection-integration.test.ts platform/web/src/services/native-projection.test.ts platform/web/src/services/native-projection.ts platform/windows .superpowers/sdd/dual-screen-task9-attended-checkpoint.json .superpowers/sdd/dual-screen-task9-phase-request.json .superpowers/sdd/dual-screen-task9-phase-start.json .superpowers/sdd/dual-screen-task9-route-receipt.json .superpowers/sdd/dual-screen-task9-route-request.json
@@ -738,7 +748,7 @@ python platform/qa/run.py all
 npm --prefix platform/web run typecheck
 npm --prefix platform/web run build
 npm --prefix platform/web run test:e2e -- --grep "one personal action"
-dotnet test platform/windows/CourseStudio.ProjectionHost.slnx --no-restore
+.tools/dotnet/dotnet.exe test platform/windows/CourseStudio.ProjectionHost.slnx --no-restore --filter "TestCategory!=projection_integration"
 ```
 
 Expected: all automated gates pass; hardware certification remains false unless a separate attended run has genuinely passed.

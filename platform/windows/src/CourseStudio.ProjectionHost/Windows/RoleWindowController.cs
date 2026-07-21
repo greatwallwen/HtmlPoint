@@ -40,6 +40,11 @@ internal sealed record PlatformRoleWindow(
     bool StyleWasSaved,
     object NativeToken);
 
+internal interface INativeRoleWindowToken
+{
+    RoleWindow Window { get; }
+}
+
 internal sealed class PlatformWindowInvalidatedEventArgs(
     PlatformRoleWindow window,
     string code) : EventArgs
@@ -170,6 +175,14 @@ public sealed class RoleWindowController : IRoleWindowController
     public event Action<Role, string>? Invalidated;
 
     public bool IsOpen => _stage is not null && _presenter is not null;
+
+    internal RoleWindow NativeWindow(Role role)
+    {
+        PlatformRoleWindow? window = role == Role.Stage ? _stage : _presenter;
+        return window?.NativeToken is INativeRoleWindowToken token
+            ? token.Window
+            : throw new ProjectionWindowPolicyException("native_window_unavailable");
+    }
 
     public async Task<RoleAssignment> OpenAsync(
         DisplayTopology topology,

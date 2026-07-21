@@ -1,0 +1,27 @@
+{
+  "attendedSession": false,
+  "checks": [
+    "host_digest_policy",
+    "authenticated_helper_transport",
+    "published_bundle_streamed",
+    "webview_roles_committed_equal_frame",
+    "exact_fullscreen_geometry",
+    "host_restart_and_job_cleanup",
+    "certification_not_requested"
+  ],
+  "hostExecutableDigest": "6b32bf73d8a5b90dd05a80294da14bda1a052433844efd289fadb121dfca357e",
+  "interactiveLocalSession": true,
+  "physicalDualScreenCertified": false,
+  "receiptDigests": [
+    "b707616c7e52ec77c099a81c73493859f287891e320dcb904182329f9856762f",
+    "05c7434e1ac4ed790b4e56e54911da9d5c634006b9da74bb8af88642c3c44431",
+    "af4034617231c67151b79f372fd7d961c4bb7f9a4f50f7972e10060ab44615ab",
+    "05c7ffcc856bf8d566eda64345c9750c7834725362024aceb07bf49ccefa207c",
+    "5bf14db307a599d15c67a318eaa6cdacbfef48f1a95d0ae4eea8aac8bd588eac"
+  ],
+  "releaseSignatureCertified": false,
+  "schemaVersion": 1,
+  "status": "passed",
+  "verifiedAt": "2026-07-21T01:32:00.647229+00:00",
+  "webBundleDigest": "7032aca72b1089f07ae65ac062146380a32e396175b71179e7760e593704ff2d"
+}

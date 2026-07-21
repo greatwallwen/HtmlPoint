@@ -66,6 +66,16 @@ def test_resolver_returns_exact_published_path_free_bundle(tmp_path: Path) -> No
         assert first.course_version_id == refs["courseVersionId"]
         assert first.runtime_manifest_digest == refs["runtimeManifestDigest"]
         assert first.navigation_identity == second.navigation_identity
+        stored_course = fixture.catalog.get_course_version(str(refs["courseVersionId"]))
+        assert stored_course is not None
+        assert first.bootstrap["courseDigest"] == stored_course.payload.content_digest
+        teaching_course = first.bootstrap["course"]
+        assert teaching_course["schemaVersion"] == 1
+        assert teaching_course["id"] == refs["courseVersionId"]
+        assert teaching_course["title"]
+        assert teaching_course["chapters"]
+        assert teaching_course["chapters"][0]["lessons"]
+        assert teaching_course["chapters"][0]["lessons"][0]["status"] == "grounded"
         assert [asset.opaque_id for asset in first.assets] == list(
             first.bootstrap["projection"]["runtimeManifest"]["artifactIds"]
         )

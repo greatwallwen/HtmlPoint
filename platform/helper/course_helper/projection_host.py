@@ -10,8 +10,11 @@ import os
 import queue
 import re
 import secrets
+import shutil
 import subprocess
+import tempfile
 import threading
+import time
 from collections.abc import Callable, Mapping
 from contextlib import closing
 from dataclasses import dataclass
@@ -766,12 +769,14 @@ class AuthenticatedSubprocessTransport:
         process: subprocess.Popen[bytes],
         job: _WindowsJobObject,
         session_key: bytearray,
+        runtime_directory: Path,
     ) -> None:
         if process.stdin is None or process.stdout is None or process.stderr is None:
             raise ProjectionHostError("host_pipe_invalid")
         self._process = process
         self._job = job
         self._session_key = session_key
+        self._runtime_directory = runtime_directory
         self._encoder = AuthenticatedEnvelopeCodec(
             bytes(session_key), send_direction="helper"
         )
@@ -821,9 +826,18 @@ class AuthenticatedSubprocessTransport:
         bootstrap_handle = msvcrt.get_osfhandle(bootstrap_read_fd)
         startup = subprocess.STARTUPINFO()
         startup.lpAttributeList = {"handle_list": [bootstrap_handle]}
+        runtime_parent = Path(tempfile.gettempdir()) / "CourseStudio.ProjectionHost"
+        runtime_parent.mkdir(parents=True, exist_ok=True)
+        projection_run_root = Path(
+            tempfile.mkdtemp(
+                prefix=f"run-{secrets.token_hex(16)}-",
+                dir=runtime_parent,
+            )
+        )
         environment = _minimal_host_environment(
             bootstrap_handle,
             spec.runtime_root,
+            projection_run_root,
         )
         process: subprocess.Popen[bytes] | None = None
         job: _WindowsJobObject | None = None
@@ -855,9 +869,10 @@ class AuthenticatedSubprocessTransport:
                 launch_key,
                 timeout_seconds=10.0,
             )
-            return cls(process, job, session_key)
+            return cls(process, job, session_key, projection_run_root)
         except Exception:
             _cleanup_failed_launch(process, job)
+            _cleanup_projection_runtime(projection_run_root)
             raise
         finally:
             for descriptor in (bootstrap_read_fd, bootstrap_write_fd):
@@ -913,6 +928,7 @@ class AuthenticatedSubprocessTransport:
             self._encoder.close()
             self._decoder.close()
             _zero(self._session_key)
+            _cleanup_projection_runtime(self._runtime_directory)
 
     def _read_stdout(self) -> None:
         assert self._process.stdout is not None
@@ -1190,6 +1206,7 @@ def _perform_helper_handshake(
 def _minimal_host_environment(
     bootstrap_handle: int,
     runtime_root: Path | None,
+    projection_run_root: Path,
 ) -> dict[str, str]:
     environment = {
         key: value
@@ -1200,11 +1217,36 @@ def _minimal_host_environment(
         {
             "COURSE_PROJECTION_BOOTSTRAP_HANDLE": str(bootstrap_handle),
             "COURSE_PROJECTION_PROTOCOL": "1",
+            "COURSE_PROJECTION_RUN_ROOT": str(projection_run_root),
         }
     )
     if runtime_root is not None:
         environment["DOTNET_ROOT"] = str(runtime_root)
     return environment
+
+
+def _cleanup_projection_runtime(runtime_directory: Path) -> None:
+    expected_parent = (
+        Path(tempfile.gettempdir()) / "CourseStudio.ProjectionHost"
+    ).resolve()
+    requested = Path(os.path.abspath(runtime_directory))
+    try:
+        if requested.parent.resolve() != expected_parent:
+            return
+    except OSError:
+        return
+    for attempt in range(50):
+        try:
+            if not requested.exists():
+                return
+            if requested.is_symlink() or _is_reparse(requested):
+                return
+            shutil.rmtree(requested)
+            return
+        except OSError:
+            if attempt == 49:
+                return
+            time.sleep(0.1)
 
 
 def _canonical_json(value: object) -> bytes:

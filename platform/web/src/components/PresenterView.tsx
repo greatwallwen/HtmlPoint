@@ -131,7 +131,7 @@ export function PresenterView({
     ): void => {
       const current = frameRef.current;
       const bus = busRef.current;
-      if (!current || !bus || !hasAuthoritativeFrameRef.current) return;
+      if (!current || !hasAuthoritativeFrameRef.current) return;
       const next: TeachingFrame = {
         ...current,
         ...update(current),
@@ -139,12 +139,20 @@ export function PresenterView({
         sequence: Math.max(sequenceRef.current, current.sequence) + 1,
         sentAt: new Date(runtime.now()).toISOString(),
       };
+      if (nativeProjection !== undefined) {
+        nativeProjection.adapter.requestTeachingUpdate(
+          nativeProjection.frame,
+          next,
+        );
+        return;
+      }
+      if (!bus) return;
       sequenceRef.current = next.sequence;
       frameRef.current = next;
       setFrame(next);
       bus.publish(next);
     },
-    [lessons.length, runtime],
+    [lessons.length, nativeProjection, runtime],
   );
 
   useEffect(() => {
@@ -218,7 +226,7 @@ export function PresenterView({
   }, [acceptFrame, course.id, lessons.length, nativeProjection?.adapter, runtime, sessionId, validSession]);
 
   useEffect(() => {
-    if (nativeProjection !== undefined || !frame?.playing) return;
+    if (!frame?.playing) return;
     const timer = globalThis.window.setInterval(() => {
       publishUpdate((current) => ({
         playing: true,

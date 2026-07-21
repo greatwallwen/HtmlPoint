@@ -1039,7 +1039,7 @@ def projection_job_timeout_seconds(job: ProjectionJob) -> int:
         "projection_open_session": 120,
         "projection_assign_window": 30,
         "projection_enter_fullscreen": 30,
-        "projection_verify_assignment": 30,
+        "projection_verify_assignment": 120,
         "projection_close_session": 30,
     }
     return ceilings[job.type]

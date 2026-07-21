@@ -31,4 +31,6 @@ pythonpath = ["."]
 testpaths = ["tests"]
 markers = [
   "reference_demo: exercises an explicitly allowlisted local reference fixture",
+  "projection_integration: launches the installed native Host without certification",
+  "projection_hardware: requires attended physical dual-screen confirmation",
 ]

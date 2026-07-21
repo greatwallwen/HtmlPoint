@@ -166,7 +166,9 @@ internal sealed class WitnessOverlay : Window
                 {
                     new TextBlock
                     {
-                        Text = role == Role.Stage ? "Stage code" : "Presenter code",
+                        Text = role == Role.Stage
+                            ? "观众屏验证码（Stage）"
+                            : "控制屏验证码（Presenter）",
                         FontSize = 18,
                         Foreground = new SolidColorBrush(Color.FromRgb(41, 52, 68)),
                     },
@@ -181,7 +183,7 @@ internal sealed class WitnessOverlay : Window
                     },
                     new TextBlock
                     {
-                        Text = $"Expires {expiresAt.ToLocalTime():HH:mm:ss}",
+                        Text = $"请在 {expiresAt.ToLocalTime():HH:mm:ss} 前确认",
                         FontSize = 14,
                         Foreground = new SolidColorBrush(Color.FromRgb(74, 84, 98)),
                     },
@@ -199,7 +201,7 @@ internal sealed class WitnessInputDialog : Window
 
     internal WitnessInputDialog(DateTimeOffset expiresAt)
     {
-        Title = "Confirm physical projection";
+        Title = "确认实体双屏";
         WindowStyle = WindowStyle.SingleBorderWindow;
         ResizeMode = ResizeMode.NoResize;
         ShowInTaskbar = false;
@@ -209,7 +211,7 @@ internal sealed class WitnessInputDialog : Window
         _presenterInput = CodeInput();
         Button confirm = new()
         {
-            Content = "Confirm",
+            Content = "确认认证",
             MinWidth = 120,
             MinHeight = 44,
             HorizontalAlignment = HorizontalAlignment.Right,
@@ -234,20 +236,20 @@ internal sealed class WitnessInputDialog : Window
                 {
                     new TextBlock
                     {
-                        Text = "Confirm both physical screens",
+                        Text = "确认两块实体屏幕",
                         FontSize = 24,
                         FontWeight = FontWeights.SemiBold,
                         Foreground = new SolidColorBrush(Color.FromRgb(28, 43, 62)),
                     },
                     new TextBlock
                     {
-                        Text = $"Enter both six-character codes before {expiresAt.ToLocalTime():HH:mm:ss}.",
+                        Text = $"请在 {expiresAt.ToLocalTime():HH:mm:ss} 前输入两块屏幕右上角的 6 位验证码。",
                         FontSize = 14,
                         Margin = new Thickness(0, 6, 0, 18),
                         Foreground = new SolidColorBrush(Color.FromRgb(78, 89, 104)),
                     },
-                    Labelled("Stage code", _stageInput),
-                    Labelled("Presenter code", _presenterInput),
+                    Labelled("观众屏（Stage）验证码", _stageInput),
+                    Labelled("控制屏（Presenter）验证码", _presenterInput),
                     confirm,
                 },
             },

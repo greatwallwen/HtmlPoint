@@ -104,6 +104,8 @@ def test_six_projection_jobs_build_exact_native_commands_with_bounded_timeouts()
             == payload["payload"]
         )
         assert 0 < projection_job_timeout_seconds(job) <= 120
+        if job.type == "projection_verify_assignment":
+            assert projection_job_timeout_seconds(job) == 120
 
 
 @pytest.mark.parametrize(

@@ -108,6 +108,21 @@ COURSE_COMPOSITION_SCREENSHOTS = (
     Path("platform/web/output/playwright/stage.png"),
     Path("platform/web/output/playwright/presenter.png"),
 )
+PROJECTION_OPT_IN_FLAGS = (
+    "COURSE_PROJECTION_RESTORE",
+    "COURSE_PROJECTION_INTEGRATION_TEST",
+    "COURSE_PROJECTION_HARDWARE_TEST",
+)
+PROJECTION_DOTNET = Path(".tools/dotnet/dotnet.exe")
+PROJECTION_SOLUTION = Path("platform/windows/CourseStudio.ProjectionHost.slnx")
+PROJECTION_INTEGRATION_PROJECT = Path(
+    "platform/windows/tests/CourseStudio.ProjectionHost.IntegrationTests/"
+    "CourseStudio.ProjectionHost.IntegrationTests.csproj"
+)
+PROJECTION_INTEGRATION_ROOT = Path(".tools/projection-integration")
+PROJECTION_HARDWARE_EVIDENCE = Path(
+    "platform/windows/evidence/physical-dual-screen-current.json"
+)
 DESIGN_QA_EVIDENCE = (
     Path("platform/web/evidence/design-qa-edit.png"),
     Path("platform/web/evidence/design-qa-comparison.png"),
@@ -1678,7 +1693,8 @@ def run_all(repo_root: Path) -> list[CheckResult]:
                 "pytest",
                 "platform/helper/tests",
                 "-m",
-                "not reference_demo and not network_visual and not model_download",
+                "not reference_demo and not network_visual and not model_download "
+                "and not projection_integration and not projection_hardware",
                 "-q",
             ],
             repo_root,
@@ -1689,7 +1705,16 @@ def run_all(repo_root: Path) -> list[CheckResult]:
     commands = (
         (
             "web tests",
-            [npm, "--prefix", "platform/web", "test", "--", "--run"],
+            [
+                npm,
+                "--prefix",
+                "platform/web",
+                "test",
+                "--",
+                "--run",
+                "--exclude",
+                "**/*.projection-integration.test.ts",
+            ],
         ),
         (
             "web typecheck",
@@ -1701,6 +1726,355 @@ def run_all(repo_root: Path) -> list[CheckResult]:
     for name, args in commands:
         results.append(run_command(name, args, repo_root))
     return results
+
+
+def _projection_dotnet(repo_root: Path) -> str:
+    return str((repo_root / PROJECTION_DOTNET).resolve())
+
+
+def _projection_test_filter() -> str:
+    return "TestCategory!=projection_integration&TestCategory!=projection_hardware"
+
+
+def _restore_projection(repo_root: Path) -> CheckResult:
+    return run_command(
+        "projection restore",
+        [
+            _projection_dotnet(repo_root),
+            "restore",
+            str(PROJECTION_SOLUTION),
+            "--locked-mode",
+            "--packages",
+            str((repo_root / ".tools/nuget").resolve()),
+        ],
+        repo_root,
+    )
+
+
+def run_projection_restore(repo_root: Path) -> list[CheckResult]:
+    return [_restore_projection(repo_root)]
+
+
+def run_projection_contracts(repo_root: Path) -> list[CheckResult]:
+    npm = npm_executable()
+    return [
+        run_command(
+            "projection Python contracts",
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-p",
+                "no:cacheprovider",
+                "platform/helper/tests/test_projection_contracts.py",
+                "-q",
+            ],
+            repo_root,
+        ),
+        run_command(
+            "projection Web contracts",
+            [
+                npm,
+                "--prefix",
+                "platform/web",
+                "test",
+                "--",
+                "--run",
+                "src/domain/projection-schema.test.ts",
+                "src/domain/projection.test.ts",
+            ],
+            repo_root,
+        ),
+        run_command(
+            "projection .NET contracts",
+            [
+                _projection_dotnet(repo_root),
+                "test",
+                str(PROJECTION_SOLUTION),
+                "--no-restore",
+                "--filter",
+                _projection_test_filter(),
+            ],
+            repo_root,
+        ),
+    ]
+
+
+def run_projection_host(repo_root: Path) -> list[CheckResult]:
+    return [
+        run_command(
+            "projection Helper host boundary",
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-p",
+                "no:cacheprovider",
+                "platform/helper/tests/test_projection_host.py",
+                "platform/helper/tests/test_projection_jobs.py",
+                "-q",
+            ],
+            repo_root,
+        ),
+        run_command(
+            "projection native host",
+            [
+                _projection_dotnet(repo_root),
+                "test",
+                str(PROJECTION_SOLUTION),
+                "--no-restore",
+                "--filter",
+                _projection_test_filter(),
+            ],
+            repo_root,
+        ),
+    ]
+
+
+def _reset_projection_integration_runtime(repo_root: Path) -> CheckResult:
+    root = (repo_root / PROJECTION_INTEGRATION_ROOT).resolve()
+    tools_root = (repo_root / ".tools").resolve()
+    try:
+        root.relative_to(tools_root)
+        if root.exists():
+            if root.is_symlink():
+                raise OSError("projection integration root is a link")
+            shutil.rmtree(root)
+        (root / "install" / "projection-host").mkdir(parents=True)
+        return CheckResult("projection integration reset", True, "clean runtime root")
+    except (OSError, ValueError) as error:
+        return CheckResult(
+            "projection integration reset",
+            False,
+            f"runtime reset failed: {type(error).__name__}",
+        )
+
+
+def _stage_projection_web_bundle(repo_root: Path) -> CheckResult:
+    source = (repo_root / "platform/web/dist").resolve()
+    root = (repo_root / PROJECTION_INTEGRATION_ROOT).resolve()
+    destination = root / "install" / "projection-host" / "web"
+    executable = (
+        root
+        / "install"
+        / "projection-host"
+        / "CourseStudio.ProjectionHost.exe"
+    )
+    try:
+        if not source.is_dir() or not executable.is_file():
+            raise OSError("published inputs missing")
+        if destination.exists():
+            shutil.rmtree(destination)
+        shutil.copytree(source, destination)
+        if not (destination / "index.html").is_file():
+            raise OSError("web entry missing")
+        return CheckResult(
+            "projection staged web bundle",
+            True,
+            "Host and WebView bundle staged",
+        )
+    except OSError as error:
+        return CheckResult(
+            "projection staged web bundle",
+            False,
+            f"staging failed: {type(error).__name__}",
+        )
+
+
+def _cleanup_projection_integration_runtime(repo_root: Path) -> CheckResult:
+    root = (repo_root / PROJECTION_INTEGRATION_ROOT).resolve()
+    tools_root = (repo_root / ".tools").resolve()
+    try:
+        root.relative_to(tools_root)
+        if root.exists():
+            if root.is_symlink():
+                raise OSError("projection integration root is a link")
+            shutil.rmtree(root)
+        return CheckResult("projection integration cleanup", True, "runtime removed")
+    except (OSError, ValueError) as error:
+        return CheckResult(
+            "projection integration cleanup",
+            False,
+            f"runtime cleanup failed: {type(error).__name__}",
+        )
+
+
+def _reset_projection_hardware_evidence(repo_root: Path) -> CheckResult:
+    target = (repo_root / PROJECTION_HARDWARE_EVIDENCE).resolve()
+    evidence_root = (repo_root / PROJECTION_HARDWARE_EVIDENCE.parent).resolve()
+    try:
+        target.relative_to(evidence_root)
+        if target.exists():
+            if target.is_symlink() or not target.is_file():
+                raise OSError("hardware evidence is not a plain file")
+            target.unlink()
+        return CheckResult(
+            "projection hardware evidence reset",
+            True,
+            "stale certification receipt removed",
+        )
+    except (OSError, ValueError) as error:
+        return CheckResult(
+            "projection hardware evidence reset",
+            False,
+            f"evidence reset failed: {type(error).__name__}",
+        )
+
+
+def run_projection_integration(repo_root: Path) -> list[CheckResult]:
+    npm = npm_executable()
+    integration_host = (
+        repo_root
+        / PROJECTION_INTEGRATION_ROOT
+        / "install"
+        / "projection-host"
+    ).resolve()
+    return [
+        _reset_projection_integration_runtime(repo_root),
+        _restore_projection(repo_root),
+        run_command(
+            "projection Web publish",
+            [npm, "--prefix", "platform/web", "run", "build"],
+            repo_root,
+        ),
+        run_command(
+            "projection Host publish",
+            [
+                _projection_dotnet(repo_root),
+                "publish",
+                "platform/windows/src/CourseStudio.ProjectionHost/"
+                "CourseStudio.ProjectionHost.csproj",
+                "--configuration",
+                "Release",
+                "--no-restore",
+                "--output",
+                str(integration_host),
+            ],
+            repo_root,
+        ),
+        _stage_projection_web_bundle(repo_root),
+        run_command(
+            "projection native integration",
+            [
+                _projection_dotnet(repo_root),
+                "test",
+                str(PROJECTION_INTEGRATION_PROJECT),
+                "--no-restore",
+                "--filter",
+                "TestCategory=projection_integration",
+            ],
+            repo_root,
+        ),
+        run_command(
+            "projection Helper integration",
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-p",
+                "no:cacheprovider",
+                "platform/helper/tests/test_projection_integration.py",
+                "-m",
+                "projection_integration",
+                "-q",
+            ],
+            repo_root,
+        ),
+        run_command(
+            "projection Web integration",
+            [
+                npm,
+                "--prefix",
+                "platform/web",
+                "test",
+                "--",
+                "--run",
+                "src/domain/projection.projection-integration.test.ts",
+            ],
+            repo_root,
+        ),
+        _cleanup_projection_integration_runtime(repo_root),
+    ]
+
+
+def run_projection_hardware(repo_root: Path) -> list[CheckResult]:
+    npm = npm_executable()
+    integration_host = (
+        repo_root
+        / PROJECTION_INTEGRATION_ROOT
+        / "install"
+        / "projection-host"
+    ).resolve()
+    return [
+        _reset_projection_hardware_evidence(repo_root),
+        _reset_projection_integration_runtime(repo_root),
+        _restore_projection(repo_root),
+        run_command(
+            "projection Web publish",
+            [npm, "--prefix", "platform/web", "run", "build"],
+            repo_root,
+        ),
+        run_command(
+            "projection Host publish",
+            [
+                _projection_dotnet(repo_root),
+                "publish",
+                "platform/windows/src/CourseStudio.ProjectionHost/"
+                "CourseStudio.ProjectionHost.csproj",
+                "--configuration",
+                "Release",
+                "--no-restore",
+                "--output",
+                str(integration_host),
+            ],
+            repo_root,
+        ),
+        _stage_projection_web_bundle(repo_root),
+        run_command(
+            "projection attended hardware",
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-p",
+                "no:cacheprovider",
+                "platform/helper/tests/test_projection_hardware.py",
+                "-m",
+                "projection_hardware",
+                "-q",
+                "--capture=no",
+            ],
+            repo_root,
+        ),
+        _cleanup_projection_integration_runtime(repo_root),
+    ]
+
+
+def _interactive_projection_console() -> bool:
+    return bool(sys.stdin.isatty() and sys.stdout.isatty())
+
+
+def _projection_mode_preflight(mode: str) -> int | None:
+    required = {
+        "projection-restore": "COURSE_PROJECTION_RESTORE",
+        "projection-integration": "COURSE_PROJECTION_INTEGRATION_TEST",
+        "projection-hardware": "COURSE_PROJECTION_HARDWARE_TEST",
+    }.get(mode)
+    if required is None:
+        if any(name in os.environ for name in PROJECTION_OPT_IN_FLAGS):
+            print("OFFLINE_GATE_LIVE_OPT_IN_SET", file=sys.stderr)
+            return 2
+        return None
+    if os.environ.get(required) != "1":
+        print(f"{required}_REQUIRED", file=sys.stderr)
+        return 2
+    if any(name != required and name in os.environ for name in PROJECTION_OPT_IN_FLAGS):
+        print("PROJECTION_OPT_IN_CONFLICT", file=sys.stderr)
+        return 2
+    if mode == "projection-hardware" and not _interactive_projection_console():
+        print("PROJECTION_INTERACTIVE_CONSOLE_REQUIRED", file=sys.stderr)
+        return 2
+    return None
 
 
 def _print_results(results: Sequence[CheckResult]) -> None:
@@ -3189,6 +3563,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         if preflight is not None:
             return preflight
         return produce_embedding_model_live(repo_root, repo_root / EMBEDDING_MODEL_RECEIPT)
+    projection_modes = {
+        "projection-restore": run_projection_restore,
+        "projection-contracts": run_projection_contracts,
+        "projection-host": run_projection_host,
+        "projection-integration": run_projection_integration,
+        "projection-hardware": run_projection_hardware,
+    }
+    if len(args) == 1 and args[0] in projection_modes:
+        preflight = _projection_mode_preflight(args[0])
+        if preflight is not None:
+            return preflight
+        repo_root = _repo_root()
+        results = projection_modes[args[0]](repo_root)
+        _print_results(results)
+        return 0 if all(result.ok for result in results) else 1
     if any(
         name in os.environ
         for name in (
@@ -3196,6 +3585,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "COURSE_NETWORK_VISUAL_TEST",
             "COURSE_REFERENCE_ROOT",
             "COURSE_E2E_FIXTURE",
+            *PROJECTION_OPT_IN_FLAGS,
         )
     ):
         print("OFFLINE_GATE_LIVE_OPT_IN_SET", file=sys.stderr)
@@ -3206,9 +3596,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "knowledge-demo",
         "course-composition",
         "authentic-visuals",
+        *projection_modes,
     }:
         print(
             "usage: python platform/qa/run.py {focused|all|knowledge-demo|course-composition|authentic-visuals|"
+            "projection-restore|projection-contracts|projection-host|projection-integration|projection-hardware|"
             "embedding-model-live|network-visual-acquisition-live}",
             file=sys.stderr,
         )

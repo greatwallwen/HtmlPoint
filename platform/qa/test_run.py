@@ -1127,10 +1127,19 @@ def test_run_all_aggregates_focused_and_every_npm_gate(
             "pytest",
             "platform/helper/tests",
             "-m",
-            "not reference_demo and not network_visual and not model_download",
+            "not reference_demo and not network_visual and not model_download and not projection_integration and not projection_hardware",
             "-q",
         ],
-        [qa.npm_executable(), "--prefix", "platform/web", "test", "--", "--run"],
+        [
+            qa.npm_executable(),
+            "--prefix",
+            "platform/web",
+            "test",
+            "--",
+            "--run",
+            "--exclude",
+            "**/*.projection-integration.test.ts",
+        ],
         [qa.npm_executable(), "--prefix", "platform/web", "run", "typecheck"],
         [qa.npm_executable(), "--prefix", "platform/web", "run", "build"],
         [qa.npm_executable(), "--prefix", "platform/web", "run", "test:e2e"],
@@ -1296,6 +1305,201 @@ def test_cli_rejects_invalid_mode(capsys: pytest.CaptureFixture[str]) -> None:
     usage = capsys.readouterr().err
     assert "focused" in usage
     assert "knowledge-demo" in usage
+
+
+@pytest.mark.parametrize(
+    ("mode", "flag", "runner"),
+    (
+        ("projection-restore", "COURSE_PROJECTION_RESTORE", "run_projection_restore"),
+        (
+            "projection-integration",
+            "COURSE_PROJECTION_INTEGRATION_TEST",
+            "run_projection_integration",
+        ),
+        (
+            "projection-hardware",
+            "COURSE_PROJECTION_HARDWARE_TEST",
+            "run_projection_hardware",
+        ),
+    ),
+)
+def test_live_projection_modes_require_their_exact_opt_in(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    mode: str,
+    flag: str,
+    runner: str,
+) -> None:
+    monkeypatch.setattr(qa, "_repo_root", lambda: tmp_path)
+    for name in qa.PROJECTION_OPT_IN_FLAGS:
+        monkeypatch.delenv(name, raising=False)
+    calls: list[Path] = []
+    monkeypatch.setattr(
+        qa,
+        runner,
+        lambda root: calls.append(root) or [qa.CheckResult(mode, True, "checked")],
+    )
+    if mode == "projection-hardware":
+        monkeypatch.setattr(qa, "_interactive_projection_console", lambda: True)
+
+    assert qa.main([mode]) == 2
+    assert f"{flag}_REQUIRED" in capsys.readouterr().err
+    assert calls == []
+
+    monkeypatch.setenv(flag, "1")
+    assert qa.main([mode]) == 0
+    assert calls == [tmp_path]
+
+
+@pytest.mark.parametrize(
+    ("mode", "runner"),
+    (
+        ("projection-contracts", "run_projection_contracts"),
+        ("projection-host", "run_projection_host"),
+    ),
+)
+def test_offline_projection_modes_dispatch_only_without_live_flags(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    mode: str,
+    runner: str,
+) -> None:
+    monkeypatch.setattr(qa, "_repo_root", lambda: tmp_path)
+    for name in qa.PROJECTION_OPT_IN_FLAGS:
+        monkeypatch.delenv(name, raising=False)
+    calls: list[Path] = []
+    monkeypatch.setattr(
+        qa,
+        runner,
+        lambda root: calls.append(root) or [qa.CheckResult(mode, True, "checked")],
+    )
+
+    assert qa.main([mode]) == 0
+    assert calls == [tmp_path]
+
+    monkeypatch.setenv("COURSE_PROJECTION_INTEGRATION_TEST", "1")
+    assert qa.main([mode]) == 2
+    assert capsys.readouterr().err.strip() == "OFFLINE_GATE_LIVE_OPT_IN_SET"
+    assert calls == [tmp_path]
+
+
+def test_projection_live_modes_reject_conflicting_opt_ins_before_dispatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(qa, "_repo_root", lambda: tmp_path)
+    monkeypatch.setenv("COURSE_PROJECTION_INTEGRATION_TEST", "1")
+    monkeypatch.setenv("COURSE_PROJECTION_HARDWARE_TEST", "1")
+    monkeypatch.setattr(
+        qa,
+        "run_projection_integration",
+        lambda _root: (_ for _ in ()).throw(AssertionError("integration dispatched")),
+    )
+
+    assert qa.main(["projection-integration"]) == 2
+    assert capsys.readouterr().err.strip() == "PROJECTION_OPT_IN_CONFLICT"
+
+
+def test_projection_hardware_requires_a_visible_interactive_console(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(qa, "_repo_root", lambda: tmp_path)
+    for name in qa.PROJECTION_OPT_IN_FLAGS:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("COURSE_PROJECTION_HARDWARE_TEST", "1")
+    monkeypatch.setattr(qa, "_interactive_projection_console", lambda: False)
+    monkeypatch.setattr(
+        qa,
+        "run_projection_hardware",
+        lambda _root: (_ for _ in ()).throw(AssertionError("hardware dispatched")),
+    )
+
+    assert qa.main(["projection-hardware"]) == 2
+    assert capsys.readouterr().err.strip() == "PROJECTION_INTERACTIVE_CONSOLE_REQUIRED"
+
+
+def test_projection_hardware_builds_the_real_pipeline_and_resets_stale_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    commands: list[tuple[str, tuple[str, ...]]] = []
+    monkeypatch.setattr(qa, "npm_executable", lambda: "npm")
+    monkeypatch.setattr(qa, "_projection_dotnet", lambda _root: "dotnet")
+    monkeypatch.setattr(
+        qa,
+        "_reset_projection_hardware_evidence",
+        lambda _root: qa.CheckResult("projection hardware evidence reset", True, "reset"),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        qa,
+        "_reset_projection_integration_runtime",
+        lambda _root: qa.CheckResult("projection hardware runtime reset", True, "reset"),
+    )
+    monkeypatch.setattr(
+        qa,
+        "_stage_projection_web_bundle",
+        lambda _root: qa.CheckResult("projection staged web bundle", True, "staged"),
+    )
+    monkeypatch.setattr(
+        qa,
+        "_cleanup_projection_integration_runtime",
+        lambda _root: qa.CheckResult("projection hardware cleanup", True, "clean"),
+    )
+
+    def fake_run(name: str, args: object, _root: Path) -> qa.CheckResult:
+        commands.append((name, tuple(args)))
+        return qa.CheckResult(name, True, "passed")
+
+    monkeypatch.setattr(qa, "run_command", fake_run)
+
+    results = qa.run_projection_hardware(tmp_path)
+
+    assert [result.name for result in results] == [
+        "projection hardware evidence reset",
+        "projection hardware runtime reset",
+        "projection restore",
+        "projection Web publish",
+        "projection Host publish",
+        "projection staged web bundle",
+        "projection attended hardware",
+        "projection hardware cleanup",
+    ]
+    assert [name for name, _args in commands] == [
+        "projection restore",
+        "projection Web publish",
+        "projection Host publish",
+        "projection attended hardware",
+    ]
+    restore = commands[0][1]
+    assert "--locked-mode" in restore
+    assert "--packages" in restore
+    attended = commands[-1][1]
+    assert "platform/helper/tests/test_projection_hardware.py" in attended
+    assert "projection_hardware" in attended
+    assert "--capture=no" in attended
+
+
+def test_projection_hardware_evidence_reset_removes_only_the_fixed_receipt(
+    tmp_path: Path,
+) -> None:
+    evidence_root = tmp_path / "platform" / "windows" / "evidence"
+    evidence_root.mkdir(parents=True)
+    receipt = evidence_root / "physical-dual-screen-current.json"
+    unrelated = evidence_root / "projection-integration.json"
+    receipt.write_text("stale", encoding="utf-8")
+    unrelated.write_text("keep", encoding="utf-8")
+
+    result = qa._reset_projection_hardware_evidence(tmp_path)
+
+    assert result.ok
+    assert not receipt.exists()
+    assert unrelated.read_text(encoding="utf-8") == "keep"
 
 
 def test_print_results_keeps_each_gate_on_one_physical_line(

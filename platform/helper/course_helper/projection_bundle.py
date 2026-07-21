@@ -144,6 +144,13 @@ class PublishedProjectionBundleResolver:
 
             bootstrap = {
                 "schemaVersion": 1,
+                "courseDigest": course.payload.content_digest,
+                "course": _teaching_course_projection(
+                    course.payload.version_id,
+                    requirement.payload,
+                    outline.payload,
+                    deck.payload,
+                ),
                 "projection": {
                     "courseVersion": _camelize(course.payload.model_dump(mode="json")),
                     "requirement": _camelize(
@@ -178,6 +185,98 @@ class PublishedProjectionBundleResolver:
                 bootstrap=bootstrap,
                 assets=assets,
             )
+
+
+def _teaching_course_projection(
+    course_version_id: str,
+    requirement: Any,
+    outline: Any,
+    deck: Any,
+) -> dict[str, Any]:
+    nodes = _walk_nodes(deck.nodes)
+    source_ids = tuple(
+        dict.fromkeys(
+            source_id
+            for node in nodes
+            for source_id in node.source_version_ids
+        )
+    )
+    purpose_labels = {
+        "core": "核心讲解",
+        "example": "真实示例",
+        "exercise": "实践练习",
+        "evidence": "证据解析",
+        "warning": "风险提示",
+    }
+    chapters: list[dict[str, Any]] = []
+    for chapter in outline.chapters:
+        lessons: list[dict[str, Any]] = []
+        for index, placement in enumerate(chapter.placements):
+            related = tuple(
+                node
+                for node in nodes
+                if placement.placement_id in node.placement_ids
+            )
+            title = next(
+                (
+                    node.text.strip()
+                    for node in related
+                    if node.node_type in {"heading", "title"}
+                    and isinstance(node.text, str)
+                    and node.text.strip()
+                ),
+                f"知识单元 {index + 1}",
+            )
+            lesson_sources = tuple(
+                dict.fromkeys(
+                    source_id
+                    for node in related
+                    for source_id in node.source_version_ids
+                )
+            )
+            lessons.append(
+                {
+                    "id": placement.placement_id,
+                    "title": title,
+                    "summary": purpose_labels[placement.purpose],
+                    "durationMinutes": min(90, placement.allocated_minutes),
+                    "sourceIds": list(lesson_sources),
+                    "status": "grounded",
+                }
+            )
+        if lessons:
+            chapters.append(
+                {
+                    "id": chapter.chapter_id,
+                    "title": chapter.title,
+                    "objective": chapter.objective,
+                    "lessons": lessons,
+                }
+            )
+    if not chapters:
+        raise ProjectionHostError("published_bundle_unavailable")
+    created_at = deck.created_at.isoformat()
+    return {
+        "schemaVersion": 1,
+        "id": course_version_id,
+        "title": requirement.title,
+        "audience": requirement.audience,
+        "goal": "；".join(requirement.learning_goals),
+        "durationMinutes": requirement.duration_minutes,
+        "chapters": chapters,
+        "sources": [
+            {
+                "id": source_id,
+                "name": f"已治理来源 {index + 1}",
+                "kind": "note",
+                "size": 0,
+                "status": "ready",
+                "addedAt": created_at,
+            }
+            for index, source_id in enumerate(source_ids)
+        ],
+        "updatedAt": created_at,
+    }
 
 
 def _projection_asset_sources(

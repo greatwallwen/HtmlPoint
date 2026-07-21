@@ -18,14 +18,23 @@ public enum ProjectionWebMessageKind
     Ready,
     MessageAccepted,
     FrameCommitted,
+    Control,
     Rejected,
 }
+
+public sealed record ProjectionTeachingControl(
+    long BaseSequence,
+    string LessonId,
+    int LessonIndex,
+    bool Playing,
+    int ElapsedSeconds);
 
 public sealed record ProjectionWebMessage(
     ProjectionWebMessageKind Kind,
     long? Sequence,
     string? FrameDigest,
-    string? RejectionCode);
+    string? RejectionCode,
+    ProjectionTeachingControl? Control = null);
 
 public sealed partial class ProjectionWebMessageGate
 {
@@ -61,10 +70,29 @@ public sealed partial class ProjectionWebMessageGate
         "code",
     ];
 
+    private static readonly HashSet<string> ControlProperties =
+    [
+        "schemaVersion",
+        "type",
+        "role",
+        "channelId",
+        "sessionId",
+        "courseVersionId",
+        "runtimeManifestDigest",
+        "navigationIdentity",
+        "generation",
+        "baseSequence",
+        "lessonId",
+        "lessonIndex",
+        "playing",
+        "elapsedSeconds",
+    ];
+
     private readonly ProjectionWebBinding _binding;
     private readonly Dictionary<long, string> _knownFrames = [];
     private readonly HashSet<long> _accepted = [];
     private readonly HashSet<long> _committed = [];
+    private long? _pendingControlBase;
     private bool _ready;
 
     public ProjectionWebMessageGate(ProjectionWebBinding binding)
@@ -142,6 +170,7 @@ public sealed partial class ProjectionWebMessageGate
                 "frame_committed" => AcceptReceipt(
                     root,
                     ProjectionWebMessageKind.FrameCommitted),
+                "projection_control" => AcceptControl(root),
                 "projection_rejected" => AcceptRejection(root),
                 _ => throw new ProjectionWebMessageException("web_message_invalid"),
             };
@@ -210,7 +239,59 @@ public sealed partial class ProjectionWebMessageGate
             throw new ProjectionWebMessageException("frame_commit_order_invalid");
         }
 
+        if (kind == ProjectionWebMessageKind.FrameCommitted
+            && _pendingControlBase is long pending
+            && sequence > pending)
+        {
+            _pendingControlBase = null;
+        }
+
         return new ProjectionWebMessage(kind, sequence, frameDigest, null);
+    }
+
+    private ProjectionWebMessage AcceptControl(JsonElement root)
+    {
+        EnsureExactProperties(root, ControlProperties);
+        EnsureRoleAndChannel(root);
+        if (_binding.Role != Role.Presenter)
+        {
+            throw new ProjectionWebMessageException("projection_control_forbidden");
+        }
+
+        if (!_ready
+            || !BindingIdentityMatches(root)
+            || !TryGetInt64(root, "baseSequence", out long baseSequence)
+            || !TryGetString(root, "lessonId", out string? lessonId)
+            || !TryGetInt32(root, "lessonIndex", out int lessonIndex)
+            || !TryGetBoolean(root, "playing", out bool playing)
+            || !TryGetInt32(root, "elapsedSeconds", out int elapsedSeconds)
+            || lessonId is null
+            || !OpaqueIdPattern().IsMatch(lessonId)
+            || lessonIndex is < 0 or > 10_000
+            || elapsedSeconds is < 0 or > 172_800
+            || _committed.Count == 0
+            || baseSequence != _committed.Max())
+        {
+            throw new ProjectionWebMessageException("projection_control_invalid");
+        }
+
+        if (_pendingControlBase is not null)
+        {
+            throw new ProjectionWebMessageException("projection_control_pending");
+        }
+
+        _pendingControlBase = baseSequence;
+        return new ProjectionWebMessage(
+            ProjectionWebMessageKind.Control,
+            null,
+            null,
+            null,
+            new ProjectionTeachingControl(
+                baseSequence,
+                lessonId,
+                lessonIndex,
+                playing,
+                elapsedSeconds));
     }
 
     private ProjectionWebMessage AcceptRejection(JsonElement root)
@@ -243,6 +324,24 @@ public sealed partial class ProjectionWebMessageGate
             throw new ProjectionWebMessageException("web_receipt_identity_mismatch");
         }
     }
+
+    private bool BindingIdentityMatches(JsonElement root) =>
+        TryGetString(root, "sessionId", out string? sessionId)
+        && TryGetString(root, "courseVersionId", out string? courseVersionId)
+        && TryGetString(root, "runtimeManifestDigest", out string? manifestDigest)
+        && TryGetString(root, "navigationIdentity", out string? navigationIdentity)
+        && TryGetInt64(root, "generation", out long generation)
+        && string.Equals(sessionId, _binding.SessionId, StringComparison.Ordinal)
+        && string.Equals(courseVersionId, _binding.CourseVersionId, StringComparison.Ordinal)
+        && string.Equals(
+            manifestDigest,
+            _binding.RuntimeManifestDigest,
+            StringComparison.Ordinal)
+        && string.Equals(
+            navigationIdentity,
+            _binding.NavigationIdentity,
+            StringComparison.Ordinal)
+        && generation == _binding.Generation;
 
     private static void EnsureExactProperties(
         JsonElement root,
@@ -295,6 +394,22 @@ public sealed partial class ProjectionWebMessageGate
         return root.TryGetProperty(propertyName, out JsonElement property)
             && property.ValueKind == JsonValueKind.Number
             && property.TryGetInt64(out value);
+    }
+
+    private static bool TryGetBoolean(
+        JsonElement root,
+        string propertyName,
+        out bool value)
+    {
+        value = false;
+        if (!root.TryGetProperty(propertyName, out JsonElement property)
+            || property.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+        {
+            return false;
+        }
+
+        value = property.GetBoolean();
+        return true;
     }
 
     [GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$", RegexOptions.CultureInvariant)]

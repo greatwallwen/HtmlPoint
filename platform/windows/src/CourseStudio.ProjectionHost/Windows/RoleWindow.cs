@@ -361,7 +361,7 @@ internal sealed class NativeRoleWindowPlatform : IRoleWindowPlatform
         }
     }
 
-    private sealed class NativeWindowState
+    private sealed class NativeWindowState : INativeRoleWindowToken
     {
         private NativeWindowState(
             RoleWindow window,
@@ -378,6 +378,8 @@ internal sealed class NativeRoleWindowPlatform : IRoleWindowPlatform
         }
 
         internal RoleWindow Window { get; }
+
+        RoleWindow INativeRoleWindowToken.Window => Window;
 
         internal nint Handle { get; }
 

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RootNamespace>CourseStudio.ProjectionHost.IntegrationTests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="MSTest.TestAdapter" />
+    <PackageReference Include="MSTest.TestFramework" />
+    <ProjectReference Include="../../src/CourseStudio.ProjectionHost.Core/CourseStudio.ProjectionHost.Core.csproj" />
+    <ProjectReference Include="../../src/CourseStudio.ProjectionHost/CourseStudio.ProjectionHost.csproj" />
+  </ItemGroup>
+</Project>

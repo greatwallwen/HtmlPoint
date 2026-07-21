@@ -20,6 +20,10 @@ import {
   ProjectionClientError,
   type ProjectionClient,
 } from "../services/projection-client";
+import type {
+  NativeProjectionAdapter,
+  ProjectionFrame,
+} from "../services/native-projection";
 
 const COURSE: CourseDocument = {
   schemaVersion: 1,
@@ -1012,6 +1016,50 @@ describe("StageView", () => {
 });
 
 describe("PresenterView", () => {
+  it("sends native presenter navigation through the trusted Host bridge", async () => {
+    const user = userEvent.setup();
+    const requestTeachingUpdate = vi.fn(() => true);
+    const adapter = {
+      role: "presenter",
+      requestTeachingUpdate,
+      reportFrameCommitted: vi.fn(),
+    } as unknown as NativeProjectionAdapter;
+    const frame = {
+      schemaVersion: 1,
+      type: "projection_frame",
+      role: "presenter",
+      channelId: "11111111-1111-4111-8111-111111111111",
+      sessionId: "native-session",
+      courseVersionId: "course-version-1",
+      runtimeManifestDigest: "a".repeat(64),
+      navigationIdentity: "b".repeat(64),
+      generation: 1,
+      sequence: 4,
+      frameDigest: "c".repeat(64),
+      teachingFrame: makeFrame("native-session", { sequence: 4 }),
+    } satisfies ProjectionFrame;
+
+    render(
+      <PresenterView
+        course={COURSE}
+        sessionId="native-session"
+        nativeProjection={{ adapter, frame }}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "下一节" }));
+
+    expect(requestTeachingUpdate).toHaveBeenCalledWith(
+      frame,
+      expect.objectContaining({
+        lessonId: "lesson-evidence",
+        lessonIndex: 1,
+        sequence: 5,
+        playing: false,
+        elapsedSeconds: 0,
+      }),
+    );
+  });
+
   it("accepts the controller initial frame even when the presenter clock is ahead", async () => {
     const sessionId = "session-presenter-clock-skew";
     const hub = new InMemoryTeachingHub();

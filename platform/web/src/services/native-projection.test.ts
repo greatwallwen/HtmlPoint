@@ -136,12 +136,15 @@ class FakeWebView {
   }
 }
 
-function scope(webview?: FakeWebView): Window & typeof globalThis {
+function scope(
+  webview?: FakeWebView,
+  role: "stage" | "presenter" = "stage",
+): Window & typeof globalThis {
   const candidate = {
     chrome: webview === undefined ? undefined : { webview },
     __courseStudioProjection: {
       schemaVersion: 1,
-      role: "stage",
+      role,
       channelId: "11111111-1111-4111-8111-111111111111",
       origin: "https://projection.course-studio.test",
     },
@@ -236,6 +239,66 @@ describe("native projection adapter", () => {
     expect(webview.messages).toContainEqual(
       expect.objectContaining({ type: "frame_committed", role: "stage", sequence: 1 }),
     );
+  });
+
+  it("allows only the presenter to request one bounded update per committed frame", async () => {
+    const webview = new FakeWebView();
+    const adapter = detectNativeProjectionAdapter(scope(webview, "presenter"))!;
+    const presenterFrame = {
+      ...projectionFrame,
+      role: "presenter",
+    } satisfies ProjectionFrame;
+    const presenterBootstrap = {
+      ...bootstrap,
+      role: "presenter",
+      frame: presenterFrame,
+    } satisfies ProjectionBootstrap;
+    const pending = adapter.waitForBootstrap();
+    webview.emit(presenterBootstrap);
+    await pending;
+
+    expect(adapter.requestTeachingUpdate(presenterFrame, {
+      ...teachingFrame,
+      playing: true,
+      sequence: 2,
+    })).toBe(true);
+    expect(webview.messages).toContainEqual({
+      schemaVersion: 1,
+      type: "projection_control",
+      role: "presenter",
+      channelId: presenterFrame.channelId,
+      sessionId: presenterFrame.sessionId,
+      courseVersionId: presenterFrame.courseVersionId,
+      runtimeManifestDigest: presenterFrame.runtimeManifestDigest,
+      navigationIdentity: presenterFrame.navigationIdentity,
+      generation: presenterFrame.generation,
+      baseSequence: 1,
+      lessonId: "lesson-1",
+      lessonIndex: 0,
+      playing: true,
+      elapsedSeconds: 0,
+    });
+    expect(adapter.requestTeachingUpdate(presenterFrame, {
+      ...teachingFrame,
+      playing: false,
+      sequence: 2,
+    })).toBe(false);
+
+    const next = {
+      ...presenterFrame,
+      sequence: 2,
+      frameDigest: digest("f"),
+      teachingFrame: { ...teachingFrame, playing: true, sequence: 2 },
+    } satisfies ProjectionFrame;
+    webview.emit(next);
+    expect(adapter.requestTeachingUpdate(next, {
+      ...next.teachingFrame,
+      playing: false,
+      sequence: 3,
+    })).toBe(true);
+
+    const stage = detectNativeProjectionAdapter(scope(new FakeWebView()))!;
+    expect(stage.requestTeachingUpdate(projectionFrame, teachingFrame)).toBe(false);
   });
 
   it("reports a frame commit only after layout effect and two animation frames", () => {

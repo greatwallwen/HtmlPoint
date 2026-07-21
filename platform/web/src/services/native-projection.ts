@@ -135,6 +135,10 @@ export interface NativeProjectionAdapter {
   subscribeFrame(listener: (frame: ProjectionFrame) => void): () => void;
   reportMessageAccepted(frame: ProjectionFrame): void;
   reportFrameCommitted(frame: ProjectionFrame): void;
+  requestTeachingUpdate(
+    current: ProjectionFrame,
+    next: ProjectionFrame["teachingFrame"],
+  ): boolean;
 }
 
 export interface NativeProjectionRenderContext {
@@ -204,6 +208,7 @@ class WebViewNativeProjectionAdapter implements NativeProjectionAdapter {
   private listening = false;
   private readyReported = false;
   private latestSequence = -1;
+  private pendingControlBase?: number;
 
   constructor(
     private readonly bridge: WebViewBridge,
@@ -248,6 +253,44 @@ class WebViewNativeProjectionAdapter implements NativeProjectionAdapter {
     this.bridge.postMessage(receipt("frame_committed", frame));
   }
 
+  requestTeachingUpdate(
+    current: ProjectionFrame,
+    next: ProjectionFrame["teachingFrame"],
+  ): boolean {
+    if (
+      this.role !== "presenter" ||
+      this.bootstrap === undefined ||
+      this.pendingControlBase !== undefined ||
+      !matchesBootstrap(current, this.bootstrap) ||
+      current.sequence !== this.latestSequence ||
+      next.sessionId !== current.sessionId ||
+      next.courseId !== current.teachingFrame.courseId ||
+      next.lessonCount !== current.teachingFrame.lessonCount ||
+      next.sequence !== current.sequence + 1 ||
+      !teachingFrameSchema.safeParse(next).success
+    ) {
+      return false;
+    }
+    this.pendingControlBase = current.sequence;
+    this.bridge.postMessage({
+      schemaVersion: 1,
+      type: "projection_control",
+      role: "presenter",
+      channelId: current.channelId,
+      sessionId: current.sessionId,
+      courseVersionId: current.courseVersionId,
+      runtimeManifestDigest: current.runtimeManifestDigest,
+      navigationIdentity: current.navigationIdentity,
+      generation: current.generation,
+      baseSequence: current.sequence,
+      lessonId: next.lessonId,
+      lessonIndex: next.lessonIndex,
+      playing: next.playing,
+      elapsedSeconds: next.elapsedSeconds,
+    });
+    return true;
+  }
+
   private readonly onMessage = (event: MessageEvent<unknown>): void => {
     if (this.bootstrap === undefined) {
       const parsed = projectionBootstrapSchema.safeParse(event.data);
@@ -279,6 +322,12 @@ class WebViewNativeProjectionAdapter implements NativeProjectionAdapter {
     }
 
     this.latestSequence = frame.sequence;
+    if (
+      this.pendingControlBase !== undefined &&
+      frame.sequence > this.pendingControlBase
+    ) {
+      this.pendingControlBase = undefined;
+    }
     this.knownFrames.add(frameKey(frame));
     for (const listener of this.listeners) listener(frame);
   };

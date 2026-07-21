@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.0",
+  "phaseId": "dual-screen-task9-real-pipeline-and-hardware",
+  "status": "awaiting_attended_operator",
+  "integrationEvidence": {
+    "path": "platform/windows/evidence/projection-integration.json",
+    "sha256": "5a27d43784cbbf19419ddded490f98d12e7db5ff6bad635e7c571f37f7c1bf9e",
+    "interactiveLocalSession": true,
+    "attendedSession": false,
+    "physicalDualScreenCertified": false,
+    "releaseSignatureCertified": false
+  },
+  "automatedVerification": [
+    "projection integration passed with real Helper Host and WebView2",
+    "projection QA meta-tests passed 176 of 176",
+    "projection native offline tests passed 42 of 42"
+  ],
+  "attendedAttempts": {
+    "count": 2,
+    "witnessSubmitted": false,
+    "certificationReceiptWritten": false,
+    "retainedDiagnosticLogs": 0
+  },
+  "closedGaps": [
+    "hardware gate now restores locked dependencies after phase cache cleanup",
+    "witness expiry rejects before delayed UI cleanup and zeroizes sensitive material",
+    "hardware receipt now requires post-witness frame advance and matching role commits",
+    "hardware receipt now requires move or minimize invalidation followed by a fresh Host and second witness",
+    "non-certifying integration evidence no longer labels the run attended"
+  ],
+  "remainingAcceptance": [
+    "complete the first attended two-code witness",
+    "start then pause the Presenter timer to prove a synchronized forward frame",
+    "move or minimize one course window to prove invalidation",
+    "complete the second attended two-code witness after restoration",
+    "seal physical-dual-screen-current.json and final design QA"
+  ],
+  "supergrill": {
+    "stableSkillModified": false,
+    "candidateActivated": false,
+    "evolutionCheckDeferredUntilMilestonePasses": true
+  }
+}

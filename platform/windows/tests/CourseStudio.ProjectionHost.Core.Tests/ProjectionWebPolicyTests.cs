@@ -241,6 +241,78 @@ public sealed class ProjectionWebPolicyTests
     }
 
     [TestMethod]
+    public void OnlyPresenterCanRequestOneBoundedControlFromTheLatestCommittedFrame()
+    {
+        ProjectionWebBinding binding = new(
+            Role.Presenter,
+            Guid.Parse("22222222-2222-4222-8222-222222222222"),
+            "session-2",
+            "course-version-2",
+            digest("e"),
+            digest("f"),
+            7);
+        ProjectionWebMessageGate gate = new(binding);
+        gate.RegisterFrame(new FrameIdentity(
+            binding.CourseVersionId,
+            binding.RuntimeManifestDigest,
+            binding.NavigationIdentity,
+            9,
+            digest("a")));
+        gate.Accept(ReadyJson("presenter", binding.ChannelId));
+        gate.Accept(ReceiptJson(
+            "message_accepted",
+            "presenter",
+            binding.ChannelId,
+            binding,
+            9,
+            digest("a")));
+        gate.Accept(ReceiptJson(
+            "frame_committed",
+            "presenter",
+            binding.ChannelId,
+            binding,
+            9,
+            digest("a")));
+
+        string control = $$"""
+        {"schemaVersion":1,"type":"projection_control","role":"presenter","channelId":"{{binding.ChannelId}}","sessionId":"{{binding.SessionId}}","courseVersionId":"{{binding.CourseVersionId}}","runtimeManifestDigest":"{{binding.RuntimeManifestDigest}}","navigationIdentity":"{{binding.NavigationIdentity}}","generation":{{binding.Generation}},"baseSequence":9,"lessonId":"lesson-2","lessonIndex":1,"playing":false,"elapsedSeconds":0}
+        """;
+        ProjectionWebMessage message = gate.Accept(control);
+
+        Assert.AreEqual(ProjectionWebMessageKind.Control, message.Kind);
+        Assert.IsNotNull(message.Control);
+        Assert.AreEqual(9, message.Control.BaseSequence);
+        Assert.AreEqual("lesson-2", message.Control.LessonId);
+        Assert.AreEqual(1, message.Control.LessonIndex);
+        Assert.IsFalse(message.Control.Playing);
+
+        string replay = control.Replace(
+            "\"lesson-2\"",
+            "\"lesson-3\"",
+            StringComparison.Ordinal);
+        Assert.AreEqual(
+            "projection_control_pending",
+            Assert.ThrowsExactly<ProjectionWebMessageException>(() =>
+                gate.Accept(replay)).Code);
+
+        ProjectionWebBinding stageBinding = binding with
+        {
+            Role = Role.Stage,
+            ChannelId = Guid.Parse("33333333-3333-4333-8333-333333333333"),
+        };
+        ProjectionWebMessageGate stageGate = new(stageBinding);
+        Assert.AreEqual(
+            "projection_control_forbidden",
+            Assert.ThrowsExactly<ProjectionWebMessageException>(() =>
+                stageGate.Accept(control
+                    .Replace("presenter", "stage", StringComparison.Ordinal)
+                    .Replace(
+                        binding.ChannelId.ToString(),
+                        stageBinding.ChannelId.ToString(),
+                        StringComparison.Ordinal))).Code);
+    }
+
+    [TestMethod]
     public void OutboundBootstrapIsBoundBeforeItCanReachTheRenderer()
     {
         ProjectionWebBinding binding = new(

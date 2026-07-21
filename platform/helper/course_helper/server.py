@@ -224,6 +224,7 @@ def _create_projection_supervisor(
             artifact_root=app_data / "artifacts",
         ),
         evidence_store=ProjectionEvidenceStore(_safe_evidence_root(app_data)),
+        command_timeout_seconds=120,
     )
 
 

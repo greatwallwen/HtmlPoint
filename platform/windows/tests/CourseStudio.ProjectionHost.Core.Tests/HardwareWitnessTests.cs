@@ -147,6 +147,32 @@ public sealed class HardwareWitnessTests
     }
 
     [TestMethod]
+    public async Task UnsubmittedChallengeExpiresActivelyAndZeroizesSecrets()
+    {
+        FakeWitnessSurface surface = new() { BlockHide = true };
+        HardwareWitnessCoordinator coordinator = new(
+            surface,
+            new FakeEntropy(),
+            TimeSpan.FromMilliseconds(25));
+        TaskCompletionSource<string> rejected = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        coordinator.ProofRejected += code => rejected.TrySetResult(code);
+
+        await coordinator.BeginAsync(
+            Evidence(),
+            Context(),
+            StartedAt,
+            CancellationToken.None);
+
+        string code = await rejected.Task.WaitAsync(TimeSpan.FromSeconds(1));
+
+        Assert.AreEqual("witness_expired", code);
+        Assert.AreEqual("witness_expired", coordinator.ConsumptionCode);
+        Assert.AreEqual(0, coordinator.RetainedSensitiveByteCount);
+        Assert.AreEqual(1, surface.HideCalls);
+    }
+
+    [TestMethod]
     public void FakeCoordinatorCannotConstructNativeWitnessProof()
     {
         Type proofType = typeof(HardwareWitnessCoordinator.NativeWitnessProof);
@@ -246,6 +272,8 @@ public sealed class HardwareWitnessTests
 
         public int HideCalls { get; private set; }
 
+        public bool BlockHide { get; init; }
+
         public Task ShowAsync(
             string stageCode,
             string presenterCode,
@@ -264,7 +292,9 @@ public sealed class HardwareWitnessTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             HideCalls++;
-            return Task.CompletedTask;
+            return BlockHide
+                ? new TaskCompletionSource().Task
+                : Task.CompletedTask;
         }
 
         internal void KeepCompilerAwareOfEvents()

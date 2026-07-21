@@ -46,21 +46,34 @@ public sealed class HardwareWitnessCoordinator
 
     private readonly IWitnessSurface _surface;
     private readonly IWitnessEntropySource _entropy;
+    private readonly TimeSpan _challengeLifetime;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private ActiveChallenge? _active;
+    private CancellationTokenSource? _expiryCancellation;
     private WitnessContext? _surfaceContext;
 
     public HardwareWitnessCoordinator()
-        : this(new WitnessOverlaySurface(), new RandomWitnessEntropySource())
+        : this(
+            new WitnessOverlaySurface(),
+            new RandomWitnessEntropySource(),
+            ChallengeLifetime)
     {
     }
 
     internal HardwareWitnessCoordinator(
         IWitnessSurface surface,
-        IWitnessEntropySource entropy)
+        IWitnessEntropySource entropy,
+        TimeSpan? challengeLifetime = null)
     {
+        TimeSpan lifetime = challengeLifetime ?? ChallengeLifetime;
+        if (lifetime <= TimeSpan.Zero || lifetime > TimeSpan.FromMinutes(10))
+        {
+            throw new ArgumentOutOfRangeException(nameof(challengeLifetime));
+        }
+
         _surface = surface;
         _entropy = entropy;
+        _challengeLifetime = lifetime;
         _surface.CodesSubmitted += OnCodesSubmitted;
         _surface.Cancelled += OnCancelled;
     }
@@ -91,8 +104,10 @@ public sealed class HardwareWitnessCoordinator
         {
             if (_active is not null)
             {
+                CancelExpiry();
                 Consume(_active, "challenge_replaced");
                 _active = null;
+                _surfaceContext = null;
                 await _surface.HideAsync(CancellationToken.None);
             }
 
@@ -124,7 +139,7 @@ public sealed class HardwareWitnessCoordinator
                 _entropy.Fill(challengeIdBytes);
                 stageCode = Encoding.ASCII.GetString(stageCodeBytes);
                 presenterCode = Encoding.ASCII.GetString(presenterCodeBytes);
-                DateTimeOffset expiresAt = startedAt.Add(ChallengeLifetime);
+                DateTimeOffset expiresAt = startedAt.Add(_challengeLifetime);
                 ActiveChallenge challenge = new(
                     Convert.ToHexStringLower(challengeIdBytes),
                     expiresAt,
@@ -144,6 +159,7 @@ public sealed class HardwareWitnessCoordinator
                     windows,
                     expiresAt,
                     cancellationToken);
+                StartExpiry(challenge);
                 return new WitnessChallenge(
                     challenge.ChallengeId,
                     expiresAt,
@@ -154,6 +170,7 @@ public sealed class HardwareWitnessCoordinator
             {
                 if (_active is not null)
                 {
+                    CancelExpiry();
                     Consume(_active, "begin_failed");
                     _active = null;
                     _surfaceContext = null;
@@ -341,9 +358,80 @@ public sealed class HardwareWitnessCoordinator
 
     private void ConsumeAndClear(ActiveChallenge challenge, string code)
     {
+        CancelExpiry();
         Consume(challenge, code);
         _active = null;
         _surfaceContext = null;
+    }
+
+    private void StartExpiry(ActiveChallenge challenge)
+    {
+        CancelExpiry();
+        CancellationTokenSource cancellation = new();
+        _expiryCancellation = cancellation;
+        _ = ExpireAsync(
+            challenge.ChallengeId,
+            _challengeLifetime,
+            cancellation.Token);
+    }
+
+    private void CancelExpiry()
+    {
+        CancellationTokenSource? cancellation = _expiryCancellation;
+        _expiryCancellation = null;
+        if (cancellation is null)
+        {
+            return;
+        }
+
+        cancellation.Cancel();
+        cancellation.Dispose();
+    }
+
+    private async Task ExpireAsync(
+        string challengeId,
+        TimeSpan delay,
+        CancellationToken cancellationToken)
+    {
+        bool rejected = false;
+        try
+        {
+            await Task.Delay(delay, cancellationToken);
+            await _gate.WaitAsync(cancellationToken);
+            try
+            {
+                if (_active is not null
+                    && string.Equals(
+                        _active.ChallengeId,
+                        challengeId,
+                        StringComparison.Ordinal))
+                {
+                    ConsumeAndClear(_active, "witness_expired");
+                    rejected = true;
+                }
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception exception)
+        {
+            ProofRejected?.Invoke($"expiry_failed:{exception.GetType().Name}");
+            return;
+        }
+
+        if (!rejected)
+        {
+            return;
+        }
+
+        ProofRejected?.Invoke("witness_expired");
+        await _surface.HideAsync(CancellationToken.None);
     }
 
     private void Consume(ActiveChallenge challenge, string code)

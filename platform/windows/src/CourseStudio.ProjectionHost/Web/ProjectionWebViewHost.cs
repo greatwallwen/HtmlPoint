@@ -243,6 +243,7 @@ internal sealed class ProjectionWebViewHost : IAsyncDisposable
     private WebViewRuntimePolicy? _runtimePolicy;
     private string? _bootstrapJson;
     private bool _bootstrapPosted;
+    private bool _navigationStarted;
     private bool _initialized;
     private bool _disposed;
     private bool _invalidated;
@@ -297,9 +298,25 @@ internal sealed class ProjectionWebViewHost : IAsyncDisposable
             await host.InitializeAsync(cancellationToken);
             return host;
         }
-        catch
+        catch (Exception exception)
         {
-            await host.DisposeAsync();
+            try
+            {
+                await host.DisposeAsync();
+            }
+            catch (Exception cleanupException) when (
+                cleanupException is NotImplementedException
+                    or InvalidOperationException
+                    or System.Runtime.InteropServices.COMException)
+            {
+                // Preserve the initialization failure; the isolated process is job-owned.
+            }
+
+            if (exception is NotImplementedException)
+            {
+                throw new ProjectionWebPolicyException("webview_feature_unsupported");
+            }
+
             throw;
         }
     }
@@ -319,6 +336,11 @@ internal sealed class ProjectionWebViewHost : IAsyncDisposable
             frame);
         _messageGate.RegisterFrame(frame);
         _bootstrapJson = json;
+        if (!_navigationStarted)
+        {
+            _navigationStarted = true;
+            _core!.Navigate(DocumentUrl);
+        }
         PostBootstrapWhenReady();
     }
 
@@ -359,6 +381,7 @@ internal sealed class ProjectionWebViewHost : IAsyncDisposable
             }
             catch (Exception exception) when (
                 exception is InvalidOperationException
+                    or NotImplementedException
                     or System.Runtime.InteropServices.COMException)
             {
                 // The isolated profile may already be closing. Nothing is reused.
@@ -370,13 +393,24 @@ internal sealed class ProjectionWebViewHost : IAsyncDisposable
             }
             catch (Exception exception) when (
                 exception is InvalidOperationException
+                    or NotImplementedException
                     or System.Runtime.InteropServices.COMException)
             {
                 // The runtime process can exit before teardown finishes.
             }
         }
 
-        _view.Dispose();
+        try
+        {
+            _view.Dispose();
+        }
+        catch (Exception exception) when (
+            exception is NotImplementedException
+                or InvalidOperationException
+                or System.Runtime.InteropServices.COMException)
+        {
+            // A partially initialized runtime can expose an unavailable teardown API.
+        }
         foreach (Stream stream in _responseStreams)
         {
             stream.Dispose();
@@ -421,7 +455,16 @@ internal sealed class ProjectionWebViewHost : IAsyncDisposable
             CoreWebView2BrowsingDataKinds.ServiceWorkers
                 | CoreWebView2BrowsingDataKinds.AllDomStorage
                 | CoreWebView2BrowsingDataKinds.CacheStorage);
-        _core.Profile.AreWebViewScriptApisEnabledForServiceWorkers = false;
+        try
+        {
+            _core.Profile.AreWebViewScriptApisEnabledForServiceWorkers = false;
+        }
+        catch (NotImplementedException)
+        {
+            // The fixed-origin resource gate denies worker-sourced requests and
+            // the document bootstrap masks navigator.serviceWorker. This older
+            // runtime lacks only the additional profile switch.
+        }
 
         _core.SetVirtualHostNameToFolderMapping(
             HostName,
@@ -437,7 +480,6 @@ internal sealed class ProjectionWebViewHost : IAsyncDisposable
         _runtimePolicy = new WebViewRuntimePolicy(RuntimeIdentity);
         _runtimePolicy.Verify(CaptureRuntimeIdentity(_environment));
         _initialized = true;
-        _core.Navigate(DocumentUrl);
     }
 
     private static void ApplySecuritySettings(CoreWebView2 core)
@@ -467,7 +509,16 @@ internal sealed class ProjectionWebViewHost : IAsyncDisposable
         core.WebResourceRequested += OnWebResourceRequested;
         core.WebMessageReceived += OnWebMessageReceived;
         core.ProcessFailed += OnProcessFailed;
-        core.Profile.ServiceWorkerManager.ServiceWorkerRegistered += OnServiceWorkerRegistered;
+        try
+        {
+            core.Profile.ServiceWorkerManager.ServiceWorkerRegistered +=
+                OnServiceWorkerRegistered;
+        }
+        catch (NotImplementedException)
+        {
+            // Older stable runtimes omit the monitoring API. Script access is
+            // disabled below and worker-sourced requests remain denied.
+        }
         _environment!.ProcessInfosChanged += OnProcessInfosChanged;
     }
 
@@ -482,7 +533,15 @@ internal sealed class ProjectionWebViewHost : IAsyncDisposable
         core.WebResourceRequested -= OnWebResourceRequested;
         core.WebMessageReceived -= OnWebMessageReceived;
         core.ProcessFailed -= OnProcessFailed;
-        core.Profile.ServiceWorkerManager.ServiceWorkerRegistered -= OnServiceWorkerRegistered;
+        try
+        {
+            core.Profile.ServiceWorkerManager.ServiceWorkerRegistered -=
+                OnServiceWorkerRegistered;
+        }
+        catch (NotImplementedException)
+        {
+            // No subscription was created when the monitoring API was unavailable.
+        }
         if (_environment is not null)
         {
             _environment.ProcessInfosChanged -= OnProcessInfosChanged;
@@ -600,8 +659,10 @@ internal sealed class ProjectionWebViewHost : IAsyncDisposable
         object? sender,
         CoreWebView2WebMessageReceivedEventArgs eventArgs)
     {
-        if (eventArgs.AdditionalObjects.Count != 0
-            || !Uri.TryCreate(eventArgs.Source, UriKind.Absolute, out Uri? source)
+        bool hasAdditionalObjects = HasAdditionalObjects(eventArgs);
+        bool hasSource = TryGetMessageSource(eventArgs, out Uri source);
+        if (hasAdditionalObjects
+            || !hasSource
             || !_resourcePolicy.IsNavigationAllowed(source))
         {
             Invalidate("web_message_source_invalid");
@@ -627,6 +688,46 @@ internal sealed class ProjectionWebViewHost : IAsyncDisposable
         {
             Invalidate(exception.Code);
         }
+    }
+
+    private static bool HasAdditionalObjects(
+        CoreWebView2WebMessageReceivedEventArgs eventArgs)
+    {
+        try
+        {
+            IReadOnlyList<object>? additionalObjects = eventArgs.AdditionalObjects;
+            return additionalObjects is not null && additionalObjects.Count != 0;
+        }
+        catch (Exception exception) when (
+            exception is NotImplementedException
+                or InvalidOperationException
+                or System.Runtime.InteropServices.COMException)
+        {
+            // Runtimes predating additional-object messaging cannot attach any.
+            return false;
+        }
+    }
+
+    private bool TryGetMessageSource(
+        CoreWebView2WebMessageReceivedEventArgs eventArgs,
+        out Uri source)
+    {
+        string value;
+        try
+        {
+            value = eventArgs.Source;
+        }
+        catch (Exception exception) when (
+            exception is NotImplementedException
+                or InvalidOperationException
+                or System.Runtime.InteropServices.COMException)
+        {
+            value = _core?.Source ?? string.Empty;
+        }
+
+        bool parsed = Uri.TryCreate(value, UriKind.Absolute, out Uri? candidate);
+        source = candidate!;
+        return parsed;
     }
 
     private void OnProcessFailed(
@@ -725,6 +826,19 @@ internal sealed class ProjectionWebViewHost : IAsyncDisposable
             try { Object.defineProperty(window, key, { get: blocked, configurable: false }); } catch {}
           }
           try { Object.defineProperty(navigator, "serviceWorker", { value: undefined, configurable: false }); } catch {}
+          const reject = (code) => {
+            try {
+              window.chrome?.webview?.postMessage({
+                schemaVersion: 1,
+                type: "projection_rejected",
+                role: handshake.role,
+                channelId: handshake.channelId,
+                code
+              });
+            } catch {}
+          };
+          window.addEventListener("error", () => reject("renderer_script_error"), { once: true });
+          window.addEventListener("unhandledrejection", () => reject("renderer_promise_error"), { once: true });
         })();
         """;
     }

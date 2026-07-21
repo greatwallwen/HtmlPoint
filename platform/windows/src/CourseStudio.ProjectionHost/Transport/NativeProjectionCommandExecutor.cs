@@ -1,8 +1,12 @@
 using System.Security.Cryptography;
+using System.IO;
+using System.Text;
 using System.Text.Json;
 using CourseStudio.ProjectionHost.Core;
 using CourseStudio.ProjectionHost.Native;
+using CourseStudio.ProjectionHost.Web;
 using CourseStudio.ProjectionHost.Windows;
+using CourseStudio.ProjectionHost.Witness;
 
 namespace CourseStudio.ProjectionHost.Transport;
 
@@ -10,26 +14,48 @@ internal sealed class NativeProjectionCommandExecutor : IProjectionHostCommandEx
 {
     private readonly IDisplayTopologyProvider _topologyProvider;
     private readonly IRoleWindowController _windows;
+    private readonly IProjectionPresentationSessionFactory _presentationFactory;
+    private readonly IAttendedWitnessSession _witness;
+    private readonly IProjectionReducer _reducer = new ProjectionReducer();
+    private readonly object _stateGate = new();
     private byte[] _sessionSalt = RandomNumberGenerator.GetBytes(32);
     private DisplayTopology? _topology;
     private ProjectionHostOpenContext? _openContext;
     private Guid? _sessionId;
     private int _generation;
     private ProjectionStatus _status = ProjectionStatus.Undetected;
+    private ProjectionState _certificationState = ProjectionState.Initial;
+    private IProjectionPresentationSession? _presentation;
     private string? _invalidationCode;
+    private FrameIdentity? _witnessedFrame;
+    private bool _postWitnessSyncStarted;
+    private bool _postWitnessFrameAdvanceCertified;
     private bool _disposed;
 
-    internal NativeProjectionCommandExecutor()
-        : this(new Win32DisplayTopologyProvider(), new RoleWindowController())
+    internal NativeProjectionCommandExecutor(string runRoot)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(runRoot);
+        RoleWindowController windows = new();
+        _topologyProvider = new Win32DisplayTopologyProvider();
+        _windows = windows;
+        _presentationFactory = new NativeProjectionPresentationSessionFactory(
+            windows,
+            Path.Combine(AppContext.BaseDirectory, "web"),
+            Path.Combine(runRoot, "webview"));
+        _witness = new AttendedWitnessSession();
+        windows.Invalidated += OnWindowInvalidated;
     }
 
     internal NativeProjectionCommandExecutor(
         IDisplayTopologyProvider topologyProvider,
-        IRoleWindowController windows)
+        IRoleWindowController windows,
+        IProjectionPresentationSessionFactory presentationFactory,
+        IAttendedWitnessSession witness)
     {
         _topologyProvider = topologyProvider;
         _windows = windows;
+        _presentationFactory = presentationFactory;
+        _witness = witness;
         if (windows is RoleWindowController controller)
         {
             controller.Invalidated += OnWindowInvalidated;
@@ -77,8 +103,25 @@ internal sealed class NativeProjectionCommandExecutor : IProjectionHostCommandEx
         catch (ProjectionWindowPolicyException exception)
         {
             openContext?.Dispose();
-            _status = ProjectionStatus.Invalidated;
-            _invalidationCode = exception.Code;
+            Invalidate(exception.Code);
+            return Reject(command, exception.Code);
+        }
+        catch (ProjectionWebPolicyException exception)
+        {
+            openContext?.Dispose();
+            Invalidate(exception.Code);
+            return Reject(command, exception.Code);
+        }
+        catch (WitnessRejectedException exception)
+        {
+            openContext?.Dispose();
+            Invalidate(exception.Code);
+            return Reject(command, exception.Code);
+        }
+        catch (WitnessConsumedException exception)
+        {
+            openContext?.Dispose();
+            Invalidate(exception.Code);
             return Reject(command, exception.Code);
         }
         catch
@@ -101,6 +144,8 @@ internal sealed class NativeProjectionCommandExecutor : IProjectionHostCommandEx
             controller.Invalidated -= OnWindowInvalidated;
         }
 
+        await DisposePresentationAsync();
+        await _witness.InvalidateAsync("host_disposed", CancellationToken.None);
         await _windows.DisposeAsync();
         _openContext?.Dispose();
         _openContext = null;
@@ -121,6 +166,12 @@ internal sealed class NativeProjectionCommandExecutor : IProjectionHostCommandEx
         bool eligible = IsEligible(_topology);
         _generation = command.ExpectedGeneration;
         _status = eligible ? ProjectionStatus.Candidate : ProjectionStatus.Undetected;
+        _certificationState = ProjectionState.Initial;
+        ResetWitnessedFrameProgress();
+        if (eligible)
+        {
+            ApplySignal(new DisplaysDetected(_topology));
+        }
         return Receipt(
             command,
             eligible,
@@ -188,6 +239,31 @@ internal sealed class NativeProjectionCommandExecutor : IProjectionHostCommandEx
             ? await _windows.SwapAsync(command.ExpectedGeneration, cancellationToken)
             : await _windows.OpenAsync(_topology, cancellationToken);
         _generation = checked((int)assignment.StageWindow.WindowGeneration);
+        await _witness.InvalidateAsync("assignment_changed", CancellationToken.None);
+        await DisposePresentationAsync();
+        try
+        {
+            _presentation = await _presentationFactory.StartAsync(
+                _openContext!,
+                _sessionId!.Value,
+                _generation,
+                cancellationToken);
+            _presentation.FrameCommitted += OnFrameCommitted;
+            _presentation.SyncStarted += OnSyncStarted;
+            _presentation.Invalidated += OnPresentationInvalidated;
+        }
+        catch
+        {
+            await _windows.CloseAsync(CancellationToken.None);
+            throw;
+        }
+
+        _certificationState = ProjectionState.Initial;
+        ResetWitnessedFrameProgress();
+        ApplySignal(new DisplaysDetected(_topology));
+        ApplySignal(new WindowsAssigned(
+            assignment.StageWindow,
+            assignment.PresenterWindow));
         _status = ProjectionStatus.Assigned;
         return Receipt(
             command,
@@ -218,6 +294,26 @@ internal sealed class NativeProjectionCommandExecutor : IProjectionHostCommandEx
             return Reject(command, "fullscreen_verification_failed");
         }
 
+        if (_presentation is null)
+        {
+            return Reject(command, "presentation_session_missing");
+        }
+
+        RoleWindowEvidence stage = evidence.Single(item => item.Role == Role.Stage);
+        RoleWindowEvidence presenter = evidence.Single(item => item.Role == Role.Presenter);
+        ApplySignal(new FullscreenVerified(
+            Geometry(stage),
+            Geometry(presenter)));
+        FrameIdentity initialFrame = _presentation.LatestFrame;
+        ApplySignal(new FrameCommitted(Role.Stage, initialFrame));
+        ApplySignal(new FrameCommitted(Role.Presenter, initialFrame));
+        if (_certificationState.Phase != ProjectionPhase.Syncing)
+        {
+            return Reject(
+                command,
+                _certificationState.InvalidationCode ?? "frame_sync_failed");
+        }
+
         _status = ProjectionStatus.Fullscreen;
         return Receipt(
             command,
@@ -243,12 +339,100 @@ internal sealed class NativeProjectionCommandExecutor : IProjectionHostCommandEx
         IReadOnlyList<RoleWindowEvidence> evidence = await _windows.VerifyAsync(
             command.ExpectedGeneration,
             cancellationToken);
+        if (evidence.Count != 2 || evidence.Any(item => !item.IsExactFullscreen))
+        {
+            return Reject(command, "fullscreen_verification_failed");
+        }
+
+        if (_certificationState.Phase == ProjectionPhase.Certified
+            && _certificationState.PhysicalDualScreenCertified)
+        {
+            _status = ProjectionStatus.Certified;
+            string message;
+            lock (_stateGate)
+            {
+                message = _postWitnessFrameAdvanceCertified
+                    ? "projection_assignment_certified_after_frame_advance"
+                    : "projection_assignment_certified";
+            }
+            return Receipt(
+                command,
+                true,
+                _status,
+                message,
+                _generation,
+                Assignments(evidence));
+        }
+
+        if (_certificationState.Phase != ProjectionPhase.Syncing
+            || _certificationState.LatestFrame is null
+            || _topology is null)
+        {
+            return Reject(command, "projection_sync_incomplete");
+        }
+
         _status = ProjectionStatus.WitnessPending;
+        DateTimeOffset startedAt = DateTimeOffset.UtcNow;
+        AttendedWitnessResult result = await _witness.RunAsync(
+            evidence,
+            new WitnessContext(_generation, _topology.TopologyId, true),
+            startedAt,
+            cancellationToken);
+        if (result.Generation != _generation
+            || !string.Equals(
+                result.TopologyId,
+                _topology.TopologyId,
+                StringComparison.Ordinal)
+            || result.Challenge.Generation != _generation
+            || !string.Equals(
+                result.Challenge.TopologyId,
+                _topology.TopologyId,
+                StringComparison.Ordinal))
+        {
+            Invalidate("witness_state_changed");
+            return Reject(command, "witness_state_changed");
+        }
+
+        string challengeDigest = Digest(
+            result.Challenge.ChallengeId,
+            result.Challenge.ExpiresAt.ToUniversalTime().ToString("O"),
+            result.Challenge.Generation.ToString(
+                System.Globalization.CultureInfo.InvariantCulture),
+            result.Challenge.TopologyId,
+            _presentation?.RuntimeIdentityDigest ?? string.Empty);
+        WitnessIdentity challenge = new(
+            result.Challenge.ChallengeId,
+            challengeDigest,
+            startedAt,
+            result.Challenge.ExpiresAt,
+            null);
+        ApplySignal(new WitnessChallengeIssued(
+            challenge,
+            result.Challenge.ExpiresAt));
+        ApplySignal(new NativeWitnessAccepted(
+            challenge with { ObservedAt = result.AcceptedAt },
+            result.WitnessDigest));
+        if (_certificationState.Phase != ProjectionPhase.Certified
+            || !_certificationState.PhysicalDualScreenCertified
+            || _certificationState.ReleaseSignatureCertified)
+        {
+            return Reject(
+                command,
+                _certificationState.InvalidationCode ?? "witness_rejected");
+        }
+
+        _status = ProjectionStatus.Certified;
+        lock (_stateGate)
+        {
+            _witnessedFrame = _certificationState.LatestFrame;
+            _postWitnessSyncStarted = false;
+            _postWitnessFrameAdvanceCertified = false;
+        }
         return Receipt(
             command,
             true,
             _status,
-            "native_witness_required",
+            "projection_assignment_certified",
             _generation,
             Assignments(evidence));
     }
@@ -265,12 +449,16 @@ internal sealed class NativeProjectionCommandExecutor : IProjectionHostCommandEx
             return Reject(command, invalid);
         }
 
+        await _witness.InvalidateAsync("session_closed", CancellationToken.None);
+        await DisposePresentationAsync();
         await _windows.CloseAsync(cancellationToken);
         _openContext?.Dispose();
         _openContext = null;
         _sessionId = null;
         _topology = null;
         _status = ProjectionStatus.Closed;
+        _certificationState = ProjectionState.Initial;
+        ResetWitnessedFrameProgress();
         _invalidationCode = null;
         CryptographicOperations.ZeroMemory(_sessionSalt);
         _sessionSalt = RandomNumberGenerator.GetBytes(32);
@@ -368,6 +556,174 @@ internal sealed class NativeProjectionCommandExecutor : IProjectionHostCommandEx
             .Distinct(StringComparer.Ordinal)
             .Count() == 2;
 
+    private WindowGeometry Geometry(RoleWindowEvidence evidence)
+    {
+        ProjectionDisplay display = _topology?.Displays.SingleOrDefault(item =>
+                string.Equals(
+                    item.DisplayId,
+                    evidence.DisplayId,
+                    StringComparison.Ordinal))
+            ?? throw new ProjectionWindowPolicyException("display_not_found");
+        int dpi = Math.Clamp(
+            checked((int)Math.Round(display.ScalePercent * 96d / 100d)),
+            48,
+            768);
+        return new WindowGeometry(
+            evidence.DisplayId,
+            new ProjectionRectangle(
+                checked((int)evidence.TargetRect.X),
+                checked((int)evidence.TargetRect.Y),
+                checked((int)evidence.TargetRect.Width),
+                checked((int)evidence.TargetRect.Height)),
+            dpi,
+            evidence.IsExactFullscreen,
+            evidence.IsMinimized,
+            evidence.IsCloaked);
+    }
+
+    private void ApplySignal(ProjectionSignal signal)
+    {
+        lock (_stateGate)
+        {
+            _certificationState = _reducer.Apply(_certificationState, signal).State;
+            _status = StatusFor(_certificationState.Phase);
+            if (_certificationState.Phase == ProjectionPhase.Invalidated)
+            {
+                _invalidationCode = SafeCode(
+                    _certificationState.InvalidationCode ?? "projection_invalidated");
+            }
+        }
+    }
+
+    private void Invalidate(string code)
+    {
+        string safe = SafeCode(code);
+        lock (_stateGate)
+        {
+            _certificationState = _certificationState with
+            {
+                Phase = ProjectionPhase.Invalidated,
+                Generation = checked(_certificationState.Generation + 1),
+                PhysicalDualScreenCertified = false,
+                ReleaseSignatureCertified = false,
+                InvalidationCode = safe,
+            };
+            _invalidationCode = safe;
+            _status = ProjectionStatus.Invalidated;
+            _witnessedFrame = null;
+            _postWitnessSyncStarted = false;
+            _postWitnessFrameAdvanceCertified = false;
+        }
+
+        _ = _witness.InvalidateAsync(safe, CancellationToken.None);
+    }
+
+    private async Task DisposePresentationAsync()
+    {
+        IProjectionPresentationSession? presentation = _presentation;
+        _presentation = null;
+        if (presentation is null)
+        {
+            return;
+        }
+
+        presentation.FrameCommitted -= OnFrameCommitted;
+        presentation.SyncStarted -= OnSyncStarted;
+        presentation.Invalidated -= OnPresentationInvalidated;
+        await presentation.DisposeAsync();
+    }
+
+    private void OnFrameCommitted(Role role, FrameIdentity frame)
+    {
+        if (_disposed || _invalidationCode is not null)
+        {
+            return;
+        }
+
+        ApplySignal(new FrameCommitted(role, frame));
+        lock (_stateGate)
+        {
+            if (_postWitnessSyncStarted
+                && _certificationState.Phase == ProjectionPhase.Certified
+                && _certificationState.LatestFrame is not null
+                && _witnessedFrame is not null
+                && _certificationState.LatestFrame.Sequence > _witnessedFrame.Sequence)
+            {
+                _postWitnessFrameAdvanceCertified = true;
+            }
+        }
+    }
+
+    private void OnSyncStarted(FrameIdentity frame)
+    {
+        if (!_disposed && _invalidationCode is null)
+        {
+            lock (_stateGate)
+            {
+                if (_certificationState.Phase == ProjectionPhase.Certified
+                    && _certificationState.PhysicalDualScreenCertified
+                    && _witnessedFrame is not null
+                    && frame.Sequence > _witnessedFrame.Sequence
+                    && string.Equals(
+                        frame.CourseVersionId,
+                        _witnessedFrame.CourseVersionId,
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        frame.RuntimeManifestDigest,
+                        _witnessedFrame.RuntimeManifestDigest,
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        frame.NavigationIdentity,
+                        _witnessedFrame.NavigationIdentity,
+                        StringComparison.Ordinal))
+                {
+                    _postWitnessSyncStarted = true;
+                }
+
+                _status = ProjectionStatus.Syncing;
+            }
+        }
+    }
+
+    private void ResetWitnessedFrameProgress()
+    {
+        lock (_stateGate)
+        {
+            _witnessedFrame = null;
+            _postWitnessSyncStarted = false;
+            _postWitnessFrameAdvanceCertified = false;
+        }
+    }
+
+    private void OnPresentationInvalidated(string code) => Invalidate(code);
+
+    private static ProjectionStatus StatusFor(ProjectionPhase phase) => phase switch
+    {
+        ProjectionPhase.Undetected => ProjectionStatus.Undetected,
+        ProjectionPhase.Candidate => ProjectionStatus.Candidate,
+        ProjectionPhase.Assigned => ProjectionStatus.Assigned,
+        ProjectionPhase.Fullscreen => ProjectionStatus.Fullscreen,
+        ProjectionPhase.Syncing => ProjectionStatus.Syncing,
+        ProjectionPhase.WitnessPending => ProjectionStatus.WitnessPending,
+        ProjectionPhase.Certified => ProjectionStatus.Certified,
+        ProjectionPhase.Invalidated => ProjectionStatus.Invalidated,
+        ProjectionPhase.Closed => ProjectionStatus.Closed,
+        _ => ProjectionStatus.Invalidated,
+    };
+
+    private static string Digest(params string[] values)
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(string.Join('|', values));
+        try
+        {
+            return Convert.ToHexStringLower(SHA256.HashData(bytes));
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(bytes);
+        }
+    }
+
     private static string SafeCode(string value) =>
         value.Length is > 0 and <= 64
             && value[0] is >= 'a' and <= 'z'
@@ -381,7 +737,6 @@ internal sealed class NativeProjectionCommandExecutor : IProjectionHostCommandEx
     private void OnWindowInvalidated(Role role, string code)
     {
         _ = role;
-        _invalidationCode = SafeCode(code);
-        _status = ProjectionStatus.Invalidated;
+        Invalidate(code);
     }
 }

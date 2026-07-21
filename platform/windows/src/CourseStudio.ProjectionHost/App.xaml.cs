@@ -13,6 +13,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs eventArgs)
     {
         base.OnStartup(eventArgs);
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
         _shutdown = new CancellationTokenSource();
         _hostRun = Task.Run(() => RunHostAsync(_shutdown.Token));
         ObserveHostRunAsync(_hostRun);
@@ -33,9 +34,10 @@ public partial class App : Application
         {
             exitCode = await run;
         }
-        catch
+        catch (Exception exception)
         {
-            Console.Error.WriteLine("projection-host: unexpected termination");
+            Console.Error.WriteLine(
+                $"projection-host: unexpected termination:{exception.GetType().Name}");
             exitCode = 1;
         }
 
@@ -44,14 +46,10 @@ public partial class App : Application
 
     private static async Task<int> RunHostAsync(CancellationToken cancellationToken)
     {
-        string runRoot = Path.Combine(
-            Path.GetTempPath(),
-            "CourseStudio.ProjectionHost",
-            Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(runRoot);
+        string runRoot = ProjectionRunRoot();
         try
         {
-            NativeProjectionCommandExecutor executor = new();
+            NativeProjectionCommandExecutor executor = new(runRoot);
             ProjectionHostProtocolProcessor processor = new(
                 executor,
                 () => new ProjectionAssetStagingStore(
@@ -74,24 +72,76 @@ public partial class App : Application
                 or InvalidOperationException
                 or CryptographicException)
         {
-            Console.Error.WriteLine("projection-host: protocol terminated");
+            Console.Error.WriteLine(
+                $"projection-host: protocol terminated:{exception.GetType().Name}");
             return 1;
         }
         finally
         {
+            await CleanupRunRootAsync(runRoot);
+        }
+    }
+
+    private static async Task CleanupRunRootAsync(string runRoot)
+    {
+        for (int attempt = 0; attempt < 15; attempt++)
+        {
             try
             {
-                if (Directory.Exists(runRoot)
-                    && !File.GetAttributes(runRoot).HasFlag(FileAttributes.ReparsePoint))
+                if (!Directory.Exists(runRoot))
                 {
-                    Directory.Delete(runRoot, recursive: true);
+                    return;
                 }
+
+                if (File.GetAttributes(runRoot).HasFlag(FileAttributes.ReparsePoint))
+                {
+                    Console.Error.WriteLine("projection-host: temporary cleanup rejected");
+                    return;
+                }
+
+                Directory.Delete(runRoot, recursive: true);
+                return;
             }
             catch (Exception exception) when (
                 exception is IOException or UnauthorizedAccessException)
             {
-                Console.Error.WriteLine("projection-host: temporary cleanup deferred");
+                if (attempt == 14)
+                {
+                    Console.Error.WriteLine("projection-host: temporary cleanup deferred");
+                    return;
+                }
+
+                await Task.Delay(100);
             }
         }
+    }
+
+    private static string ProjectionRunRoot()
+    {
+        string? supplied = Environment.GetEnvironmentVariable(
+            "COURSE_PROJECTION_RUN_ROOT");
+        if (string.IsNullOrWhiteSpace(supplied))
+        {
+            throw new InvalidOperationException("Projection run root is missing.");
+        }
+
+        string requested = Path.GetFullPath(supplied);
+        string expectedParent = Path.GetFullPath(Path.Combine(
+            Path.GetTempPath(),
+            "CourseStudio.ProjectionHost"));
+        DirectoryInfo directory = new(requested);
+        if (!directory.Exists
+            || directory.Attributes.HasFlag(FileAttributes.ReparsePoint)
+            || !string.Equals(
+                directory.Parent?.FullName,
+                expectedParent,
+                StringComparison.OrdinalIgnoreCase)
+            || !directory.Name.StartsWith("run-", StringComparison.Ordinal)
+            || directory.Name.Length is < 20 or > 64)
+        {
+            throw new InvalidOperationException("Projection run root is invalid.");
+        }
+
+        return requested;
     }
 }

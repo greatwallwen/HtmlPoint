@@ -421,6 +421,114 @@ def test_authenticated_course_projection_reopens_identical_published_bytes(
     ).status_code == 404
 
 
+def test_authenticated_personal_run_projection_hides_published_binding_ids(
+    tmp_path: Path,
+) -> None:
+    from datetime import timedelta
+
+    from course_helper.api import HelperRuntime, create_app
+    from course_helper.domain.common import ActorRef
+    from course_helper.domain.personal_course import PersonalCourseRequest, PersonalCourseResult
+    from course_helper.jobs import WorkerRuntimeConfig
+    from course_helper.personal_runs import advance_personal_run, create_personal_run
+    from course_helper.session import LaunchSession
+    from course_helper.slide_builder import publish_course_version
+    from test_course_publication import _prepare_publication, _request
+    from test_network_visuals import NOW as NETWORK_NOW
+
+    value = _prepare_publication(tmp_path)
+    outcome = publish_course_version(
+        value.catalog,
+        _request(value, "api-personal-projection", value.visual_placement_ids),
+        confirmed_course_version_id=value.confirmed_course_id,
+        expected_course_digest=value.confirmed_course_digest,
+        visual_placement_ids=value.visual_placement_ids,
+        clock=lambda: NETWORK_NOW + timedelta(hours=1),
+    )
+    course_id = str(outcome.result_refs["courseVersionId"])
+    deck_id = str(outcome.result_refs["slideDeckId"])
+    manifest_id = str(outcome.result_refs["runtimeManifestId"])
+    source_id = str(value.catalog.connection.execute(
+        "SELECT version_id FROM sources ORDER BY version_id LIMIT 1"
+    ).fetchone()[0])
+    actor = ActorRef(actor_type="human", actor_id="local-user")
+    request = PersonalCourseRequest(
+        request_id="personal-request-" + "f" * 32,
+        prompt="制作个人课程",
+        source_version_ids=(source_id,),
+        created_at=NETWORK_NOW,
+        requested_by=actor,
+    )
+    run = create_personal_run(
+        value.catalog,
+        request,
+        source_snapshot_digest="f" * 64,
+        clock=lambda: NETWORK_NOW,
+    )
+    for status in (
+        "importing",
+        "organizing_knowledge",
+        "composing",
+        "assigning_visuals",
+        "validating",
+    ):
+        run = advance_personal_run(
+            value.catalog,
+            run.run_id,
+            expected_revision=run.revision,
+            next_status=status,
+            evidence_id=f"evidence-{status}",
+            clock=lambda: NETWORK_NOW,
+        )
+    run = advance_personal_run(
+        value.catalog,
+        run.run_id,
+        expected_revision=run.revision,
+        next_status="ready",
+        evidence_id="evidence-ready",
+        result=PersonalCourseResult(
+            title="个人课程",
+            course_version_id=course_id,
+            slide_deck_version_id=deck_id,
+            runtime_manifest_version_id=manifest_id,
+            chapter_count=1,
+        ),
+        clock=lambda: NETWORK_NOW,
+    )
+    value.catalog.close()
+
+    class NeverRunner:
+        async def run(self, *_args: object, **_kwargs: object) -> object:
+            raise AssertionError("personal projection must not dispatch a worker job")
+
+    session = LaunchSession.create(allowed_origin="http://127.0.0.1:4173")
+    client = TestClient(create_app(HelperRuntime(
+        config=WorkerRuntimeConfig(
+            database_path=str(tmp_path / "publication.sqlite3"),
+            app_data_path=str(tmp_path / "app-data"),
+            source_roots=(),
+        ),
+        launch_session=session,
+        job_runner=NeverRunner(),  # type: ignore[arg-type]
+    )))
+    path = f"/v1/personal-courses/{run.run_id}/projection"
+    assert client.get(path).status_code == 401
+    headers = _authenticated_headers(client, session.launch_nonce)
+
+    response = client.get(path, headers=headers)
+
+    assert response.status_code == 200
+    assert response.json()["courseVersionId"] == course_id
+    assert course_id not in path
+    assert deck_id not in path
+    assert manifest_id not in path
+    assert client.get(path + "?courseVersionId=" + course_id, headers=headers).status_code == 422
+    assert client.get(
+        "/v1/personal-courses/personal-run-" + "0" * 32 + "/projection",
+        headers=headers,
+    ).status_code == 404
+
+
 def test_api_requires_exact_origin_and_session_and_nonce_is_single_use(
     tmp_path: Path,
 ) -> None:

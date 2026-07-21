@@ -661,7 +661,7 @@ def _compose_from_retrievals(
         chapters.append(
             CourseOutlineChapter(
                 chapter_id=chapter_id,
-                title=f"Goal {index}: {goal}",
+                title=goal,
                 objective=goal,
                 placements=tuple(placements),
             )

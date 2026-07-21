@@ -6,6 +6,7 @@ import {
   coursePublishJobSchema,
   importStartJobSchema,
   knowledgeIndexJobSchema,
+  personalCourseCreateJobSchema,
   reviewResolveJobSchema,
   visualAttachJobSchema,
 } from "./helper-contracts-schema";
@@ -15,6 +16,7 @@ import {
   createCoursePublishJob,
   createImportStartJob,
   createKnowledgeIndexJob,
+  createPersonalCourseJob,
   createReviewResolveJob,
   createVisualAttachJob,
 } from "./governed-job-factory";
@@ -113,6 +115,24 @@ describe("governed job factory", () => {
       expected_course_digest: digest,
       visual_placement_ids: ["visual-placement-1"],
       job_bindings: [],
+    }));
+  });
+
+  it("digests personal course timestamps in the Helper canonical microsecond form", async () => {
+    const job = await createPersonalCourseJob({
+      requestId: `personal-request-${"1".repeat(32)}`,
+      prompt: "制作 AI 实战课",
+      sourceVersionIds: ["source-version-1"],
+      createdAt: "2026-07-21T03:56:42.544Z",
+    });
+
+    expect(personalCourseCreateJobSchema.parse(job)).toEqual(job);
+    expect(job.requestDigest).toBe(await stableDigest({
+      kind: "personal_course_create",
+      request: {
+        ...job.request,
+        createdAt: "2026-07-21T03:56:42.544000Z",
+      },
     }));
   });
 });

@@ -1,20 +1,37 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
 from pydantic import TypeAdapter, ValidationError
 
+from course_helper.cards import create_review_task
 from course_helper.catalog import KnowledgeCatalog
 from course_helper.domain.common import ActorRef, SourceLocator
-from course_helper.domain.sources import SourceAssetVersion
+from course_helper.domain.composition import canonical_digest
+from course_helper.domain.evidence import EvidenceObject
+from course_helper.domain.personal_course import PersonalCourseRequest
+from course_helper.domain.sources import (
+    ChunkLocator,
+    ExtractedChunk,
+    ExtractionResult,
+    SourceAssetVersion,
+)
+from course_helper.import_pipeline import persist_governed_import
 from course_helper.jobs import (
     JobSpec,
     PersonalCourseCreateJob,
+    PersonalCourseResolveJob,
     PersonalCourseStatusJob,
     WorkerRuntimeConfig,
     personal_course_create_request_digest,
+    personal_course_resolve_request_digest,
+)
+from course_helper.personal_orchestrator import (
+    create_personal_course_run,
+    resume_personal_course,
 )
 from course_helper.personal_jobs import run_personal_job
 
@@ -133,3 +150,104 @@ def test_personal_status_is_read_only_and_rejects_extra_create_fields(
         pass
     else:
         raise AssertionError("personal create accepted an extra internal field")
+
+
+def test_recommended_knowledge_resolution_closes_review_and_reaches_ready(
+    tmp_path: Path,
+) -> None:
+    config = _config(tmp_path)
+    actor = ActorRef(actor_type="human", actor_id="personal-user")
+    source = SourceAssetVersion(
+        logical_id="source-personal-resolution",
+        version_id="source-personal-resolution-v1",
+        revision=1,
+        content_digest=hashlib.sha256(b"personal-resolution").hexdigest(),
+        created_at=NOW,
+        created_by=actor,
+        locator=SourceLocator(root_id="fixture", relative_path="resolution.md"),
+        display_name="resolution.md",
+        source_kind="markdown",
+        media_type="text/markdown",
+        byte_size=64,
+        extraction_status="parsed",
+    )
+    chunk = ExtractedChunk(
+        chunk_id="chunk-personal-resolution-v1",
+        source_version_id=source.version_id,
+        ordinal=0,
+        modality="text",
+        language="zh-CN",
+        normalized_text="用真实资料完成个人 AI 工作流课程。",
+        content_digest=hashlib.sha256(b"personal-resolution-chunk").hexdigest(),
+        locator=ChunkLocator(
+            kind="markdown-section",
+            ast_path=(1,),
+            heading_path=("个人 AI 工作流",),
+        ),
+        heading="个人 AI 工作流",
+    )
+    extraction = ExtractionResult(
+        source=source,
+        chunks=(chunk,),
+        evidence=EvidenceObject(
+            evidence_id="evidence-personal-resolution-extract",
+            kind="extraction",
+            subject_version_id=source.version_id,
+            status="verified",
+            producer="personal-jobs-tests",
+            started_at=NOW,
+            finished_at=NOW,
+        ),
+    )
+    with KnowledgeCatalog.open(config.database_path) as catalog:
+        catalog.insert_source(source)
+        with catalog.atomic_write():
+            imported = persist_governed_import(catalog, extraction=extraction, actor=actor)
+        create_review_task(
+            catalog,
+            kind="manual-review",
+            subject_version_id=imported.candidate_card_version_ids[0],
+            created_at=NOW,
+            created_by=actor,
+        )
+
+    request = PersonalCourseRequest(
+        request_id="personal-request-" + "e" * 32,
+        prompt="为个人讲师制作 AI 工作流课程",
+        source_version_ids=(source.version_id,),
+        created_at=NOW,
+        requested_by=actor,
+    )
+    queued = create_personal_course_run(config, request, actor)
+    attention = resume_personal_course(config, queued.run_id, actor)
+    assert attention.status == "needs_attention"
+    assert attention.attention_bundle is not None
+    attention_digest = canonical_digest(attention.attention_bundle)
+    action = attention.attention_bundle.items[0].recommended_action
+    resolve = PersonalCourseResolveJob.model_validate(
+        {
+            "type": "personal_course_resolve",
+            "operationId": "personal-resolution-operation",
+            "requestDigest": personal_course_resolve_request_digest(
+                run_id=attention.run_id,
+                expected_attention_digest=attention_digest,
+                action=action,
+            ),
+            "actor": ACTOR_JSON,
+            "runId": attention.run_id,
+            "expectedAttentionDigest": attention_digest,
+            "action": action,
+        }
+    )
+
+    resumed = run_personal_job(resolve, config, RecordingSupervisor())
+    ready = resume_personal_course(config, attention.run_id, actor)
+
+    assert resumed.status_code == 202
+    assert ready.status == "ready"
+    with KnowledgeCatalog.open_read_only(config.database_path) as catalog:
+        assert catalog.connection.execute(
+            "SELECT count(*) FROM review_task_current WHERE current_status = 'open' "
+            "AND task_id IN (SELECT task_id FROM review_tasks WHERE subject_version_id = ?)",
+            (imported.candidate_card_version_ids[0],),
+        ).fetchone() == (0,)

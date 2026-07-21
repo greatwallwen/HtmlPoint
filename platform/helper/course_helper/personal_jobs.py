@@ -2,14 +2,21 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from datetime import datetime, timezone
 from typing import Protocol, cast
 
-from course_helper.catalog import KnowledgeCatalog
+from course_helper.catalog import KnowledgeCatalog, canonical_model_json
 from course_helper.domain.common import ActorRef, ImmutableJsonValue
 from course_helper.domain.composition import canonical_digest
 from course_helper.domain.evidence import EvidenceCheck, EvidenceObject
-from course_helper.domain.personal_course import PersonalCourseRun, PersonalCourseStatus
+from course_helper.domain.knowledge import ReviewTask
+from course_helper.domain.personal_course import (
+    AttentionBundle,
+    PersonalCourseRun,
+    PersonalCourseStatus,
+)
 from course_helper.jobs import (
     JobOutcome,
     PersonalCourseCreateJob,
@@ -19,6 +26,7 @@ from course_helper.jobs import (
 )
 from course_helper.personal_orchestrator import create_personal_course_run
 from course_helper.personal_runs import get_personal_run, resolve_personal_attention
+from course_helper.reviews import ReviewResolution, resolve_review_task
 
 
 class PersonalSupervisor(Protocol):
@@ -156,6 +164,8 @@ def _resolve_attention(
         phase = _attention_phase(catalog, run)
         resume_status = _resume_status(phase, job.action)
         now = datetime.now(timezone.utc)
+        if phase == "organizing_knowledge":
+            _resolve_knowledge_review_tasks(catalog, bundle, job.action, actor, now)
         evidence = EvidenceObject(
             evidence_id="personal-resolution-"
             + canonical_digest(
@@ -188,6 +198,73 @@ def _resolve_attention(
             evidence_id=evidence.evidence_id,
             clock=lambda: now,
         )
+
+
+def _resolve_knowledge_review_tasks(
+    catalog: KnowledgeCatalog,
+    bundle: AttentionBundle,
+    action: str,
+    actor: ActorRef,
+    resolved_at: datetime,
+) -> None:
+    decision = {
+        "approve": "accept",
+        "reject": "reject",
+        "use-source-visual": "accept",
+        "continue-without-visual": "dismiss",
+    }.get(action)
+    if decision is None:
+        return
+    attention_ids = {
+        item.attention_id for item in bundle.items if action in item.allowed_actions
+    }
+    rows = catalog.connection.execute(
+        """
+        SELECT task.payload_json
+        FROM review_tasks task
+        JOIN review_task_current current USING(task_id)
+        WHERE current.current_status = 'open'
+        ORDER BY task.task_id
+        """
+    ).fetchall()
+    for (payload,) in rows:
+        task = ReviewTask.model_validate_json(str(payload), strict=False)
+        if _review_attention_id(task) not in attention_ids:
+            continue
+        expected_digest = hashlib.sha256(
+            canonical_model_json(task).encode("utf-8")
+        ).hexdigest()
+        resolution_id = "resolution-" + hashlib.sha256(
+            json.dumps(
+                {
+                    "decision": decision,
+                    "expected_review_digest": expected_digest,
+                    "task_id": task.task_id,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        resolve_review_task(
+            catalog,
+            ReviewResolution(
+                resolution_id=resolution_id,
+                task_id=task.task_id,
+                decision=decision,
+                expected_review_digest=expected_digest,
+                resolved_at=resolved_at,
+                resolved_by=actor,
+            ),
+        )
+
+
+def _review_attention_id(task: ReviewTask) -> str:
+    prefix = (
+        "attention-visual-"
+        if task.kind in {"visual-rights", "visual-unverified"}
+        else "attention-conflict-"
+    )
+    return prefix + hashlib.sha256(task.subject_version_id.encode("utf-8")).hexdigest()[:32]
 
 
 def _attention_phase(catalog: KnowledgeCatalog, run: PersonalCourseRun) -> str:

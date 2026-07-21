@@ -56,53 +56,40 @@ def _write_course_composition_receipt(tmp_path: Path) -> dict[str, Any]:
     policy_path.parent.mkdir(parents=True, exist_ok=True)
     policy_bytes = json.dumps(policy).encode("utf-8")
     policy_path.write_bytes(policy_bytes)
-    required = [
-        "knowledge_import_start",
-        "knowledge_review_resolve",
-        "knowledge_card_publish",
-        "knowledge_index",
-        "course_compose",
-        "course_outline_confirm",
-        "chart_build",
-        "visual_search",
-        "visual_acquire",
-        "visual_revalidate",
-        "course_visual_attach",
-        "course_validate",
-    ]
-    publish = {
-        "type": "course_publish",
-        "operationId": "publish-operation-1",
-        "resultIds": {"courseVersionId": "course-v1"},
-    }
     receipt = {
         "schemaVersion": 1,
         "status": "verified",
-        "mode": "fixture-backed-loopback",
+        "mode": "fixture-backed-loopback-personal-flow",
         "browserPolicySha256": hashlib.sha256(policy_bytes).hexdigest(),
-        "operations": [
-            *(
-                {"type": item, "operationId": f"operation-{index}", "resultIds": {}}
-                for index, item in enumerate(required)
-            ),
-            publish,
-            dict(publish),
-        ],
-        "published": {
-            "courseVersionId": "course-v1",
-            "slideDeckId": "deck-v1",
-            "runtimeManifestId": "runtime-v1",
-            "runtimeManifestDigest": "b" * 64,
-            "courseProjectionId": "projection-v1",
+        "fixtures": {
+            "markdownSha256": "b" * 64,
+            "pptxSha256": "c" * 64,
+            "datasetSha256": "d" * 64,
         },
+        "operations": [
+            {"type": "knowledge_import_start", "status": 200},
+            {"type": "knowledge_import_start", "status": 200},
+            {"type": "knowledge_import_start", "status": 200},
+            {"type": "personal_course_create", "status": 202},
+            {"type": "personal_course_status", "status": 200},
+            {"type": "personal_course_resolve", "status": 202},
+        ],
         "checks": {
-            "exactOperationReplay": True,
-            "byteBoundReopen": True,
-            "stagePresenterSharedProjection": True,
+            "onePrimaryComposeAction": True,
+            "manualKnowledgePublicationClicks": 0,
+            "manualVisualBindingClicks": 0,
+            "attentionBundleCount": 1,
+            "persistedCourseReopen": True,
+            "opaqueIdentifiersHidden": True,
+            "sourceDatasetAndVisualProvenanceVisible": True,
             "physicalDualScreenCertified": False,
-            "liveNetworkAuthorizationCertified": False,
+            "noPageErrors": True,
+            "noConsoleErrors": True,
+            "noUnexpectedSameOriginFailures": True,
+            "controlledArtifactAbortCount": 1,
             "protectedSourceAccessed": False,
         },
+        "screenshots": [path.as_posix() for path in qa.COURSE_COMPOSITION_SCREENSHOTS],
     }
     receipt_path = tmp_path / qa.COURSE_COMPOSITION_RECEIPT
     receipt_path.parent.mkdir(parents=True, exist_ok=True)
@@ -119,9 +106,9 @@ def test_course_composition_and_authentic_visual_offline_receipts(tmp_path: Path
     assert qa.run_course_composition_gate(tmp_path).ok
     authentic = qa.run_authentic_visuals_gate(tmp_path)
     assert authentic.ok
-    assert authentic.details == "HISTORICAL RECEIPT VERIFIED — CURRENT NETWORK AUTHORIZATION NOT CERTIFIED"
+    assert authentic.details == "personal flow verified with real source visuals; live network authorization not certified"
 
-    receipt["checks"]["liveNetworkAuthorizationCertified"] = True
+    receipt["checks"]["physicalDualScreenCertified"] = True
     (tmp_path / qa.COURSE_COMPOSITION_RECEIPT).write_text(
         json.dumps(receipt), encoding="utf-8"
     )
@@ -589,52 +576,16 @@ def test_design_qa_requires_final_result_and_evidence(tmp_path: Path) -> None:
 
     missing = qa.check_design_qa(tmp_path)
     assert missing.ok is False
-    assert "design-qa-edit.png" in missing.details
+    assert "personal-course-entry.png" in missing.details
 
-    evidence_payloads = {
-        qa.SOURCE_IMAGE: b"reference",
-        Path("platform/web/evidence/design-qa-edit.png"): b"implementation",
-        Path("platform/web/evidence/design-qa-comparison.png"): b"comparison",
-        Path("platform/web/evidence/teaching-stage.png"): b"stage",
-        Path("platform/web/evidence/teaching-presenter.png"): b"presenter",
-        Path("platform/web/evidence/browser-flow-fixture.md"): b"fixture",
-    }
-    for relative, payload in evidence_payloads.items():
-        evidence = tmp_path / relative
-        evidence.parent.mkdir(parents=True, exist_ok=True)
-        evidence.write_bytes(payload)
-
-    def entry(relative: Path) -> dict[str, str]:
-        return {
-            "path": relative.as_posix(),
-            "sha256": hashlib.sha256(evidence_payloads[relative]).hexdigest().upper(),
-        }
-
-    receipt = {
-        "schemaVersion": 1,
-        "currentCommitBeforeEvidenceCommit": "a" * 40,
-        "reference": entry(qa.SOURCE_IMAGE),
-        "evidence": {
-            "implementation": entry(Path("platform/web/evidence/design-qa-edit.png")),
-            "comparison": entry(Path("platform/web/evidence/design-qa-comparison.png")),
-            "stage": entry(Path("platform/web/evidence/teaching-stage.png")),
-            "presenter": entry(Path("platform/web/evidence/teaching-presenter.png")),
-            "fixture": entry(Path("platform/web/evidence/browser-flow-fixture.md")),
-        },
-        "physicalDualScreenCertified": False,
-        "protectedChangedPathGuard": {"forbiddenPathCount": 0},
-        "commands": [{"command": "verify", "exitCode": 0}],
-        "designQa": "passed",
-    }
-    receipt_path = tmp_path / "platform/web/evidence/acceptance-receipt.json"
-    receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+    _write_course_composition_receipt(tmp_path)
 
     assert qa.check_design_qa(tmp_path).ok is True
 
-    (tmp_path / "platform/web/evidence/design-qa-edit.png").write_bytes(b"tampered")
+    (tmp_path / qa.COURSE_COMPOSITION_SCREENSHOTS[0]).write_bytes(b"tampered")
     tampered = qa.check_design_qa(tmp_path)
     assert tampered.ok is False
-    assert "SHA-256" in tampered.details
+    assert "invalid browser screenshot" in tampered.details
 
     report.write_text("final result: failed\n", encoding="utf-8")
     wrong_final = qa.check_design_qa(tmp_path)

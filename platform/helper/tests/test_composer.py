@@ -132,6 +132,7 @@ def test_composes_every_requirement_field_into_deterministic_five_minute_outline
     two = compose(Catalog((first, second)), result, options=options)
     assert one.outline == two.outline
     assert one.outline.uncovered_goals == ()
+    assert tuple(chapter.title for chapter in one.outline.chapters) == requirement().learning_goals
     selected_ids = tuple(item.card_version_id for chapter in one.outline.chapters for item in chapter.placements)
     assert selected_ids == ("card-explain", "card-apply")
     assert set(selected_ids).issubset({hit.card.version_id for hit in result.hits})

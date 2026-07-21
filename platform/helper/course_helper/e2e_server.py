@@ -17,6 +17,7 @@ from pptx.util import Inches
 from course_helper.api import HelperRuntime, create_app
 from course_helper.catalog import KnowledgeCatalog
 from course_helper.jobs import BoundedJobRunner, WorkerRuntimeConfig
+from course_helper.personal_supervisor import PersonalCourseSupervisor
 from course_helper.session import LaunchSession
 
 
@@ -103,16 +104,24 @@ def main() -> int:
     temporary = launch_file.with_suffix(".tmp")
     temporary.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     temporary.replace(launch_file)
-    uvicorn.run(
-        create_app(HelperRuntime(
-            config=config,
-            launch_session=session,
-            job_runner=BoundedJobRunner(config),
-        )),
-        host="127.0.0.1",
-        port=args.port,
-        log_level="warning",
-    )
+    supervisor = PersonalCourseSupervisor(config)
+    supervisor.resume_pending()
+    try:
+        uvicorn.run(
+            create_app(
+                HelperRuntime(
+                    config=config,
+                    launch_session=session,
+                    job_runner=BoundedJobRunner(config),
+                    personal_course_supervisor=supervisor,
+                )
+            ),
+            host="127.0.0.1",
+            port=args.port,
+            log_level="warning",
+        )
+    finally:
+        supervisor.shutdown()
     return 0
 
 

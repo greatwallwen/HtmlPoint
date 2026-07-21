@@ -40,7 +40,10 @@ import {
 import { requestTeachingProjection, type TeachingProjectionSnapshot } from "../domain/projection-bus";
 import { projectReopenedCourse } from "../domain/course-agent";
 import type { PersonalCourseResponse, PersonalCourseView } from "../domain/personal-course-schema";
-import type { PersonalCourseResolveJob } from "../domain/helper-contracts-schema";
+import type {
+  CourseProjectionResponse,
+  PersonalCourseResolveJob,
+} from "../domain/helper-contracts-schema";
 import {
   createImportStartJob,
   createPersonalCourseJob,
@@ -360,6 +363,12 @@ function StudioWorkflow({
   );
 }
 
+function projectionNodes(
+  nodes: CourseProjectionResponse["slideDeck"]["nodes"],
+): CourseProjectionResponse["slideDeck"]["nodes"] {
+  return nodes.flatMap((node) => [node, ...projectionNodes(node.children)]);
+}
+
 function PersonalStudioWorkflow({
   knowledgeClient,
   artifactClient,
@@ -435,13 +444,43 @@ function PersonalStudioWorkflow({
     return () => { current = false; globalThis.clearTimeout(timer); };
   }, [knowledgeClient, response]);
 
-  const openCourse = (target: "edit" | "teach") => {
-    const course = response?.view.course;
+  const openCourse = async (target: "edit" | "teach") => {
+    const current = response;
+    if (current === undefined) return;
+    const course = current.view.course;
     if (course === null || course === undefined) return;
+    const projection = await knowledgeClient.getPersonalCourseProjection(current.runId);
+    const nodes = projectionNodes(projection.slideDeck.nodes);
     dispatch({
       type: "PERSONAL_COURSE_OPENED",
       course,
       target,
+      governed: {
+        requirementId: projection.requirement.requirementId,
+        outlineVersionId: projection.outline.versionId,
+        courseVersionId: projection.courseVersionId,
+        slideDeckId: projection.slideDeck.versionId,
+        runtimeManifestId: projection.runtimeManifest.versionId,
+        cardVersionIds: [...new Set(
+          projection.outline.chapters.flatMap((chapter) =>
+            chapter.placements.map((placement) => placement.cardVersionId),
+          ),
+        )],
+        visualPlacementIds: [...new Set(
+          nodes.flatMap((node) =>
+            node.assetBindings.map((binding) => binding.visualPlacementId),
+          ),
+        )],
+      },
+      projection: {
+        courseDigest: projection.courseDigest,
+        usageScope: projection.usageScope,
+        courseUpdatedAt: course.updatedAt,
+        slideDeck: projection.slideDeck,
+        runtimeManifest: projection.runtimeManifest,
+        warnings: [],
+        publicationStatus: "published",
+      },
       receipt: {
         id: "personal-course-validation",
         courseId: course.id,

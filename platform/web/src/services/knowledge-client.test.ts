@@ -62,6 +62,7 @@ describe("KnowledgeClient governed surface", () => {
       "indexKnowledge",
       "createPersonalCourse",
       "getPersonalCourse",
+      "getPersonalCourseProjection",
       "resolvePersonalCourseAttention",
       "composeCourse",
       "confirmOutline",
@@ -254,5 +255,40 @@ describe("KnowledgeClient governed surface", () => {
 
     fetchMock.mockResolvedValueOnce(response({ result: { ...result, internalId: "leak" }, evidence }));
     await expect(client.getPersonalCourse(job)).rejects.toThrow(SAFE_HELPER_FAILURE_MESSAGE);
+  });
+
+  it("reopens a personal course projection without exposing published binding IDs in the URL", async () => {
+    const runId = `personal-run-${"d".repeat(32)}`;
+    const actor = { actorType: "human", actorId: "local-user", displayName: null };
+    const projection = {
+      schemaVersion: 1,
+      courseVersionId: "course-personal-v1",
+      courseDigest: digest,
+      usageScope: "private-training" as const,
+      status: "published" as const,
+      requirement: { schemaVersion: 1, requirementId: "requirement-personal", title: "个人课程", audience: "个人讲师", learningGoals: ["完成课程"], durationMinutes: 60, requiredTagIds: [], excludedTagIds: [], usageScope: "private-training" as const },
+      outline: {
+        schemaVersion: 1, logicalId: "outline-personal", versionId: "outline-personal-v1", revision: 1, contentDigest: "b".repeat(64), supersedesVersionId: null, createdAt: timestamp, createdBy: actor, requirementId: "requirement-personal", uncoveredGoals: [], retrievalEvidenceId: "evidence-retrieval", indexSnapshotId: "snapshot-personal",
+        chapters: [{ schemaVersion: 1, chapterId: "chapter-personal", title: "第一章", objective: "完成课程", placements: [{ schemaVersion: 1, placementId: "placement-personal", cardVersionId: "card-personal", chapterId: "chapter-personal", lessonId: "lesson-personal", purpose: "core", allocatedMinutes: 60 }] }],
+      },
+      slideDeck: {
+        schemaVersion: 1, logicalId: "deck-personal", versionId: "deck-personal-v1", revision: 1, contentDigest: "c".repeat(64), supersedesVersionId: null, createdAt: timestamp, createdBy: actor, courseVersionId: "course-personal-v1",
+        nodes: [{ schemaVersion: 1, nodeId: "slide-personal", nodeType: "slide", text: "个人课程", items: [], placementIds: ["placement-personal"], cardVersionIds: ["card-personal"], chunkIds: [], sourceVersionIds: [], evidenceIds: ["evidence-1"], presenterNotes: "讲师提示", assetBindings: [], children: [] }],
+      },
+      runtimeManifest: {
+        schemaVersion: 1, logicalId: "runtime-personal", versionId: "runtime-personal-v1", revision: 1, contentDigest: "e".repeat(64), supersedesVersionId: null, createdAt: timestamp, createdBy: actor, courseVersionId: "course-personal-v1", slideDeckVersionId: "deck-personal-v1", slideDeckDigest: "c".repeat(64), jobBindings: [], artifactIds: [], evidenceIds: ["evidence-1"],
+      },
+    };
+    const fetchMock = vi.fn().mockResolvedValue(response(projection));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new KnowledgeClient(session);
+
+    await expect(client.getPersonalCourseProjection(runId)).resolves.toEqual(projection);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${helperOrigin}/v1/personal-courses/${runId}/projection`,
+      expect.objectContaining({ method: "GET" }),
+    );
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain("course-personal-v1");
   });
 });

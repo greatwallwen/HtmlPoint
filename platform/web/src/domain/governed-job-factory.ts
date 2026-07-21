@@ -20,6 +20,9 @@ import { stableDigest } from "./validation";
 
 const ACTOR = { actorType: "human" as const, actorId: "local-user" };
 
+const helperCanonicalTimestamp = (value: string): string =>
+  new Date(value).toISOString().replace(/\.(\d{3})Z$/, ".$1000Z");
+
 export async function createImportStartJob(
   upload: UploadResponse,
 ): Promise<ImportStartJob> {
@@ -113,7 +116,10 @@ export async function createPersonalCourseJob(input: {
     operationId: createId("personal-create-operation"),
     requestDigest: await stableDigest({
       kind: "personal_course_create",
-      request,
+      request: {
+        ...request,
+        createdAt: helperCanonicalTimestamp(request.createdAt),
+      },
     }),
     actor: ACTOR,
     request,

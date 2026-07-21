@@ -327,6 +327,18 @@ export class KnowledgeClient implements KnowledgeSummaryClient {
     return this.#runJob(job, personalCourseStatusJobSchema, personalCourseResultSchema);
   }
 
+  getPersonalCourseProjection(runId: string): Promise<CourseProjectionResponse> {
+    if (!/^personal-run-[0-9a-f]{32}$/.test(runId)) {
+      return Promise.reject(new Error(SAFE_HELPER_FAILURE_MESSAGE));
+    }
+    return this.#fetchJson(
+      `/v1/personal-courses/${encodeURIComponent(runId)}/projection`,
+      { method: "GET" },
+      courseProjectionResponseSchema,
+      READ_TIMEOUT_MS,
+    );
+  }
+
   resolvePersonalCourseAttention(job: PersonalCourseResolveJob) {
     return this.#runJob(job, personalCourseResolveJobSchema, personalCourseResultSchema);
   }

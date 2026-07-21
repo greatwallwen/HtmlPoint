@@ -76,7 +76,6 @@ REQUIRED_DOMAIN_FILES = (
 )
 
 DESIGN_QA_REPORT = Path("platform/web/design-qa.md")
-ACCEPTANCE_RECEIPT = Path("platform/web/evidence/acceptance-receipt.json")
 KNOWLEDGE_DEMO_RECEIPT = Path(
     "platform/helper/evidence/reference-demo-receipt.json"
 )
@@ -100,13 +99,13 @@ NETWORK_VISUAL_RECEIPT = Path(
     "platform/helper/evidence/network-visual-acquisition-live.json"
 )
 COURSE_COMPOSITION_RECEIPT = Path(
-    "platform/web/evidence/course-composition-browser-e2e.json"
+    "platform/web/evidence/personal-course-browser-e2e.json"
 )
 COURSE_BROWSER_POLICY = Path("platform/web/e2e/browser-policy.json")
 COURSE_COMPOSITION_SCREENSHOTS = (
-    Path("platform/web/output/playwright/published-editor.png"),
-    Path("platform/web/output/playwright/stage.png"),
-    Path("platform/web/output/playwright/presenter.png"),
+    Path("platform/web/evidence/personal-course-entry.png"),
+    Path("platform/web/evidence/personal-course-post-action.png"),
+    Path("platform/web/evidence/personal-course-ready.png"),
 )
 PROJECTION_OPT_IN_FLAGS = (
     "COURSE_PROJECTION_RESTORE",
@@ -124,18 +123,9 @@ PROJECTION_HARDWARE_EVIDENCE = Path(
     "platform/windows/evidence/physical-dual-screen-current.json"
 )
 DESIGN_QA_EVIDENCE = (
-    Path("platform/web/evidence/design-qa-edit.png"),
-    Path("platform/web/evidence/design-qa-comparison.png"),
-    ACCEPTANCE_RECEIPT,
+    *COURSE_COMPOSITION_SCREENSHOTS,
+    COURSE_COMPOSITION_RECEIPT,
 )
-ACCEPTANCE_HASHED_ENTRIES = {
-    "reference": SOURCE_IMAGE,
-    "implementation": Path("platform/web/evidence/design-qa-edit.png"),
-    "comparison": Path("platform/web/evidence/design-qa-comparison.png"),
-    "stage": Path("platform/web/evidence/teaching-stage.png"),
-    "presenter": Path("platform/web/evidence/teaching-presenter.png"),
-    "fixture": Path("platform/web/evidence/browser-flow-fixture.md"),
-}
 
 _GRADIENT_RE = re.compile(r"(?:linear|radial|conic)-gradient", re.IGNORECASE)
 _CSS_COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
@@ -1254,74 +1244,6 @@ def check_source_image(image_path: Path, expected_sha256: str) -> CheckResult:
     return CheckResult("source image", True, f"SHA-256 {actual}")
 
 
-def _acceptance_receipt_error(repo_root: Path) -> str | None:
-    receipt_path = repo_root / ACCEPTANCE_RECEIPT
-    try:
-        receipt = json.loads(_read_utf8(receipt_path))
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        return f"invalid acceptance receipt: {exc}"
-
-    if not isinstance(receipt, dict) or receipt.get("schemaVersion") != 1:
-        return "acceptance receipt must be a schemaVersion 1 object"
-    if receipt.get("designQa") != "passed":
-        return "acceptance receipt designQa must be 'passed'"
-    if receipt.get("physicalDualScreenCertified") is not False:
-        return "acceptance receipt must not certify unverified physical dual-screen"
-    if not re.fullmatch(
-        r"[0-9a-f]{40}",
-        str(receipt.get("currentCommitBeforeEvidenceCommit", "")),
-        re.IGNORECASE,
-    ):
-        return "acceptance receipt implementation commit must be a full Git hash"
-
-    protected = receipt.get("protectedChangedPathGuard")
-    if not isinstance(protected, dict) or protected.get("forbiddenPathCount") != 0:
-        return "acceptance receipt protected-path guard must report zero violations"
-
-    commands = receipt.get("commands")
-    if (
-        not isinstance(commands, list)
-        or not commands
-        or any(
-            not isinstance(command, dict) or command.get("exitCode") != 0
-            for command in commands
-        )
-    ):
-        return "acceptance receipt commands must be non-empty and all pass"
-
-    evidence = receipt.get("evidence")
-    if not isinstance(evidence, dict):
-        return "acceptance receipt evidence must be an object"
-
-    entries: dict[str, object] = {"reference": receipt.get("reference")}
-    entries.update({name: evidence.get(name) for name in ACCEPTANCE_HASHED_ENTRIES if name != "reference"})
-    for name, expected_path in ACCEPTANCE_HASHED_ENTRIES.items():
-        entry = entries.get(name)
-        if not isinstance(entry, dict):
-            return f"acceptance receipt entry {name!r} must be an object"
-        if entry.get("path") != expected_path.as_posix():
-            return f"acceptance receipt entry {name!r} has an unexpected path"
-        expected_hash = entry.get("sha256")
-        if not isinstance(expected_hash, str) or not re.fullmatch(
-            r"[0-9a-f]{64}", expected_hash, re.IGNORECASE
-        ):
-            return f"acceptance receipt entry {name!r} needs a SHA-256 digest"
-        asset_path = repo_root / expected_path
-        if not asset_path.is_file():
-            return f"acceptance receipt entry {name!r} is missing {expected_path}"
-        try:
-            actual_hash = _sha256_file(asset_path)
-        except OSError as exc:
-            return f"cannot hash acceptance evidence {expected_path}: {exc}"
-        if actual_hash != expected_hash.upper():
-            return (
-                f"acceptance receipt SHA-256 mismatch for {expected_path}: "
-                f"expected {expected_hash.upper()}, got {actual_hash}"
-            )
-
-    return None
-
-
 def check_workflow_order(workflow_path: Path) -> CheckResult:
     try:
         source = _read_utf8(workflow_path)
@@ -1384,13 +1306,13 @@ def check_design_qa(repo_root: Path) -> CheckResult:
     missing = [str(path) for path in DESIGN_QA_EVIDENCE if not (repo_root / path).is_file()]
     if missing:
         return CheckResult("design QA", False, f"missing evidence: {', '.join(missing)}")
-    receipt_error = _acceptance_receipt_error(repo_root)
+    receipt_error = _course_composition_receipt_error(repo_root)
     if receipt_error:
         return CheckResult("design QA", False, receipt_error)
     return CheckResult(
         "design QA",
         True,
-        "final result: passed with hash-verified acceptance evidence",
+        "final result: passed with verified personal-course browser evidence",
     )
 
 
@@ -1543,13 +1465,22 @@ def _course_composition_receipt_error(repo_root: Path) -> str | None:
     except (OSError, UnicodeError, json.JSONDecodeError):
         return "browser receipt or browser policy is unreadable"
     if not isinstance(receipt, dict) or frozenset(receipt) != frozenset(
-        ("schemaVersion", "status", "mode", "browserPolicySha256", "operations", "published", "checks")
+        (
+            "schemaVersion",
+            "status",
+            "mode",
+            "browserPolicySha256",
+            "fixtures",
+            "operations",
+            "checks",
+            "screenshots",
+        )
     ):
         return "browser receipt structure is invalid"
     if (
         receipt.get("schemaVersion") != 1
         or receipt.get("status") != "verified"
-        or receipt.get("mode") != "fixture-backed-loopback"
+        or receipt.get("mode") != "fixture-backed-loopback-personal-flow"
         or receipt.get("browserPolicySha256")
         != hashlib.sha256(policy_bytes).hexdigest()
     ):
@@ -1564,60 +1495,64 @@ def _course_composition_receipt_error(repo_root: Path) -> str | None:
         or "Google LLC" not in policy.get("publisher", "")
     ):
         return "browser policy is invalid"
+    fixtures = receipt.get("fixtures")
+    if not isinstance(fixtures, dict) or frozenset(fixtures) != frozenset(
+        ("markdownSha256", "pptxSha256", "datasetSha256")
+    ) or any(not _is_sha256(value) for value in fixtures.values()):
+        return "browser fixture digests are invalid"
     checks = receipt.get("checks")
-    if not isinstance(checks, dict) or checks != {
-        "exactOperationReplay": True,
-        "byteBoundReopen": True,
-        "stagePresenterSharedProjection": True,
-        "physicalDualScreenCertified": False,
-        "liveNetworkAuthorizationCertified": False,
-        "protectedSourceAccessed": False,
-    }:
+    expected_boolean_checks = (
+        "onePrimaryComposeAction",
+        "persistedCourseReopen",
+        "opaqueIdentifiersHidden",
+        "sourceDatasetAndVisualProvenanceVisible",
+        "noPageErrors",
+        "noConsoleErrors",
+        "noUnexpectedSameOriginFailures",
+    )
+    if (
+        not isinstance(checks, dict)
+        or any(checks.get(name) is not True for name in expected_boolean_checks)
+        or checks.get("manualKnowledgePublicationClicks") != 0
+        or checks.get("manualVisualBindingClicks") != 0
+        or not isinstance(checks.get("attentionBundleCount"), int)
+        or not 0 <= checks["attentionBundleCount"] <= 1
+        or not isinstance(checks.get("controlledArtifactAbortCount"), int)
+        or checks["controlledArtifactAbortCount"] < 0
+        or checks.get("physicalDualScreenCertified") is not False
+        or checks.get("protectedSourceAccessed") is not False
+    ):
         return "browser receipt certification boundaries are invalid"
-    published = receipt.get("published")
-    if not isinstance(published, dict) or frozenset(published) != frozenset(
-        ("courseVersionId", "slideDeckId", "runtimeManifestId", "runtimeManifestDigest", "courseProjectionId")
-    ) or not _is_sha256(published.get("runtimeManifestDigest")):
-        return "published projection identity is invalid"
-    if any(not isinstance(value, str) or not value for value in published.values()):
-        return "published projection IDs are invalid"
     operations = receipt.get("operations")
     if not isinstance(operations, list) or not operations:
         return "browser receipt has no operations"
-    required_types = {
-        "knowledge_import_start",
-        "knowledge_review_resolve",
-        "knowledge_card_publish",
-        "knowledge_index",
-        "course_compose",
-        "course_outline_confirm",
-        "chart_build",
-        "visual_search",
-        "visual_acquire",
-        "visual_revalidate",
-        "course_visual_attach",
-        "course_validate",
-        "course_publish",
-    }
     operation_types: list[str] = []
-    publish_operations: list[Mapping[str, Any]] = []
     for operation in operations:
         if not isinstance(operation, dict) or frozenset(operation) != frozenset(
-            ("type", "operationId", "resultIds")
+            ("type", "status")
         ):
             return "browser operation envelope is invalid"
         operation_type = operation.get("type")
-        if not isinstance(operation_type, str):
+        status = operation.get("status")
+        if (
+            not isinstance(operation_type, str)
+            or not isinstance(status, int)
+            or not 200 <= status < 300
+        ):
             return "browser operation type is invalid"
         operation_types.append(operation_type)
-        if operation_type == "course_publish":
-            publish_operations.append(operation)
-    if not required_types.issubset(operation_types):
-        return "browser operation chain is incomplete"
-    if len(publish_operations) != 2 or publish_operations[0] != publish_operations[1]:
-        return "course publish replay is not byte-identical"
+    if (
+        operation_types.count("knowledge_import_start") != 3
+        or operation_types.count("personal_course_create") != 1
+        or operation_types.count("personal_course_resolve") > 1
+        or "knowledge_card_publish" in operation_types
+        or "course_visual_attach" in operation_types
+    ):
+        return "personal browser operation chain is invalid"
     if receipt_bytes.lower().find(b"course_aiproduct") >= 0 or receipt_bytes.lower().find(b"references/") >= 0:
         return "browser receipt leaks a protected source path"
+    if receipt.get("screenshots") != [path.as_posix() for path in COURSE_COMPOSITION_SCREENSHOTS]:
+        return "browser screenshot manifest is invalid"
     for screenshot in COURSE_COMPOSITION_SCREENSHOTS:
         try:
             payload = (repo_root / screenshot).read_bytes()
@@ -1633,7 +1568,7 @@ def run_course_composition_gate(repo_root: Path) -> CheckResult:
     return CheckResult(
         "course composition",
         error is None,
-        error or "fixture-backed loopback publish, replay, reopen, Stage, and Presenter verified",
+        error or "one-click personal compose, persisted reopen, governed visuals, and non-certifying teach setup verified",
     )
 
 
@@ -1644,7 +1579,7 @@ def run_authentic_visuals_gate(repo_root: Path) -> CheckResult:
     return CheckResult(
         "authentic visuals",
         True,
-        "HISTORICAL RECEIPT VERIFIED — CURRENT NETWORK AUTHORIZATION NOT CERTIFIED",
+        "personal flow verified with real source visuals; live network authorization not certified",
     )
 
 
@@ -3619,7 +3554,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             reconfigure = getattr(sys.stdout, "reconfigure", None)
             if callable(reconfigure):
                 reconfigure(encoding="utf-8")
-            print("HISTORICAL RECEIPT VERIFIED — CURRENT NETWORK AUTHORIZATION NOT CERTIFIED")
+            print("PERSONAL FLOW VERIFIED — LIVE NETWORK AUTHORIZATION NOT CERTIFIED")
     else:
         results = [run_knowledge_demo_gate(repo_root, require_source_root=True)]
     _print_results(results)

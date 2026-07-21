@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "status": "verified",
+  "mode": "fixture-backed-loopback-personal-flow",
+  "browserPolicySha256": "09afacb6ef18559c4c974780d25ccf1c41dc4eaa565d429849e9c05a3f653673",
+  "fixtures": {
+    "markdownSha256": "5583a3b600260a24eaf8b613cc1e7180a75e653ce7d8ac2e88a3e1c1cff0b6fd",
+    "pptxSha256": "c3848ce2eaa66dbdbb4cb4fe4eb7bfdab13270e559a2fc3ff4f5b0e586b644a8",
+    "datasetSha256": "724ac11900d80a0234804076e9330edbc1cf553369ca955542e2348b06ed5a70"
+  },
+  "operations": [
+    {
+      "type": "knowledge_import_start",
+      "status": 200
+    },
+    {
+      "type": "knowledge_import_start",
+      "status": 200
+    },
+    {
+      "type": "knowledge_import_start",
+      "status": 200
+    },
+    {
+      "type": "personal_course_create",
+      "status": 202
+    },
+    {
+      "type": "personal_course_status",
+      "status": 200
+    },
+    {
+      "type": "personal_course_resolve",
+      "status": 202
+    },
+    {
+      "type": "personal_course_status",
+      "status": 200
+    },
+    {
+      "type": "personal_course_status",
+      "status": 200
+    },
+    {
+      "type": "personal_course_status",
+      "status": 200
+    }
+  ],
+  "checks": {
+    "onePrimaryComposeAction": true,
+    "manualKnowledgePublicationClicks": 0,
+    "manualVisualBindingClicks": 0,
+    "attentionBundleCount": 1,
+    "persistedCourseReopen": true,
+    "opaqueIdentifiersHidden": true,
+    "sourceDatasetAndVisualProvenanceVisible": true,
+    "physicalDualScreenCertified": false,
+    "noPageErrors": true,
+    "noConsoleErrors": true,
+    "noUnexpectedSameOriginFailures": true,
+    "controlledArtifactAbortCount": 1,
+    "protectedSourceAccessed": false
+  },
+  "screenshots": [
+    "platform/web/evidence/personal-course-entry.png",
+    "platform/web/evidence/personal-course-post-action.png",
+    "platform/web/evidence/personal-course-ready.png"
+  ]
+}

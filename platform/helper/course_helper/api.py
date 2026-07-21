@@ -51,6 +51,7 @@ from course_helper.jobs import (
     projection_job_timeout_seconds,
 )
 from course_helper.personal_jobs import PersonalJobError, PersonalSupervisor, run_personal_job
+from course_helper.personal_runs import get_personal_run
 from course_helper.projection_host import ProjectionHostError
 from course_helper.index_outbox import reopen_index_snapshot
 from course_helper.session import LaunchSession, SessionRejected
@@ -242,6 +243,46 @@ class CourseProjectionResponse(HttpResponseModel):
     outline: Mapping[str, Any]
     slide_deck: Mapping[str, Any]
     runtime_manifest: Mapping[str, Any]
+
+
+def _course_projection_from_ids(
+    catalog: KnowledgeCatalog,
+    *,
+    course_version_id: str,
+    slide_deck_id: str,
+    runtime_manifest_id: str,
+) -> CourseProjectionResponse:
+    course = catalog.get_course_version(course_version_id)
+    deck = catalog.get_slide_deck(slide_deck_id)
+    manifest = catalog.get_runtime_manifest(runtime_manifest_id)
+    if course is None or deck is None or manifest is None:
+        raise LookupError
+    outline = catalog.get_course_outline(course.payload.outline_version_id)
+    requirement = catalog.get_course_requirement(course.payload.requirement_id)
+    if outline is None or requirement is None:
+        raise LookupError
+    if (
+        course.payload.status != "published"
+        or course.payload.content_digest != course_version_content_digest(course.payload)
+        or deck.payload.course_version_id != course.payload.version_id
+        or deck.payload.content_digest != slide_deck_content_digest(deck.payload)
+        or manifest.payload.course_version_id != course.payload.version_id
+        or manifest.payload.slide_deck_version_id != deck.payload.version_id
+        or manifest.payload.slide_deck_digest != deck.payload.content_digest
+        or manifest.payload.content_digest != runtime_manifest_content_digest(manifest.payload)
+        or outline.payload.requirement_id != requirement.payload.requirement_id
+    ):
+        raise LookupError
+    return CourseProjectionResponse(
+        course_version_id=course.payload.version_id,
+        course_digest=course.payload.content_digest,
+        usage_scope=course.payload.usage_scope,
+        status="published",
+        requirement=_camelize_json(requirement.payload.model_dump(mode="json")),
+        outline=_camelize_json(outline.payload.model_dump(mode="json")),
+        slide_deck=_camelize_json(deck.payload.model_dump(mode="json")),
+        runtime_manifest=_camelize_json(manifest.payload.model_dump(mode="json")),
+    )
 
 
 class JobRunner(Protocol):
@@ -651,39 +692,12 @@ def create_app(runtime: HelperRuntime) -> FastAPI:
         ):
             raise HTTPException(status_code=422, detail="invalid request")
         try:
-            with KnowledgeCatalog.open(runtime.config.database_path) as catalog:
-                course = catalog.get_course_version(course_version_id)
-                deck = catalog.get_slide_deck(slideDeckId)
-                manifest = catalog.get_runtime_manifest(runtimeManifestId)
-                if course is None or deck is None or manifest is None:
-                    raise LookupError
-                outline = catalog.get_course_outline(course.payload.outline_version_id)
-                requirement = catalog.get_course_requirement(course.payload.requirement_id)
-                if outline is None or requirement is None:
-                    raise LookupError
-                if (
-                    course.payload.status != "published"
-                    or course.payload.content_digest
-                    != course_version_content_digest(course.payload)
-                    or deck.payload.course_version_id != course.payload.version_id
-                    or deck.payload.content_digest != slide_deck_content_digest(deck.payload)
-                    or manifest.payload.course_version_id != course.payload.version_id
-                    or manifest.payload.slide_deck_version_id != deck.payload.version_id
-                    or manifest.payload.slide_deck_digest != deck.payload.content_digest
-                    or manifest.payload.content_digest
-                    != runtime_manifest_content_digest(manifest.payload)
-                    or outline.payload.requirement_id != requirement.payload.requirement_id
-                ):
-                    raise LookupError
-                return CourseProjectionResponse(
-                    course_version_id=course.payload.version_id,
-                    course_digest=course.payload.content_digest,
-                    usage_scope=course.payload.usage_scope,
-                    status="published",
-                    requirement=_camelize_json(requirement.payload.model_dump(mode="json")),
-                    outline=_camelize_json(outline.payload.model_dump(mode="json")),
-                    slide_deck=_camelize_json(deck.payload.model_dump(mode="json")),
-                    runtime_manifest=_camelize_json(manifest.payload.model_dump(mode="json")),
+            with KnowledgeCatalog.open_read_only(runtime.config.database_path) as catalog:
+                return _course_projection_from_ids(
+                    catalog,
+                    course_version_id=course_version_id,
+                    slide_deck_id=slideDeckId,
+                    runtime_manifest_id=runtimeManifestId,
                 )
         except HTTPException:
             raise
@@ -691,6 +705,40 @@ def create_app(runtime: HelperRuntime) -> FastAPI:
             raise HTTPException(
                 status_code=404,
                 detail="course projection unavailable",
+                headers={"Cache-Control": "no-store"},
+            ) from None
+
+    @app.get(
+        "/v1/personal-courses/{run_id}/projection",
+        response_model=CourseProjectionResponse,
+    )
+    def personal_course_projection(
+        run_id: str,
+        request: Request,
+        _authenticated: str = Depends(require_session),
+    ) -> CourseProjectionResponse:
+        if (
+            request.query_params
+            or not re.fullmatch(r"personal-run-[0-9a-f]{32}", run_id)
+        ):
+            raise HTTPException(status_code=422, detail="invalid request")
+        try:
+            with KnowledgeCatalog.open_read_only(runtime.config.database_path) as catalog:
+                run = get_personal_run(catalog, run_id)
+                if run is None or run.status != "ready" or run.result is None:
+                    raise LookupError
+                return _course_projection_from_ids(
+                    catalog,
+                    course_version_id=run.result.course_version_id,
+                    slide_deck_id=run.result.slide_deck_version_id,
+                    runtime_manifest_id=run.result.runtime_manifest_version_id,
+                )
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(
+                status_code=404,
+                detail="personal course projection unavailable",
                 headers={"Cache-Control": "no-store"},
             ) from None
 

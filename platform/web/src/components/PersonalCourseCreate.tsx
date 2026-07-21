@@ -5,11 +5,11 @@ export interface PersonalCourseCreateProps {
   onStart(files: File[], prompt: string): Promise<void> | void;
 }
 
-function mergeFiles(current: File[], incoming: FileList | null): File[] {
+function mergeFiles(current: File[], incoming: Iterable<File>): File[] {
   const merged = new Map(
     current.map((file) => [`${file.webkitRelativePath || file.name}:${file.size}`, file]),
   );
-  Array.from(incoming ?? []).forEach((file) => {
+  Array.from(incoming).forEach((file) => {
     merged.set(`${file.webkitRelativePath || file.name}:${file.size}`, file);
   });
   return Array.from(merged.values()).slice(0, 50);
@@ -21,8 +21,9 @@ export function PersonalCourseCreate({ onStart }: PersonalCourseCreateProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
   const addFiles = (event: ChangeEvent<HTMLInputElement>) => {
-    setFiles((current) => mergeFiles(current, event.currentTarget.files));
+    const selectedFiles = Array.from(event.currentTarget.files ?? []);
     event.currentTarget.value = "";
+    setFiles((current) => mergeFiles(current, selectedFiles));
   };
   const submit = async (event: FormEvent) => {
     event.preventDefault();

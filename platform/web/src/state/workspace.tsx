@@ -69,7 +69,14 @@ export interface WorkspaceState {
 export type WorkspaceAction =
   | { type: "START_NEW" }
   | { type: "PERSONAL_COURSE_TRACKED"; runId: string; view: PersonalCourseView }
-  | { type: "PERSONAL_COURSE_OPENED"; course: CourseDocument; receipt: EvidenceReceipt; target: "edit" | "teach" }
+  | {
+      type: "PERSONAL_COURSE_OPENED";
+      course: CourseDocument;
+      receipt: EvidenceReceipt;
+      target: "edit" | "teach";
+      governed: GovernedWorkspaceBindings;
+      projection: GovernedCourseProjection;
+    }
   | { type: "ADD_SOURCES"; sources: SourceAsset[] }
   | { type: "REMOVE_SOURCE"; sourceId: string }
   | { type: "SET_BRIEF"; patch: Partial<CourseBrief> }
@@ -371,6 +378,9 @@ export function workspaceReducer(
           durationMinutes: action.course.durationMinutes,
         },
         receipts: [...state.receipts, action.receipt],
+        governed: action.governed,
+        governedProjection: action.projection,
+        legacyUnlinked: undefined,
         validation: "success",
         validationWarningsAcknowledged: true,
         courseRevision: nextCourseRevision(state),

@@ -10,6 +10,7 @@ env/
 ENV/
 pip-wheel-metadata/
 .pytest_cache/
+.pytest-*/
 .mypy_cache/
 .ruff_cache/
 

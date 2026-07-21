@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "task": "personal-first-task3-contracts-and-persistence",
+  "recordedAt": "2026-07-21T10:16:20+08:00",
+  "status": "passed",
+  "productDirection": {
+    "assessment": "aligned",
+    "reason": "The platform now persists one resumable personal course run as a strict domain object while the browser receives only a concise four-state projection. Opaque IDs remain service concerns rather than visible workflow content.",
+    "majorDivergence": false,
+    "supergrillRequired": false
+  },
+  "decisions": [
+    "Use the repository's next contiguous migration number 0008 instead of the stale plan jump to 0010.",
+    "Allow only declared forward transitions and explicit needs-attention resumes.",
+    "Use request plus source snapshot digests for idempotent run creation.",
+    "Use revision compare-and-swap for every persisted transition.",
+    "Collapse internal nonterminal phases to the public creating state with exact Chinese phase labels."
+  ],
+  "verification": [
+    {
+      "command": "python -m pytest platform/helper/tests/test_personal_course_contracts.py platform/helper/tests/test_personal_runs.py platform/helper/tests/test_upgrades.py -q",
+      "result": "21 passed"
+    },
+    {
+      "command": "python -m pytest platform/helper/tests/test_personal_course_contracts.py platform/helper/tests/test_personal_runs.py platform/helper/tests/test_upgrades.py platform/helper/tests/test_lifecycle.py platform/helper/tests/test_embeddings.py -q",
+      "result": "75 passed"
+    },
+    {
+      "command": "npm.cmd --prefix platform/web test -- --run src/domain/personal-course-schema.test.ts",
+      "result": "11 passed"
+    },
+    {
+      "command": "npm.cmd --prefix platform/web run typecheck",
+      "result": "passed"
+    }
+  ],
+  "artifactHashes": [
+    {
+      "path": "platform/helper/course_helper/domain/personal_course.py",
+      "sha256": "B222BC3BED09C0A6AB9B2EBC64FFCC87A2EFFFE6B7328F76F2681AF1B78D25D9"
+    },
+    {
+      "path": "platform/helper/course_helper/personal_runs.py",
+      "sha256": "FDFA3269D889DC0CCCD415EED754AF9AF8EA45F612391F8396C23F8F349E9A17"
+    },
+    {
+      "path": "platform/helper/course_helper/migrations/0008_personal_course_runs.sql",
+      "sha256": "D3F1147B1072B19B954030B0A2C9C6564FFD728015CB76526F3E621F7F9BD62D"
+    },
+    {
+      "path": "platform/web/src/domain/personal-course-schema.ts",
+      "sha256": "0D9944D048F5CCBA3913436F8A761E5E87C0BF3D6CB13C5E68E4584C86438BFC"
+    }
+  ],
+  "cleanup": {
+    "scope": "platform only",
+    "removedDirectories": 5,
+    "removedFiles": 34,
+    "removedBytes": 1100744
+  },
+  "certification": {
+    "physicalDualScreenCertified": false,
+    "releaseSignatureCertified": false
+  },
+  "residualRisk": "The contracts and repository are not yet reachable through a typed Helper job or UI; Tasks 5 and 6 own orchestration and transport.",
+  "nextAction": "Task 4: implement safe automatic knowledge-card classification and publication policy."
+}

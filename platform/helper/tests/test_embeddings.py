@@ -49,7 +49,7 @@ def test_migration_four_creates_append_only_embedding_snapshot_tables(
             ).fetchall()
         }
 
-    assert versions == (1, 2, 3, 4, 5, 6, 7)
+    assert versions == (1, 2, 3, 4, 5, 6, 7, 8)
     assert {
         "embedding_index_snapshots",
         "card_embedding_rows",

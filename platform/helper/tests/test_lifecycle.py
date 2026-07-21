@@ -188,7 +188,7 @@ def test_v1_migration_backfills_projection_without_rewriting_immutable_card(tmp_
                 "SELECT version FROM schema_migrations ORDER BY version"
             ).fetchall()
         )
-        assert versions == (1, 2, 3, 4, 5, 6, 7)
+        assert versions == (1, 2, 3, 4, 5, 6, 7, 8)
         stored = catalog.connection.execute(
             "SELECT status, payload_json, content_digest FROM cards WHERE version_id = ?",
             (card.version_id,),

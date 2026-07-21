@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     from course_helper.source_visuals import SourceVisualMaterialization
 
 
-CURRENT_MIGRATION_VERSION = 7
+CURRENT_MIGRATION_VERSION = 8
 _MIGRATION_PATHS = {
     1: Path(__file__).with_name("migrations") / "0001_knowledge_catalog.sql",
     2: Path(__file__).with_name("migrations") / "0002_card_lifecycle.sql",
@@ -74,6 +74,7 @@ _MIGRATION_PATHS = {
     5: Path(__file__).with_name("migrations") / "0005_artifact_metadata.sql",
     6: Path(__file__).with_name("migrations") / "0006_visual_provenance.sql",
     7: Path(__file__).with_name("migrations") / "0007_import_sources.sql",
+    8: Path(__file__).with_name("migrations") / "0008_personal_course_runs.sql",
 }
 
 

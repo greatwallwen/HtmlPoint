@@ -227,7 +227,7 @@ Expected: focused Python/Web tests and typecheck pass.
 - Create: `platform/helper/course_helper/personal_runs.py`
 - Create: `platform/helper/tests/test_personal_course_contracts.py`
 - Create: `platform/helper/tests/test_personal_runs.py`
-- Create: `platform/helper/course_helper/migrations/0010_personal_course_runs.sql`
+- Create: `platform/helper/course_helper/migrations/0008_personal_course_runs.sql`
 - Modify: `platform/helper/course_helper/catalog.py`
 - Modify: `platform/helper/course_helper/upgrades.py`
 - Create: `platform/web/src/domain/personal-course-schema.ts`
@@ -327,7 +327,7 @@ Map every internal non-terminal phase to `status: "creating"` and its exact Chin
 ```powershell
 python -m pytest platform/helper/tests/test_personal_course_contracts.py platform/helper/tests/test_personal_runs.py platform/helper/tests/test_upgrades.py -q
 npm --prefix platform/web test -- --run src/domain/personal-course-schema.test.ts
-git add -- platform/helper/course_helper/domain/personal_course.py platform/helper/course_helper/personal_runs.py platform/helper/course_helper/migrations/0010_personal_course_runs.sql platform/helper/course_helper/catalog.py platform/helper/course_helper/upgrades.py platform/helper/tests/test_personal_course_contracts.py platform/helper/tests/test_personal_runs.py platform/web/src/domain/personal-course-schema.ts platform/web/src/domain/personal-course-schema.test.ts
+git add -- platform/helper/course_helper/domain/personal_course.py platform/helper/course_helper/personal_runs.py platform/helper/course_helper/migrations/0008_personal_course_runs.sql platform/helper/course_helper/catalog.py platform/helper/course_helper/upgrades.py platform/helper/tests/test_personal_course_contracts.py platform/helper/tests/test_personal_runs.py platform/web/src/domain/personal-course-schema.ts platform/web/src/domain/personal-course-schema.test.ts
 git commit -m "feat: persist personal course runs"
 ```
 

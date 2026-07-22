@@ -2,6 +2,12 @@
 requires = ["setuptools==75.6.0"]
 build-backend = "setuptools.build_meta"
 
+# Clean setuptools environments, including the macOS CI runner, must package only
+# the Helper source tree instead of treating evidence/ as a namespace package.
+[tool.setuptools.packages.find]
+include = ["course_helper*"]
+namespaces = false
+
 [project]
 name = "course-studio-helper"
 version = "0.1.0"
@@ -31,6 +37,8 @@ pythonpath = ["."]
 testpaths = ["tests"]
 markers = [
   "reference_demo: exercises an explicitly allowlisted local reference fixture",
+  "network_visual: requires explicitly authorized live network visual acquisition",
+  "model_download: exercises the Windows-only embedding model finalization runtime",
   "projection_integration: launches the installed native Host without certification",
   "projection_hardware: requires attended physical dual-screen confirmation",
 ]

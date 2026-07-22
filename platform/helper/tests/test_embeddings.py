@@ -1032,6 +1032,7 @@ def test_unassigned_suspended_worker_is_directly_killed_and_reaped(
     assert "terminate-job" not in calls
 
 
+@pytest.mark.model_download
 def test_temp_parent_rename_swap_is_blocked_before_run_root_creation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

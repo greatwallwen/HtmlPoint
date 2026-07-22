@@ -1906,6 +1906,7 @@ def test_phase_b_rejects_unsafe_wheel_archive_members(
     assert caught.value.code == "MODEL_RUNTIME_WHEEL_CLOSURE_INVALID"
 
 
+@pytest.mark.model_download
 def test_phase_b_redownloads_every_locked_byte_into_fresh_generation(
     tmp_path: Path,
 ) -> None:
@@ -2039,6 +2040,7 @@ def test_phase_b_failure_preserves_prior_cache_and_removes_unsealed_generation(
     assert list(quarantine_parent.iterdir()) == []
 
 
+@pytest.mark.model_download
 def test_phase_b_existing_generation_reuse_removes_fresh_staging(
     tmp_path: Path,
 ) -> None:
@@ -2084,6 +2086,7 @@ def test_phase_b_existing_generation_reuse_removes_fresh_staging(
     assert len(tuple((tmp_path / ".embedding-model").iterdir())) == 1
 
 
+@pytest.mark.model_download
 def test_phase_b_concurrent_same_generation_promotion_reuses_winner(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -2134,6 +2137,7 @@ def test_phase_b_concurrent_same_generation_promotion_reuses_winner(
     assert len(tuple((tmp_path / ".embedding-model").iterdir())) == 1
 
 
+@pytest.mark.model_download
 def test_phase_b_binds_ancestor_handles_during_stage_promote_and_verify(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -2211,6 +2215,7 @@ def test_phase_b_binds_ancestor_handles_during_stage_promote_and_verify(
     )
 
 
+@pytest.mark.model_download
 @pytest.mark.parametrize("runtime_fault", ("extra", "missing", "tampered"))
 def test_phase_b_runtime_files_must_match_verified_wheel_record_closure(
     tmp_path: Path,
@@ -2255,6 +2260,7 @@ def test_phase_b_runtime_files_must_match_verified_wheel_record_closure(
     assert list((tmp_path / ".embedding-quarantine").iterdir()) == []
 
 
+@pytest.mark.model_download
 def test_phase_b_binds_verified_generation_files_across_provider_hook(
     tmp_path: Path,
 ) -> None:
@@ -2301,6 +2307,7 @@ def test_phase_b_binds_verified_generation_files_across_provider_hook(
     assert (result.verified.runtime_root / "fastembed/__init__.py").read_bytes() == b""
 
 
+@pytest.mark.model_download
 def test_phase_b_generation_tree_denies_transient_new_files_during_hook(
     tmp_path: Path,
 ) -> None:
@@ -2356,6 +2363,7 @@ def test_phase_b_generation_tree_denies_transient_new_files_during_hook(
     restored_smoke.unlink()
 
 
+@pytest.mark.model_download
 def test_phase_b_provider_origins_are_parent_bound_not_callback_ordered(
     tmp_path: Path,
 ) -> None:
@@ -2397,6 +2405,7 @@ def test_phase_b_provider_origins_are_parent_bound_not_callback_ordered(
     ] == ["fastembed", "onnxruntime"]
 
 
+@pytest.mark.model_download
 @pytest.mark.parametrize("fault_stage", ("after-apply", "after-restore"))
 def test_phase_b_generation_dacl_failure_restores_all_directory_writes(
     tmp_path: Path,
@@ -2431,6 +2440,7 @@ def test_phase_b_generation_dacl_failure_restores_all_directory_writes(
     restored.unlink()
 
 
+@pytest.mark.model_download
 def test_generation_write_boundary_reports_actual_deny_identity_and_restore(
     tmp_path: Path,
 ) -> None:
@@ -2459,6 +2469,7 @@ def test_generation_write_boundary_reports_actual_deny_identity_and_restore(
     restored.unlink()
 
 
+@pytest.mark.model_download
 def test_generation_write_boundary_preserves_existing_file_acl_bytes(
     tmp_path: Path,
 ) -> None:
@@ -2496,6 +2507,7 @@ def test_generation_write_boundary_preserves_existing_file_acl_bytes(
     existing.write_bytes(b"restored")
 
 
+@pytest.mark.model_download
 @pytest.mark.parametrize(
     "fault_target",
     ("GetFileInformationByHandle", "GetAclInformation", "acl-bytes"),
@@ -2720,6 +2732,7 @@ def test_phase_b_host_attestation_rejects_abi_or_bitness_mismatch_before_fetch(
     assert called is False
 
 
+@pytest.mark.model_download
 def test_phase_b_verification_hook_runs_with_all_socket_entrypoints_denied(
     tmp_path: Path,
 ) -> None:
@@ -2816,6 +2829,7 @@ def test_phase_b_local_installer_is_hash_locked_binary_only_and_no_index(
         assert f"{wheel.name}=={wheel.version} --hash=sha256:{wheel.sha256}" in lock
 
 
+@pytest.mark.model_download
 @pytest.mark.parametrize("failure_mode", ("output-limit", "timeout"))
 def test_phase_b_local_installer_bounds_output_and_cleans_temporary_files(
     tmp_path: Path,
@@ -2876,6 +2890,7 @@ def test_phase_b_cleanup_refuses_swapped_directory_identity(
     assert (original / "owned.bin").read_bytes() == b"owned"
 
 
+@pytest.mark.model_download
 def test_phase_b_rollback_attempts_target_and_quarantine_cleanup_independently(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -2934,6 +2949,7 @@ def test_phase_b_rollback_attempts_target_and_quarantine_cleanup_independently(
     assert list(quarantine_parent.iterdir()) == []
 
 
+@pytest.mark.model_download
 def test_phase_b_pip_output_limit_rejects_one_unbuffered_burst(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -2957,6 +2973,7 @@ def test_phase_b_pip_output_limit_rejects_one_unbuffered_burst(
     assert caught.value.code == "MODEL_RUNTIME_INSTALL_FAILED"
 
 
+@pytest.mark.model_download
 def test_phase_b_pip_failure_terminates_suspended_job_grandchild(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -2987,6 +3004,7 @@ def test_phase_b_pip_failure_terminates_suspended_job_grandchild(
     assert marker.exists() is False
 
 
+@pytest.mark.model_download
 def test_phase_b_pip_job_limit_one_rejects_child_creation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

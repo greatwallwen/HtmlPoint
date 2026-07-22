@@ -497,6 +497,7 @@ def _redirect_authority_sources(
     return source_root, model_path, embeddings_path
 
 
+@pytest.mark.model_download
 def test_authority_loader_executes_bound_bytes_and_rejects_source_swaps(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -654,6 +655,7 @@ def test_authority_loader_uses_owned_unique_namespace_and_ignores_canonical_pois
         sys.modules.pop(collision_name, None)
 
 
+@pytest.mark.model_download
 def test_final_expectation_binds_exact_authority_reopens_and_rejects_wrong_types(
     tmp_path: Path,
 ) -> None:
@@ -929,6 +931,7 @@ def test_final_expectation_rejects_resigned_actual_origin_and_vector_mismatch(
         authority.close()
 
 
+@pytest.mark.model_download
 def test_final_expectation_detaches_evidence_before_bound_context_exit(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -971,6 +974,7 @@ def test_final_expectation_detaches_evidence_before_bound_context_exit(
         authority.close()
 
 
+@pytest.mark.model_download
 def test_provider_session_holds_generation_files_through_post_verification(
     tmp_path: Path,
 ) -> None:
@@ -1042,6 +1046,7 @@ def test_provider_session_holds_generation_files_through_post_verification(
         authority.close()
 
 
+@pytest.mark.model_download
 def test_live_callback_binds_unique_verified_type_and_two_fresh_replays(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1223,6 +1228,7 @@ def test_final_verification_callback_needs_no_fabricated_final_objects(
         authority.close()
 
 
+@pytest.mark.model_download
 def test_fresh_pipeline_publishes_claims_completes_and_queries_fixed_fixture(
     tmp_path: Path,
 ) -> None:
@@ -1324,6 +1330,7 @@ def _set_path(value: dict[str, Any], path: tuple[str, ...], replacement: str) ->
     target[path[-1]] = replacement
 
 
+@pytest.mark.model_download
 def test_receipt_requires_final_result_and_rejects_every_resigned_digest_tamper(
     tmp_path: Path,
 ) -> None:
@@ -1373,6 +1380,7 @@ def test_receipt_requires_final_result_and_rejects_every_resigned_digest_tamper(
         assert caught.value.code == "EMBEDDING_MODEL_RECEIPT_INVALID"
 
 
+@pytest.mark.model_download
 def test_atomic_seal_replace_failure_preserves_prior_then_success_reopens_and_validates(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1428,6 +1436,7 @@ def test_atomic_seal_replace_failure_preserves_prior_then_success_reopens_and_va
     )
 
 
+@pytest.mark.model_download
 def test_deferred_seal_can_rollback_post_return_validation_failure(
     tmp_path: Path,
 ) -> None:
@@ -1468,6 +1477,7 @@ def test_deferred_seal_can_rollback_post_return_validation_failure(
     assert transaction.finalize() == revalidated
 
 
+@pytest.mark.model_download
 def test_deferred_commit_blocks_same_identity_same_size_postvalidation_tamper(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1517,6 +1527,7 @@ def test_deferred_commit_blocks_same_identity_same_size_postvalidation_tamper(
     assert not list(quarantine.glob(".receipt-prior-*.bak"))
 
 
+@pytest.mark.model_download
 def test_deferred_final_verify_failure_releases_noexcept_then_recovers_prior(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1545,6 +1556,7 @@ def test_deferred_final_verify_failure_releases_noexcept_then_recovers_prior(
     assert sealed.read_bytes() == prior
 
 
+@pytest.mark.model_download
 def test_compare_mismatch_rollback_uses_recovery_after_same_size_prior_tamper(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1575,6 +1587,7 @@ def test_compare_mismatch_rollback_uses_recovery_after_same_size_prior_tamper(
     assert sealed.read_bytes() == prior
 
 
+@pytest.mark.model_download
 def test_backup_same_size_tamper_forces_failure_and_recovers_original_prior(
     tmp_path: Path,
 ) -> None:
@@ -1599,6 +1612,7 @@ def test_backup_same_size_tamper_forces_failure_and_recovers_original_prior(
     assert sealed.read_bytes() == prior
 
 
+@pytest.mark.model_download
 def test_destination_parent_swap_is_denied_while_held_then_prior_recovers(
     tmp_path: Path,
 ) -> None:
@@ -1622,6 +1636,7 @@ def test_destination_parent_swap_is_denied_while_held_then_prior_recovers(
     assert sealed.read_bytes() == prior
 
 
+@pytest.mark.model_download
 def test_finalize_native_close_fault_is_noexcept_after_all_prior_decisions(
     tmp_path: Path,
 ) -> None:
@@ -1665,6 +1680,7 @@ def _receipt_case(live: Any, tmp_path: Path) -> tuple[Any, Any, dict[str, Any]]:
     return expectation, final_result, receipt
 
 
+@pytest.mark.model_download
 def test_receipt_binds_exact_result_verification_pipeline_and_returns_detached_copy(
     tmp_path: Path,
 ) -> None:
@@ -1710,6 +1726,7 @@ def test_receipt_binds_exact_result_verification_pipeline_and_returns_detached_c
         )
 
 
+@pytest.mark.model_download
 @pytest.mark.parametrize("token", ["NaN", "Infinity", "-Infinity", "1e999"])
 def test_receipt_rejects_nonfinite_json_numbers(tmp_path: Path, token: str) -> None:
     live = _live_module()
@@ -1723,6 +1740,7 @@ def test_receipt_rejects_nonfinite_json_numbers(tmp_path: Path, token: str) -> N
         live.validate_receipt(path, expectation, final_result)
 
 
+@pytest.mark.model_download
 def test_receipt_rejects_nested_duplicate_key_oversize_and_bool_as_int(
     tmp_path: Path,
 ) -> None:
@@ -1749,6 +1767,7 @@ def test_receipt_rejects_nested_duplicate_key_oversize_and_bool_as_int(
         live.validate_receipt(path, expectation, final_result)
 
 
+@pytest.mark.model_download
 @pytest.mark.parametrize(
     ("started", "finished"),
     (
@@ -1774,6 +1793,7 @@ def test_receipt_rejects_noncanonical_or_reversed_utc_timestamps(
         live.validate_receipt(path, expectation, final_result)
 
 
+@pytest.mark.model_download
 def test_seal_rejects_temp_hardlink_and_reparse(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1824,6 +1844,7 @@ def test_seal_rejects_temp_hardlink_and_reparse(
         )
 
 
+@pytest.mark.model_download
 def test_seal_detects_temp_swap_and_restores_original_absence(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1853,6 +1874,7 @@ def test_seal_detects_temp_swap_and_restores_original_absence(
     assert not sealed.exists()
 
 
+@pytest.mark.model_download
 def test_seal_postreplace_validation_failure_restores_prior(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1886,6 +1908,7 @@ def test_seal_postreplace_validation_failure_restores_prior(
     assert sealed.read_bytes() == prior
 
 
+@pytest.mark.model_download
 def test_seal_rollback_failure_keeps_one_identity_verified_prior_in_quarantine(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

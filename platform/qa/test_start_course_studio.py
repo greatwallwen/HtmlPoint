@@ -10,6 +10,7 @@ from pathlib import Path
 SCRIPT = Path("platform/start-course-studio.ps1")
 DOUBLE_CLICK_ENTRY = Path("platform/启动课程平台.cmd")
 UNIX_SCRIPT = Path("platform/start-course-studio.sh")
+MACOS_ENTRY = Path("platform/启动课程平台.command")
 
 
 def _script() -> str:
@@ -59,16 +60,21 @@ def test_double_click_entry_invokes_only_the_fixed_launcher() -> None:
 
 
 def _unix_workspace(tmp_path: Path) -> tuple[Path, Path, Path]:
-    platform_root = tmp_path / "workspace with spaces" / "platform"
+    repo_root = tmp_path / "中文 workspace with spaces"
+    platform_root = repo_root / "platform"
     (platform_root / "web").mkdir(parents=True)
     (platform_root / "helper").mkdir()
+    vite = platform_root / "web" / "node_modules" / ".bin" / "vite"
+    vite.parent.mkdir(parents=True)
+    vite.write_text("fixture", encoding="utf-8")
+    vite.chmod(0o755)
     launcher = platform_root / UNIX_SCRIPT.name
     shutil.copyfile(UNIX_SCRIPT, launcher)
 
     bin_root = tmp_path / "fake-bin"
     bin_root.mkdir()
     log = tmp_path / "launcher.log"
-    for name in ("npm", "python", "uname"):
+    for name in ("npm", "uname"):
         stub = bin_root / name
         stub.write_text(
             "#!/bin/sh\n"
@@ -77,6 +83,28 @@ def _unix_workspace(tmp_path: Path) -> tuple[Path, Path, Path]:
             encoding="utf-8",
         )
         stub.chmod(0o755)
+    for name in ("dirname", "mkdir"):
+        executable = shutil.which(name)
+        assert executable is not None
+        (bin_root / name).symlink_to(executable)
+
+    python = repo_root / ".venv" / "bin" / "python"
+    python.parent.mkdir(parents=True)
+    python.write_text(
+        "#!/bin/sh\n"
+        "if [ \"${1:-}\" = '-c' ]; then\n"
+        "  printf '%s\\n' 'python-check' >> \"$LAUNCHER_LOG\"\n"
+        "  [ \"${TEST_PYTHON_COMPAT:-1}\" = '1' ]\n"
+        "  exit\n"
+        "fi\n"
+        "if [ \"${1:-}\" = '--version' ]; then\n"
+        "  printf '%s\\n' \"${TEST_PYTHON_VERSION:-Python 3.11.9}\"\n"
+        "  exit\n"
+        "fi\n"
+        "printf '%s\\n' \"python:$PWD:$*\" >> \"$LAUNCHER_LOG\"\n",
+        encoding="utf-8",
+    )
+    python.chmod(0o755)
     return launcher, bin_root, log
 
 
@@ -92,6 +120,7 @@ def _run_unix_launcher(
         "PATH": f"{bin_root}{os.pathsep}{os.environ.get('PATH', '')}",
         "LAUNCHER_LOG": str(log),
         "TEST_UNAME": uname,
+        "TEST_PYTHON_COMPAT": "1",
     }
     result = subprocess.run(
         ["sh", str(launcher), *arguments],
@@ -113,6 +142,7 @@ def test_unix_launcher_builds_missing_web_and_starts_helper_on_macos(
 
     assert result.returncode == 0, result.stderr
     assert calls == [
+        "python-check",
         "uname:" + str(tmp_path) + ":-s",
         f"npm:{tmp_path}:--prefix {platform_root / 'web'} run build",
         "python:"
@@ -126,6 +156,7 @@ def test_unix_launcher_builds_missing_web_and_starts_helper_on_macos(
         + " --port 8765",
     ]
     assert (app_data / "sources").is_dir()
+    assert "中文 workspace with spaces" in calls[-1]
 
 
 def test_unix_launcher_skips_build_when_manifest_exists(tmp_path: Path) -> None:
@@ -136,7 +167,7 @@ def test_unix_launcher_skips_build_when_manifest_exists(tmp_path: Path) -> None:
     home = tmp_path / "home"
     home.mkdir()
     result = subprocess.run(
-        ["sh", str(launcher)],
+        ["/bin/sh", str(launcher)],
         cwd=tmp_path,
         env={
             **os.environ,
@@ -144,6 +175,7 @@ def test_unix_launcher_skips_build_when_manifest_exists(tmp_path: Path) -> None:
             "PATH": f"{bin_root}{os.pathsep}{os.environ.get('PATH', '')}",
             "LAUNCHER_LOG": str(log),
             "TEST_UNAME": "Darwin",
+            "TEST_PYTHON_COMPAT": "1",
         },
         text=True,
         capture_output=True,
@@ -172,7 +204,7 @@ def test_unix_launcher_uses_xdg_data_home_on_linux(tmp_path: Path) -> None:
     xdg_data = tmp_path / "xdg data"
     home.mkdir()
     result = subprocess.run(
-        ["sh", str(launcher)],
+        ["/bin/sh", str(launcher)],
         cwd=tmp_path,
         env={
             **os.environ,
@@ -181,6 +213,7 @@ def test_unix_launcher_uses_xdg_data_home_on_linux(tmp_path: Path) -> None:
             "PATH": f"{bin_root}{os.pathsep}{os.environ.get('PATH', '')}",
             "LAUNCHER_LOG": str(log),
             "TEST_UNAME": "Linux",
+            "TEST_PYTHON_COMPAT": "1",
         },
         text=True,
         capture_output=True,
@@ -193,3 +226,126 @@ def test_unix_launcher_uses_xdg_data_home_on_linux(tmp_path: Path) -> None:
         call for call in log.read_text().splitlines() if call.startswith("python:")
     )
     assert f"--app-data {xdg_data / 'CourseStudio'}" in helper_call
+
+
+def test_macos_double_click_entry_invokes_only_fixed_shell_launcher() -> None:
+    assert MACOS_ENTRY.is_file(), "macOS double-click entry must exist"
+    assert MACOS_ENTRY.stat().st_mode & 0o111, ".command entry must be executable"
+    entry = MACOS_ENTRY.read_text(encoding="utf-8")
+
+    assert 'exec "$script_dir/start-course-studio.sh"' in entry
+    assert '"$@"' not in entry
+    assert "eval" not in entry
+    assert "source" not in entry
+
+
+def test_unix_launcher_fails_with_install_steps_when_venv_is_missing(
+    tmp_path: Path,
+) -> None:
+    launcher, bin_root, log = _unix_workspace(tmp_path)
+    (launcher.parent.parent / ".venv" / "bin" / "python").unlink()
+
+    result = subprocess.run(
+        ["/bin/sh", str(launcher)],
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "HOME": str(tmp_path / "home"),
+            "PATH": str(bin_root),
+            "LAUNCHER_LOG": str(log),
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "Python environment not found" in result.stderr
+    assert "python3 -m venv .venv" in result.stderr
+    assert "pip install -e" in result.stderr
+    assert not log.exists()
+
+
+def test_unix_launcher_rejects_incompatible_venv_python(tmp_path: Path) -> None:
+    launcher, bin_root, log = _unix_workspace(tmp_path)
+    result = subprocess.run(
+        ["/bin/sh", str(launcher)],
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "HOME": str(tmp_path / "home"),
+            "PATH": str(bin_root),
+            "LAUNCHER_LOG": str(log),
+            "TEST_PYTHON_COMPAT": "0",
+            "TEST_PYTHON_VERSION": "Python 3.11.9",
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "must use Python 3.12" in result.stderr
+    assert "Python 3.11.9" in result.stderr
+    assert "python3.12 -m venv .venv" in result.stderr
+    assert log.read_text(encoding="utf-8").splitlines() == ["python-check"]
+
+
+def test_unix_launcher_fails_closed_with_install_step_when_npm_is_missing(
+    tmp_path: Path,
+) -> None:
+    launcher, bin_root, log = _unix_workspace(tmp_path)
+    (bin_root / "npm").unlink()
+    result = subprocess.run(
+        ["/bin/sh", str(launcher)],
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "HOME": str(tmp_path / "home"),
+            "PATH": str(bin_root),
+            "LAUNCHER_LOG": str(log),
+            "TEST_PYTHON_COMPAT": "1",
+            "TEST_UNAME": "Darwin",
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "npm was not found on PATH" in result.stderr
+    assert "npm --prefix platform/web ci" in result.stderr
+    assert log.read_text(encoding="utf-8").splitlines() == [
+        "python-check",
+        f"uname:{tmp_path}:-s",
+    ]
+
+
+def test_unix_launcher_fails_closed_when_web_dependencies_are_missing(
+    tmp_path: Path,
+) -> None:
+    launcher, bin_root, log = _unix_workspace(tmp_path)
+    (launcher.parent / "web" / "node_modules" / ".bin" / "vite").unlink()
+    result = subprocess.run(
+        ["/bin/sh", str(launcher)],
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "HOME": str(tmp_path / "home"),
+            "PATH": str(bin_root),
+            "LAUNCHER_LOG": str(log),
+            "TEST_PYTHON_COMPAT": "1",
+            "TEST_UNAME": "Darwin",
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "Web dependencies are not installed" in result.stderr
+    assert "npm --prefix platform/web ci" in result.stderr
+    assert not any(
+        call.startswith(("npm:", "python:"))
+        for call in log.read_text(encoding="utf-8").splitlines()
+    )

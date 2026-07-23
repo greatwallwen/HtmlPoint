@@ -1,44 +1,42 @@
-import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { basename, dirname, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const policy = JSON.parse(readFileSync(resolve(here, "browser-policy.json"), "utf8"));
-const candidates = [
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-  resolve(process.env.LOCALAPPDATA ?? "", "Google", "Chrome", "Application", "chrome.exe"),
-];
+import { verifyDarwinChrome } from "./browser-policy-darwin.mjs";
+import { verifyWindowsChrome } from "./browser-policy-windows.mjs";
 
-export function verifySystemChrome() {
-  for (const candidate of candidates) {
-    try {
-      const script = [
-        `$p=${JSON.stringify(candidate)}`,
-        "$i=Get-Item -LiteralPath $p -ErrorAction Stop",
-        "$s=Get-AuthenticodeSignature -LiteralPath $p",
-        "$h=Get-FileHash -Algorithm SHA256 -LiteralPath $p",
-        "[pscustomobject]@{Path=$i.FullName;ProductVersion=$i.VersionInfo.ProductVersion;FileVersion=$i.VersionInfo.FileVersion;Publisher=$s.SignerCertificate.Subject;SignatureStatus=[string]$s.Status;Sha256=$h.Hash.ToLowerInvariant()}|ConvertTo-Json -Compress",
-      ].join(";");
-      const raw = execFileSync(
-        "powershell.exe",
-        ["-NoProfile", "-NonInteractive", "-Command", script],
-        { encoding: "utf8", windowsHide: true, timeout: 10_000 },
-      );
-      const actual = JSON.parse(raw);
-      const matches =
-        basename(actual.Path).toLowerCase() === policy.allowedBasename &&
-        actual.ProductVersion === policy.productVersion &&
-        actual.FileVersion === policy.fileVersion &&
-        actual.Publisher === policy.publisher &&
-        actual.SignatureStatus === "Valid" &&
-        actual.Sha256 === policy.executableSha256;
-      if (!matches) throw new Error("policy mismatch");
-      return { executablePath: actual.Path, policy };
-    } catch {
-      // Try the next fixed system installation path.
-    }
-  }
-  throw new Error("E2E_BROWSER_POLICY_MISMATCH");
+const here = dirname(fileURLToPath(import.meta.url));
+
+const platformPolicies = Object.freeze({
+  darwin: "browser-policy.darwin.json",
+  win32: "browser-policy.json",
+});
+
+function policyMismatch() {
+  const error = new Error("E2E_BROWSER_POLICY_MISMATCH");
+  error.stack = "Error: E2E_BROWSER_POLICY_MISMATCH";
+  return error;
 }
+
+export function browserPolicyFileName(platform = process.platform) {
+  const fileName = platformPolicies[platform];
+  if (!fileName) throw policyMismatch();
+  return fileName;
+}
+
+export function verifyBrowserPolicy(options = {}) {
+  const platform = options.platform ?? process.platform;
+  try {
+    const fileName = browserPolicyFileName(platform);
+    const loadPolicy = options.loadPolicy ?? ((name) => JSON.parse(readFileSync(resolve(here, name), "utf8")));
+    const policy = loadPolicy(fileName);
+    if (platform === "win32") return verifyWindowsChrome(policy, options.windows);
+    if (platform === "darwin") return verifyDarwinChrome(policy, options.darwin);
+  } catch {
+    // Keep failures stable and path-free so receipts and logs do not expose user directories.
+  }
+  throw policyMismatch();
+}
+
+// Compatibility for the existing Playwright configuration import.
+export const verifySystemChrome = verifyBrowserPolicy;

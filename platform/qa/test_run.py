@@ -41,8 +41,10 @@ VALID_TOKENS = """
 """
 
 
-def _write_course_composition_receipt(tmp_path: Path) -> dict[str, Any]:
-    policy = {
+def _write_course_composition_receipt(
+    tmp_path: Path, *, platform: str = "win32"
+) -> dict[str, Any]:
+    windows_policy = {
         "schemaVersion": 1,
         "channel": "chrome",
         "productName": "Google Chrome",
@@ -52,10 +54,31 @@ def _write_course_composition_receipt(tmp_path: Path) -> dict[str, Any]:
         "publisher": "CN=Google LLC",
         "allowedBasename": "chrome.exe",
     }
-    policy_path = tmp_path / qa.COURSE_BROWSER_POLICY
+    darwin_policy = {
+        "schemaVersion": 1,
+        "platform": "darwin",
+        "channel": "chrome",
+        "productName": "Google Chrome",
+        "bundleIdentifier": "com.google.Chrome",
+        "productVersion": "150.0.7871.125",
+        "bundleVersion": "7871.125",
+        "teamIdentifier": "EQHXZ8M8AV",
+        "executableRelativePath": "Contents/MacOS/Google Chrome",
+        "executableSha256": "e" * 64,
+        "allowedArchitectures": ["arm64", "x86_64"],
+    }
+    for relative, candidate in zip(
+        qa.COURSE_BROWSER_POLICIES, (windows_policy, darwin_policy), strict=True
+    ):
+        candidate_path = tmp_path / relative
+        candidate_path.parent.mkdir(parents=True, exist_ok=True)
+        candidate_path.write_text(json.dumps(candidate), encoding="utf-8")
+    policy = windows_policy if platform == "win32" else darwin_policy
+    policy_path = tmp_path / qa.COURSE_BROWSER_POLICIES[
+        0 if platform == "win32" else 1
+    ]
     policy_path.parent.mkdir(parents=True, exist_ok=True)
-    policy_bytes = json.dumps(policy).encode("utf-8")
-    policy_path.write_bytes(policy_bytes)
+    policy_bytes = policy_path.read_bytes()
     receipt = {
         "schemaVersion": 1,
         "status": "verified",
@@ -113,6 +136,46 @@ def test_course_composition_and_authentic_visual_offline_receipts(tmp_path: Path
         json.dumps(receipt), encoding="utf-8"
     )
     assert not qa.run_course_composition_gate(tmp_path).ok
+
+
+def test_course_composition_accepts_explicit_darwin_browser_policy(
+    tmp_path: Path,
+) -> None:
+    _write_course_composition_receipt(tmp_path, platform="darwin")
+    assert qa.run_course_composition_gate(tmp_path).ok
+
+
+def test_course_composition_rejects_noncanonical_browser_policies(
+    tmp_path: Path,
+) -> None:
+    cases = (
+        ("windows-extra", "win32", lambda policy: policy.update(extra=True)),
+        ("windows-empty-version", "win32", lambda policy: policy.update(productVersion="")),
+        ("darwin-extra", "darwin", lambda policy: policy.update(allowedBasename="chrome.exe")),
+        ("darwin-hybrid", "darwin", lambda policy: policy.update(publisher="CN=Google LLC")),
+        ("darwin-platform", "darwin", lambda policy: policy.update(platform="win32")),
+        ("darwin-team", "darwin", lambda policy: policy.update(teamIdentifier="!!!!!!!!!!")),
+        (
+            "darwin-architectures",
+            "darwin",
+            lambda policy: policy.update(allowedArchitectures=["arm64", "arm64"]),
+        ),
+    )
+    for label, platform, mutate in cases:
+        case_root = tmp_path / label
+        receipt = _write_course_composition_receipt(case_root, platform=platform)
+        policy_path = case_root / qa.COURSE_BROWSER_POLICIES[
+            0 if platform == "win32" else 1
+        ]
+        policy = json.loads(policy_path.read_text(encoding="utf-8"))
+        mutate(policy)
+        policy_bytes = json.dumps(policy).encode("utf-8")
+        policy_path.write_bytes(policy_bytes)
+        receipt["browserPolicySha256"] = hashlib.sha256(policy_bytes).hexdigest()
+        (case_root / qa.COURSE_COMPOSITION_RECEIPT).write_text(
+            json.dumps(receipt), encoding="utf-8"
+        )
+        assert not qa.run_course_composition_gate(case_root).ok, label
 
 
 class _FakeEmbeddingHttpResponse:

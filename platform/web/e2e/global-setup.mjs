@@ -58,6 +58,12 @@ export default async function globalSetup() {
     [npmCli, "run", "dev", "--", "--host", "127.0.0.1", "--port", String(webPort), "--strictPort"],
     { cwd: webRoot, detached: true, windowsHide: true, stdio: ["ignore", webLog, webLog] },
   );
+  // All systems: persist each detached owner immediately for partial-setup cleanup.
+  writeFileSync(
+    stateFile,
+    JSON.stringify({ schemaVersion: 1, webPid: web.pid }),
+    "utf8",
+  );
   const helper = spawn(
     "python",
     ["-m", "course_helper.e2e_server", "--runtime-root", runtimeRoot, "--web-origin", webOrigin, "--port", String(helperPort), "--launch-file", launchFile],
@@ -68,6 +74,11 @@ export default async function globalSetup() {
       env: { ...process.env, COURSE_E2E_FIXTURE: "1" },
       stdio: ["ignore", helperLog, helperLog],
     },
+  );
+  writeFileSync(
+    stateFile,
+    JSON.stringify({ schemaVersion: 1, webPid: web.pid, helperPid: helper.pid }),
+    "utf8",
   );
   closeSync(webLog);
   closeSync(helperLog);

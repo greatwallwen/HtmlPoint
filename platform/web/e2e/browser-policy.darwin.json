@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "platform": "darwin",
+  "channel": "chrome",
+  "productName": "Google Chrome",
+  "bundleIdentifier": "com.google.Chrome",
+  "productVersion": "150.0.7871.125",
+  "bundleVersion": "7871.125",
+  "teamIdentifier": "EQHXZ8M8AV",
+  "executableRelativePath": "Contents/MacOS/Google Chrome",
+  "executableSha256": "5acd03e7ff56ad32bc99f27b258b75393795463b53c66dd531c4432e8d0a5a3e",
+  "allowedArchitectures": ["arm64", "x86_64"]
+}

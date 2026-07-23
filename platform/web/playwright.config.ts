@@ -1,7 +1,8 @@
 import { defineConfig } from "@playwright/test";
-import { verifySystemChrome } from "./e2e/browser-policy.mjs";
+import { verifyBrowserPolicy } from "./e2e/browser-policy.mjs";
 
-const browser = verifySystemChrome();
+// Every supported OS must verify a fixed browser source before Playwright starts.
+const browser = verifyBrowserPolicy();
 
 export default defineConfig({
   testDir: "./e2e",

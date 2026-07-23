@@ -1,0 +1,13 @@
+{
+  "browserMode": "suppressed-with-standard-BROWSER-opener",
+  "exitCode": 0,
+  "httpStatus": 200,
+  "physicalDualScreenCertified": false,
+  "platform": "darwin",
+  "portReleased": true,
+  "processGroupReleased": true,
+  "schemaVersion": 1,
+  "status": "verified",
+  "terminationSignal": "SIGINT",
+  "url": "http://127.0.0.1:8765/"
+}

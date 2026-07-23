@@ -79,7 +79,12 @@ def _unix_workspace(tmp_path: Path) -> tuple[Path, Path, Path]:
         stub.write_text(
             "#!/bin/sh\n"
             f"printf '%s\\n' \"{name}:$PWD:$*\" >> \"$LAUNCHER_LOG\"\n"
-            + ("printf '%s\\n' \"$TEST_UNAME\"\n" if name == "uname" else ""),
+            + ("printf '%s\\n' \"$TEST_UNAME\"\n" if name == "uname" else "")
+            + (
+                "exit \"${TEST_NPM_EXIT:-0}\"\n"
+                if name == "npm"
+                else ""
+            ),
             encoding="utf-8",
         )
         stub.chmod(0o755)
@@ -109,7 +114,11 @@ def _unix_workspace(tmp_path: Path) -> tuple[Path, Path, Path]:
 
 
 def _run_unix_launcher(
-    tmp_path: Path, *, uname: str = "Darwin", arguments: tuple[str, ...] = ()
+    tmp_path: Path,
+    *,
+    uname: str = "Darwin",
+    arguments: tuple[str, ...] = (),
+    extra_env: dict[str, str] | None = None,
 ) -> tuple[subprocess.CompletedProcess[str], list[str], Path, Path]:
     launcher, bin_root, log = _unix_workspace(tmp_path)
     home = tmp_path / "home with spaces"
@@ -121,6 +130,7 @@ def _run_unix_launcher(
         "LAUNCHER_LOG": str(log),
         "TEST_UNAME": uname,
         "TEST_PYTHON_COMPAT": "1",
+        **(extra_env or {}),
     }
     result = subprocess.run(
         ["sh", str(launcher), *arguments],
@@ -184,6 +194,21 @@ def test_unix_launcher_skips_build_when_manifest_exists(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     assert not any(call.startswith("npm:") for call in log.read_text().splitlines())
+
+
+def test_unix_launcher_fails_closed_when_web_build_fails(
+    tmp_path: Path,
+) -> None:
+    result, calls, _home, _platform_root = _run_unix_launcher(
+        tmp_path,
+        extra_env={"TEST_NPM_EXIT": "23"},
+    )
+
+    assert result.returncode == 1
+    assert "Web build failed" in result.stderr
+    assert "Fix the build error above, then run this launcher again." in result.stderr
+    assert any(call.startswith("npm:") for call in calls)
+    assert not any(call.startswith("python:") for call in calls)
 
 
 def test_unix_launcher_rejects_parameters_without_running_commands(

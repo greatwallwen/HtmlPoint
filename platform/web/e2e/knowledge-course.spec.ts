@@ -4,6 +4,8 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { browserPolicyFileName } from "./browser-policy.mjs";
+
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const lifecycle = JSON.parse(
   readFileSync(resolve(webRoot, ".e2e-runtime", "lifecycle.json"), "utf8"),
@@ -166,7 +168,7 @@ test("one personal action creates and reopens a governed course", async ({ page 
     schemaVersion: 1,
     status: "verified",
     mode: "fixture-backed-loopback-personal-flow",
-    browserPolicySha256: sha256(resolve(webRoot, "e2e", "browser-policy.json")),
+    browserPolicySha256: sha256(resolve(webRoot, "e2e", browserPolicyFileName())),
     fixtures: {
       markdownSha256: sha256(lifecycle.fixtures.markdown),
       pptxSha256: sha256(lifecycle.fixtures.pptx),

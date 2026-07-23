@@ -101,7 +101,39 @@ NETWORK_VISUAL_RECEIPT = Path(
 COURSE_COMPOSITION_RECEIPT = Path(
     "platform/web/evidence/personal-course-browser-e2e.json"
 )
-COURSE_BROWSER_POLICY = Path("platform/web/e2e/browser-policy.json")
+COURSE_BROWSER_POLICIES = (
+    Path("platform/web/e2e/browser-policy.json"),
+    Path("platform/web/e2e/browser-policy.darwin.json"),
+)
+# Retained for callers that construct the existing Windows evidence fixture.
+COURSE_BROWSER_POLICY = COURSE_BROWSER_POLICIES[0]
+WINDOWS_BROWSER_POLICY_KEYS = frozenset(
+    (
+        "schemaVersion",
+        "channel",
+        "productName",
+        "productVersion",
+        "fileVersion",
+        "executableSha256",
+        "publisher",
+        "allowedBasename",
+    )
+)
+DARWIN_BROWSER_POLICY_KEYS = frozenset(
+    (
+        "schemaVersion",
+        "platform",
+        "channel",
+        "productName",
+        "bundleIdentifier",
+        "productVersion",
+        "bundleVersion",
+        "teamIdentifier",
+        "executableRelativePath",
+        "executableSha256",
+        "allowedArchitectures",
+    )
+)
 COURSE_COMPOSITION_SCREENSHOTS = (
     Path("platform/web/evidence/personal-course-entry.png"),
     Path("platform/web/evidence/personal-course-post-action.png"),
@@ -1456,12 +1488,15 @@ def _protected_paths_gate(repo_root: Path) -> CheckResult:
 
 def _course_composition_receipt_error(repo_root: Path) -> str | None:
     receipt_path = repo_root / COURSE_COMPOSITION_RECEIPT
-    policy_path = repo_root / COURSE_BROWSER_POLICY
     try:
         receipt_bytes = receipt_path.read_bytes()
         receipt = json.loads(receipt_bytes)
-        policy_bytes = policy_path.read_bytes()
-        policy = json.loads(policy_bytes)
+        policy_candidates = []
+        for relative in COURSE_BROWSER_POLICIES:
+            path = repo_root / relative
+            if path.is_file():
+                policy_bytes = path.read_bytes()
+                policy_candidates.append((policy_bytes, json.loads(policy_bytes)))
     except (OSError, UnicodeError, json.JSONDecodeError):
         return "browser receipt or browser policy is unreadable"
     if not isinstance(receipt, dict) or frozenset(receipt) != frozenset(
@@ -1481,19 +1516,22 @@ def _course_composition_receipt_error(repo_root: Path) -> str | None:
         receipt.get("schemaVersion") != 1
         or receipt.get("status") != "verified"
         or receipt.get("mode") != "fixture-backed-loopback-personal-flow"
-        or receipt.get("browserPolicySha256")
-        != hashlib.sha256(policy_bytes).hexdigest()
     ):
         return "browser receipt identity or policy digest is invalid"
-    if not isinstance(policy, dict) or (
-        policy.get("schemaVersion") != 1
-        or policy.get("channel") != "chrome"
-        or policy.get("productName") != "Google Chrome"
-        or policy.get("allowedBasename") != "chrome.exe"
-        or not _is_sha256(policy.get("executableSha256"))
-        or not isinstance(policy.get("publisher"), str)
-        or "Google LLC" not in policy.get("publisher", "")
-    ):
+    policy = next(
+        (
+            candidate
+            for policy_bytes, candidate in policy_candidates
+            if receipt.get("browserPolicySha256")
+            == hashlib.sha256(policy_bytes).hexdigest()
+        ),
+        None,
+    )
+    if policy is None:
+        return "browser receipt identity or policy digest is invalid"
+    if not isinstance(policy, dict):
+        return "browser policy is invalid"
+    if not _browser_policy_is_valid(policy):
         return "browser policy is invalid"
     fixtures = receipt.get("fixtures")
     if not isinstance(fixtures, dict) or frozenset(fixtures) != frozenset(
@@ -1561,6 +1599,46 @@ def _course_composition_receipt_error(repo_root: Path) -> str | None:
         if len(payload) < 1024 or not payload.startswith(b"\x89PNG\r\n\x1a\n"):
             return f"invalid browser screenshot: {screenshot.name}"
     return None
+
+
+def _browser_policy_is_valid(policy: dict[str, Any]) -> bool:
+    common_valid = (
+        policy.get("schemaVersion") == 1
+        and policy.get("channel") == "chrome"
+        and policy.get("productName") == "Google Chrome"
+        and _is_sha256(policy.get("executableSha256"))
+    )
+    if not common_valid:
+        return False
+    if frozenset(policy) == WINDOWS_BROWSER_POLICY_KEYS:
+        return (
+            policy.get("allowedBasename") == "chrome.exe"
+            and _is_browser_version(policy.get("productVersion"))
+            and _is_browser_version(policy.get("fileVersion"))
+            and isinstance(policy.get("publisher"), str)
+            and "Google LLC" in policy.get("publisher", "")
+        )
+    if frozenset(policy) != DARWIN_BROWSER_POLICY_KEYS:
+        return False
+    architectures = policy.get("allowedArchitectures")
+    return (
+        policy.get("platform") == "darwin"
+        and policy.get("bundleIdentifier") == "com.google.Chrome"
+        and _is_browser_version(policy.get("productVersion"))
+        and _is_browser_version(policy.get("bundleVersion"))
+        and policy.get("executableRelativePath")
+        == "Contents/MacOS/Google Chrome"
+        and isinstance(policy.get("teamIdentifier"), str)
+        and re.fullmatch(r"[A-Z0-9]{10}", policy["teamIdentifier"]) is not None
+        and isinstance(architectures, list)
+        and bool(architectures)
+        and len(set(architectures)) == len(architectures)
+        and set(architectures) <= {"arm64", "x86_64"}
+    )
+
+
+def _is_browser_version(value: object) -> bool:
+    return isinstance(value, str) and re.fullmatch(r"\d+(?:\.\d+)+", value) is not None
 
 
 def run_course_composition_gate(repo_root: Path) -> CheckResult:

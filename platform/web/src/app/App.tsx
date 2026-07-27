@@ -25,6 +25,7 @@ import {
 import {
   bootstrapHelperSession,
   prepareHelperSessionLaunch,
+  rebootstrapSameOriginSession,
   restoreHelperSessionForProjection,
 } from "../services/helper-session";
 import { KnowledgeClient } from "../services/knowledge-client";
@@ -206,7 +207,7 @@ function StudioWorkflow({
     hasExplicitAgent || restoredSession !== undefined ? "ready" : "checking",
   );
   const [knowledgeClient, setKnowledgeClient] = useState<KnowledgeClient | undefined>(
-    restoredSession === undefined ? undefined : new KnowledgeClient(restoredSession),
+    restoredSession === undefined ? undefined : new KnowledgeClient(restoredSession, rebootstrapSameOriginSession),
   );
   const [artifactClient, setArtifactClient] = useState<ArtifactClient | undefined>(
     restoredSession === undefined ? undefined : new ArtifactClient(restoredSession),
@@ -222,7 +223,7 @@ function StudioWorkflow({
     let current = true;
     void bootstrapHelperSession().then((session) => {
       if (current && session !== undefined) {
-        setKnowledgeClient(new KnowledgeClient(session));
+        setKnowledgeClient(new KnowledgeClient(session, rebootstrapSameOriginSession));
         setArtifactClient(new ArtifactClient(session));
         setProjectionClient(new HelperProjectionClient(session));
         setHelperState("ready");
@@ -449,48 +450,53 @@ function PersonalStudioWorkflow({
     if (current === undefined) return;
     const course = current.view.course;
     if (course === null || course === undefined) return;
-    const projection = await knowledgeClient.getPersonalCourseProjection(current.runId);
-    const nodes = projectionNodes(projection.slideDeck.nodes);
-    dispatch({
-      type: "PERSONAL_COURSE_OPENED",
-      course,
-      target,
-      governed: {
-        requirementId: projection.requirement.requirementId,
-        outlineVersionId: projection.outline.versionId,
-        courseVersionId: projection.courseVersionId,
-        slideDeckId: projection.slideDeck.versionId,
-        runtimeManifestId: projection.runtimeManifest.versionId,
-        cardVersionIds: [...new Set(
-          projection.outline.chapters.flatMap((chapter) =>
-            chapter.placements.map((placement) => placement.cardVersionId),
-          ),
-        )],
-        visualPlacementIds: [...new Set(
-          nodes.flatMap((node) =>
-            node.assetBindings.map((binding) => binding.visualPlacementId),
-          ),
-        )],
-      },
-      projection: {
-        courseDigest: projection.courseDigest,
-        usageScope: projection.usageScope,
-        courseUpdatedAt: course.updatedAt,
-        slideDeck: projection.slideDeck,
-        runtimeManifest: projection.runtimeManifest,
-        warnings: [],
-        publicationStatus: "published",
-      },
-      receipt: {
-        id: "personal-course-validation",
-        courseId: course.id,
-        kind: "validation",
-        createdAt: course.updatedAt,
-        inputDigest: "local-helper-verified",
-        summary: "本地 Helper 已完成课程、来源与运行清单验证。",
-        checks: [{ id: "personal-course-ready", level: "pass", message: "课程可以预览、编辑或授课。" }],
-      },
-    });
+    try {
+      const projection = await knowledgeClient.getPersonalCourseProjection(current.runId);
+      const nodes = projectionNodes(projection.slideDeck.nodes);
+      dispatch({
+        type: "PERSONAL_COURSE_OPENED",
+        course,
+        target,
+        governed: {
+          requirementId: projection.requirement.requirementId,
+          outlineVersionId: projection.outline.versionId,
+          courseVersionId: projection.courseVersionId,
+          slideDeckId: projection.slideDeck.versionId,
+          runtimeManifestId: projection.runtimeManifest.versionId,
+          cardVersionIds: [...new Set(
+            projection.outline.chapters.flatMap((chapter) =>
+              chapter.placements.map((placement) => placement.cardVersionId),
+            ),
+          )],
+          visualPlacementIds: [...new Set(
+            nodes.flatMap((node) =>
+              node.assetBindings.map((binding) => binding.visualPlacementId),
+            ),
+          )],
+        },
+        projection: {
+          courseDigest: projection.courseDigest,
+          usageScope: projection.usageScope,
+          courseUpdatedAt: course.updatedAt,
+          slideDeck: projection.slideDeck,
+          runtimeManifest: projection.runtimeManifest,
+          warnings: [],
+          publicationStatus: "published",
+        },
+        receipt: {
+          id: "personal-course-validation",
+          courseId: course.id,
+          kind: "validation",
+          createdAt: course.updatedAt,
+          inputDigest: "local-helper-verified",
+          summary: "本地 Helper 已完成课程、来源与运行清单验证。",
+          checks: [{ id: "personal-course-ready", level: "pass", message: "课程可以预览、编辑或授课。" }],
+        },
+      });
+    } catch (error) {
+      console.error("[openCourse] failed to load projection:", error);
+      window.alert(`无法打开课程：${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   const startNew = () => {

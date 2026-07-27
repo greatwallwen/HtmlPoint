@@ -6,8 +6,11 @@ import argparse
 import json
 import os
 import re
+import socket
 import stat
 import sys
+import threading
+import time
 import webbrowser
 from collections.abc import Sequence
 from pathlib import Path
@@ -85,16 +88,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             web_root=web_root,
         )
         app = create_app(runtime)
-        launch_session.open_browser(
-            web_application_url=web_origin,
-            helper_base_url=helper_origin,
-            opener=webbrowser.open,
-        )
-    except BrowserLaunchError:
-        _shutdown_personal_courses(personal_course_supervisor)
-        _shutdown_projection(projection_supervisor)
-        print("course-helper: browser launch failed", file=sys.stderr)
-        return 1
+        # The browser is opened after the server is ready (see below) so that
+        # the page loads with the launch fragment instead of a connection error.
     except (OSError, RuntimeError, ValueError):
         _shutdown_personal_courses(personal_course_supervisor)
         _shutdown_projection(projection_supervisor)
@@ -105,7 +100,32 @@ def main(argv: Sequence[str] | None = None) -> int:
     shutdown_ok = True
     try:
         try:
-            uvicorn.run(app, host="127.0.0.1", port=args.port)
+            server_config = uvicorn.Config(app, host="127.0.0.1", port=args.port)
+            server = uvicorn.Server(server_config)
+            server_thread = threading.Thread(target=server.run, daemon=True)
+            server_thread.start()
+            if not _wait_for_loopback(args.port, timeout=10.0):
+                print("course-helper: local server failed to start", file=sys.stderr)
+                server_failed = True
+            else:
+                connect_url = launch_session.connect_url(
+                    web_application_url=web_origin,
+                    helper_base_url=helper_origin,
+                )
+                print(f"course-helper: open {connect_url}", file=sys.stderr)
+                try:
+                    launch_session.open_browser(
+                        web_application_url=web_origin,
+                        helper_base_url=helper_origin,
+                        opener=webbrowser.open,
+                    )
+                except BrowserLaunchError:
+                    print(
+                        "course-helper: browser launch failed; "
+                        "open the URL above manually",
+                        file=sys.stderr,
+                    )
+            server_thread.join()
         except Exception:
             print("course-helper: local server failed", file=sys.stderr)
             server_failed = True
@@ -118,6 +138,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not shutdown_ok:
         print("course-helper: projection shutdown failed", file=sys.stderr)
     return 0 if not server_failed and shutdown_ok else 1
+
+
+def _wait_for_loopback(port: int, *, timeout: float = 10.0) -> bool:
+    """Poll a loopback port until it accepts connections or the timeout expires."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=0.5):
+                return True
+        except OSError:
+            time.sleep(0.15)
+    return False
 
 
 def _shutdown_personal_courses(

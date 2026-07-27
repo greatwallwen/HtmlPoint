@@ -1,0 +1,731 @@
+- generic [active] [ref=e1]:
+  - heading "HtmlPoint 课程工作台 — 问题排查与修复记录" [level=1] [ref=e2]
+  - blockquote [ref=e3]:
+    - paragraph [ref=e4]:
+      - text: 整理时间：2026-07-24 项目路径：
+      - code [ref=e5]: d:\文档\GitHub\HtmlPoint
+  - separator [ref=e6]
+  - heading "目录" [level=2] [ref=e7]
+  - list [ref=e8]:
+    - listitem [ref=e9]:
+      - link "启动报错：npm/python 找不到" [ref=e10] [cursor=pointer]:
+        - /url: "#1-启动报错npmpython-找不到"
+    - listitem [ref=e11]:
+      - link "打开空白页（一）：浏览器打开太早" [ref=e12] [cursor=pointer]:
+        - /url: "#2-打开空白页一浏览器打开太早"
+    - listitem [ref=e13]:
+      - link "打开空白页（二）：JS MIME 类型错误" [ref=e14] [cursor=pointer]:
+        - /url: "#3-打开空白页二js-mime-类型错误"
+    - listitem [ref=e15]:
+      - link "打开空白页（三）：浏览器缓存 + fragment 丢失" [ref=e16] [cursor=pointer]:
+        - /url: "#4-打开空白页三浏览器缓存--fragment-丢失"
+    - listitem [ref=e17]:
+      - link "课程创建失败：timestamp 格式不匹配" [ref=e18] [cursor=pointer]:
+        - /url: "#5-课程创建失败timestamp-格式不匹配"
+    - listitem [ref=e19]:
+      - link "中文文件名报错：HTTP header 编码限制" [ref=e20] [cursor=pointer]:
+        - /url: "#6-中文文件名报错http-header-编码限制"
+    - listitem [ref=e21]:
+      - link "创建未完成：extraction evidence 状态判断" [ref=e22] [cursor=pointer]:
+        - /url: "#7-创建未完成extraction-evidence-状态判断"
+    - listitem [ref=e23]:
+      - link "点击开始授课无反应：401 旧令牌" [ref=e24] [cursor=pointer]:
+        - /url: "#8-点击开始授课无反应401-旧令牌"
+    - listitem [ref=e25]:
+      - link "401 报错：同源 GET 请求无 Origin 头" [ref=e26] [cursor=pointer]:
+        - /url: "#9-401-报错同源-get-请求无-origin-头"
+    - listitem [ref=e27]:
+      - link "最终效果" [ref=e28] [cursor=pointer]:
+        - /url: "#10-最终效果"
+  - separator [ref=e29]
+  - heading "1. 启动报错，npm/python 找不到" [level=2] [ref=e30]
+  - heading "现象" [level=3] [ref=e31]
+  - paragraph [ref=e32]: 运行启动脚本时报错，npm.cmd 和 python 都找不到，无法启动。
+  - heading "原因" [level=3] [ref=e33]
+  - list [ref=e34]:
+    - listitem [ref=e35]:
+      - strong [ref=e36]: npm.cmd 不在系统 PATH 中
+      - text: — Node.js 解压在
+      - code [ref=e37]: E:\nodejs\node-v22.18.0-win-x64\
+      - text: 但未加入 PATH
+    - listitem [ref=e38]:
+      - strong [ref=e39]: python 解析到错误版本
+      - text: — 系统中 python 命令指向 Anaconda 或 Python 3.9，而项目
+      - code [ref=e40]: pyproject.toml
+      - text: 要求
+      - code [ref=e41]: ">=3.12,<3.13"
+    - listitem [ref=e42]:
+      - strong [ref=e43]: pyproject.toml 缺少包发现配置
+      - text: — setuptools 自动发现时把
+      - code [ref=e44]: evidence/
+      - text: 数据目录误识别为 Python 包，导致
+      - code [ref=e45]: pip install -e .
+      - text: 失败
+  - heading "修复" [level=3] [ref=e46]
+  - paragraph [ref=e47]:
+    - strong [ref=e48]:
+      - code [ref=e49]: platform/start-course-studio.ps1
+      - text: （主要修改）
+  - list [ref=e50]:
+    - listitem [ref=e51]:
+      - text: 新增 Node.js 工具链自动探测：先检查 PATH 中的
+      - code [ref=e52]: npm.cmd
+      - text: ，找不到则依次检查
+      - code [ref=e53]: E:\nodejs\node-v22.18.0-win-x64
+      - text: 和
+      - code [ref=e54]: C:\Program Files\nodejs
+      - text: ，找到后将其加入会话 PATH
+    - listitem [ref=e55]:
+      - text: 新增前端依赖首次安装：
+      - code [ref=e56]: node_modules
+      - text: 不存在时自动执行
+      - code [ref=e57]: npm install
+    - listitem [ref=e58]:
+      - text: 新增 Python 3.12 自动探测：优先用
+      - code [ref=e59]: py -3.12
+      - text: 启动器获取 Python 3.12 的完整路径，回退时验证 PATH 中的 python 是否为 3.12
+    - listitem [ref=e60]:
+      - text: 新增 Python 依赖首次安装：检测
+      - code [ref=e61]: fastapi
+      - text: /
+      - code [ref=e62]: uvicorn
+      - text: /
+      - code [ref=e63]: duckdb
+      - text: /
+      - code [ref=e64]: pydantic
+      - text: 是否可导入，不可导入时自动执行
+      - code [ref=e65]: pip install -e .
+    - listitem [ref=e66]:
+      - text: 将原来的
+      - code [ref=e67]: "& npm.cmd"
+      - text: 改为
+      - code [ref=e68]: "& $npmCmd"
+      - text: ，
+      - code [ref=e69]: "& python"
+      - text: 改为
+      - code [ref=e70]: "& $pythonExe"
+  - paragraph [ref=e71]:
+    - strong [ref=e72]:
+      - code [ref=e73]: platform/helper/pyproject.toml
+  - list [ref=e74]:
+    - listitem [ref=e75]:
+      - text: 新增
+      - code [ref=e76]: "[tool.setuptools.packages.find]"
+      - text: 段，限定
+      - code [ref=e77]: include = ["course_helper*"]
+      - text: ，避免
+      - code [ref=e78]: evidence/
+      - text: 目录被误识别为 Python 包
+    - listitem [ref=e79]:
+      - text: 新增
+      - code [ref=e80]: "[tool.setuptools.package-data]"
+      - text: 段，确保
+      - code [ref=e81]: .sql
+      - text: 和
+      - code [ref=e82]: .json
+      - text: 文件作为包数据被打包
+  - heading "启动方式" [level=3] [ref=e83]
+  - code [ref=e85]: "& \"d:\\文档\\GitHub\\HtmlPoint\\platform\\start-course-studio.ps1\""
+  - paragraph [ref=e86]:
+    - text: 或双击
+    - code [ref=e87]: platform\启动课程平台.cmd
+    - text: 。首次启动会自动安装依赖并构建前端（约 1-2 分钟），后续启动会跳过直接启动服务器。
+  - separator [ref=e88]
+  - heading "2. 打开空白页（一）：浏览器打开太早" [level=2] [ref=e89]
+  - heading "现象" [level=3] [ref=e90]
+  - paragraph [ref=e91]: 启动后浏览器打开是空白页。
+  - heading "原因" [level=3] [ref=e92]
+  - paragraph [ref=e93]:
+    - code [ref=e94]: server.py
+    - text: 在
+    - code [ref=e95]: uvicorn.run()
+    - strong [ref=e96]: 之前
+    - text: 就调用了
+    - code [ref=e97]: open_browser()
+    - text: 。浏览器打开时服务器还没启动，连接失败。用户手动刷新后 URL 丢失了
+    - code [ref=e98]: "#helper=...&nonce=..."
+    - text: fragment，前端显示"请从课程工作台启动"。
+  - code [ref=e100]: "旧流程: open_browser() → uvicorn.run() ← 浏览器先打开，服务器还没启动"
+  - heading "修复" [level=3] [ref=e101]
+  - paragraph [ref=e102]:
+    - strong [ref=e103]:
+      - text: 文件：
+      - code [ref=e104]: platform/helper/course_helper/server.py
+  - list [ref=e105]:
+    - listitem [ref=e106]:
+      - text: 将
+      - code [ref=e107]: uvicorn.run()
+      - text: 改为后台线程启动，用
+      - code [ref=e108]: _wait_for_loopback()
+      - text: 轮询端口直到服务器就绪，
+      - strong [ref=e109]: 然后再
+      - text: 调用
+      - code [ref=e110]: open_browser()
+    - listitem [ref=e111]:
+      - text: 新增
+      - code [ref=e112]: _wait_for_loopback()
+      - text: 函数：用 socket 轮询 127.0.0.1 端口，最多等待 10 秒确认服务器已就绪
+    - listitem [ref=e113]:
+      - text: 控制台打印连接 URL：服务器就绪后在 stderr 打印
+      - code [ref=e114]: "course-helper: open http://127.0.0.1:8765/#helper=...&nonce=..."
+      - text: ，即使浏览器没自动打开，也可以从控制台复制这个 URL 手动访问
+    - listitem [ref=e115]:
+      - text: 浏览器启动失败不再终止服务器：如果
+      - code [ref=e116]: webbrowser.open()
+      - text: 失败，服务器继续运行
+  - code [ref=e118]: "新流程: 后台启动 uvicorn → 等待端口就绪 → 打印连接 URL → open_browser()"
+  - separator [ref=e119]
+  - heading "3. 打开空白页（二）：JS MIME 类型错误" [level=2] [ref=e120]
+  - heading "现象" [level=3] [ref=e121]
+  - paragraph [ref=e122]: 启动后页面仍然空白。
+  - heading "原因" [level=3] [ref=e123]
+  - paragraph [ref=e124]:
+    - text: JS 文件的
+    - code [ref=e125]: Content-Type
+    - text: 是
+    - code [ref=e126]: text/plain; charset=utf-8
+    - text: ，而不是
+    - code [ref=e127]: application/javascript
+    - text: 。浏览器会拒绝执行 MIME 类型为
+    - code [ref=e128]: text/plain
+    - text: 的
+    - code [ref=e129]: <script type="module">
+    - text: ，导致页面完全空白。
+  - paragraph [ref=e130]:
+    - text: 这是 Windows 上 Python
+    - code [ref=e131]: mimetypes
+    - text: 模块的已知问题——它从注册表读取 MIME 类型，而某些 Windows 安装中
+    - code [ref=e132]: .js
+    - text: 被映射为
+    - code [ref=e133]: text/plain
+    - text: 。
+  - heading "修复" [level=3] [ref=e134]
+  - paragraph [ref=e135]:
+    - strong [ref=e136]:
+      - text: 文件：
+      - code [ref=e137]: platform/helper/course_helper/static_web.py
+  - paragraph [ref=e138]: 在挂载静态文件前纠正 MIME 类型：
+  - code [ref=e140]: mimetypes.add_type("application/javascript", ".js") mimetypes.add_type("application/javascript", ".mjs") mimetypes.add_type("text/css", ".css")
+  - paragraph [ref=e141]:
+    - text: 修复前后对比： - 修复前：
+    - code [ref=e142]: "Content-Type: text/plain; charset=utf-8"
+    - text: → 浏览器拒绝执行 → 空白页 - 修复后：
+    - code [ref=e143]: "Content-Type: application/javascript"
+    - text: → 浏览器正常执行 → 页面渲染
+  - separator [ref=e144]
+  - heading "4. 打开空白页（三）：浏览器缓存 + fragment 丢失" [level=2] [ref=e145]
+  - heading "现象" [level=3] [ref=e146]
+  - paragraph [ref=e147]: MIME 类型修复后页面仍然空白。
+  - heading "原因" [level=3] [ref=e148]
+  - paragraph [ref=e149]: 两个问题同时存在：
+  - list [ref=e150]:
+    - listitem [ref=e151]:
+      - strong [ref=e152]: 浏览器缓存
+      - text: ：浏览器缓存了旧的
+      - code [ref=e153]: text/plain
+      - text: JS 响应，即使服务器已修复 MIME 类型，浏览器仍使用缓存
+    - listitem [ref=e154]:
+      - strong [ref=e155]: fragment 丢失
+      - text: ：浏览器打开时 URL fragment（
+      - code [ref=e156]: "#helper=...&nonce=..."
+      - text: ）可能丢失，导致前端 session 握手失败，显示"请从课程工作台启动"
+  - heading "修复" [level=3] [ref=e157]
+  - paragraph [ref=e158]:
+    - strong [ref=e159]: 1. 浏览器缓存旧响应
+    - text: (
+    - code [ref=e160]: static_web.py
+    - text: )
+  - list [ref=e161]:
+    - listitem [ref=e162]:
+      - text: 添加
+      - code [ref=e163]: "Cache-Control: no-store"
+      - text: 头，强制浏览器每次获取最新文件
+  - paragraph [ref=e164]:
+    - strong [ref=e165]: 2. URL fragment 丢失导致 session 握手失败
+    - text: (
+    - code [ref=e166]: session.py
+    - text: +
+    - code [ref=e167]: api.py
+    - text: )
+  - list [ref=e168]:
+    - listitem [ref=e169]:
+      - text: 新增
+      - code [ref=e170]: /v1/session/same-origin
+      - text: 端点，允许同源 SPA 无需 nonce 直接获取 session token
+    - listitem [ref=e171]:
+      - text: 安全性：服务器只监听
+      - code [ref=e172]: 127.0.0.1
+      - text: ，同源请求只能来自 SPA 本身
+  - paragraph [ref=e173]:
+    - strong [ref=e174]: 3. 前端 fragment 丢失时自动恢复
+    - text: (
+    - code [ref=e175]: helper-session.ts
+    - text: )
+  - list [ref=e176]:
+    - listitem [ref=e177]: 当 fragment 丢失时，自动尝试同源建立 session，不再显示"请从课程工作台启动"
+  - separator [ref=e178]
+  - heading "5. 课程创建失败：timestamp 格式不匹配" [level=2] [ref=e179]
+  - heading "现象" [level=3] [ref=e180]
+  - paragraph [ref=e181]: 上传 markdown 文件后输入课程要求，显示"课程创建未能开始，请检查资料后重试。"
+  - heading "原因" [level=3] [ref=e182]
+  - paragraph [ref=e183]:
+    - text: 前端创建课程时需要计算一个
+    - code [ref=e184]: requestDigest
+    - text: （SHA-256 哈希），后端用同样的算法验证。但两边的 timestamp 序列化格式不一致：
+  - table [ref=e185]:
+    - rowgroup [ref=e186]:
+      - row [ref=e187]:
+        - columnheader "输入" [ref=e188]
+        - columnheader "前端产生" [ref=e189]
+        - columnheader "后端 Pydantic 产生" [ref=e190]
+        - columnheader "匹配？" [ref=e191]
+    - rowgroup [ref=e192]:
+      - row [ref=e193]:
+        - cell [ref=e194]:
+          - code [ref=e195]: 12:00:00.000Z
+        - cell [ref=e196]:
+          - code [ref=e197]: 12:00:00.000000Z
+        - cell [ref=e198]:
+          - code [ref=e199]: 12:00:00Z
+        - cell [ref=e200]:
+          - strong [ref=e201]: 不匹配
+      - row [ref=e202]:
+        - cell [ref=e203]:
+          - code [ref=e204]: 12:00:00.123Z
+        - cell [ref=e205]:
+          - code [ref=e206]: 12:00:00.123000Z
+        - cell [ref=e207]:
+          - code [ref=e208]: 12:00:00.123000Z
+        - cell "匹配" [ref=e209]
+  - paragraph [ref=e210]:
+    - code [ref=e211]: new Date().toISOString()
+    - text: 绝大多数时候产生
+    - code [ref=e212]: .000Z
+    - text: （零毫秒），前端旧代码把它变成
+    - code [ref=e213]: .000000Z
+    - text: ，但后端 Pydantic 把零微秒的时间戳序列化成
+    - code [ref=e214]: Z
+    - text: （去掉小数部分）。格式不同 → SHA-256 哈希不同 → 后端返回 422 → 前端显示通用错误。
+  - heading "修复" [level=3] [ref=e215]
+  - table [ref=e216]:
+    - rowgroup [ref=e217]:
+      - row [ref=e218]:
+        - columnheader "文件" [ref=e219]
+        - columnheader "改动" [ref=e220]
+    - rowgroup [ref=e221]:
+      - row [ref=e222]:
+        - cell [ref=e223]:
+          - code [ref=e224]: governed-job-factory.ts
+        - cell [ref=e225]:
+          - text: 修复
+          - code [ref=e226]: helperCanonicalTimestamp
+          - text: ，匹配 Pydantic 的序列化规则：零微秒时去掉小数部分，非零时补齐到 6 位
+      - row [ref=e227]:
+        - cell [ref=e228]:
+          - code [ref=e229]: knowledge-client.ts
+        - cell "改进错误处理，不再吞掉所有错误细节，显示 HTTP 状态码和响应体" [ref=e230]
+      - row [ref=e231]:
+        - cell [ref=e232]:
+          - code [ref=e233]: PersonalCourseCreate.tsx
+        - cell "错误信息从通用的\"请检查资料后重试\"改为显示具体错误原因" [ref=e234]
+  - separator [ref=e235]
+  - heading "6. 中文文件名报错：HTTP header 编码限制" [level=2] [ref=e236]
+  - heading "现象" [level=3] [ref=e237]
+  - paragraph [ref=e238]:
+    - text: 上传文件名为
+    - code [ref=e239]: AIGC实操-Prompt工程.md
+    - text: 的文件后报错：
+  - code [ref=e241]: "课程创建未能开始：本地知识服务暂不可用（Failed to execute 'fetch' on 'Window': Failed to read the 'headers' property from 'RequestInit': String contains non ISO-8859-1 code point.）"
+  - heading "原因" [level=3] [ref=e242]
+  - paragraph [ref=e243]:
+    - text: 浏览器 fetch API 规定：
+    - strong [ref=e244]: header 值只能包含 ISO-8859-1 字符
+    - text: （基本就是 ASCII），中文会被直接拒绝。文件名中的中文被直接放进了
+    - code [ref=e245]: X-Upload-Name
+    - text: header。
+  - heading "修复" [level=3] [ref=e246]
+  - table [ref=e247]:
+    - rowgroup [ref=e248]:
+      - row [ref=e249]:
+        - columnheader "文件" [ref=e250]
+        - columnheader "改动" [ref=e251]
+    - rowgroup [ref=e252]:
+      - row [ref=e253]:
+        - cell [ref=e254]:
+          - code [ref=e255]: knowledge-client.ts
+        - cell [ref=e256]:
+          - code [ref=e257]: X-Upload-Name
+          - text: 值用
+          - code [ref=e258]: encodeURIComponent(fileName)
+          - text: 编码
+      - row [ref=e259]:
+        - cell [ref=e260]:
+          - code [ref=e261]: api.py
+        - cell [ref=e262]:
+          - text: 后端用
+          - code [ref=e263]: unquote(names[0])
+          - text: 解码，还原原始中文文件名
+  - paragraph [ref=e264]:
+    - text: 纯 ASCII 文件名（如
+    - code [ref=e265]: test.md
+    - text: ）不受影响——
+    - code [ref=e266]: encodeURIComponent
+    - text: 和
+    - code [ref=e267]: unquote
+    - text: 对纯 ASCII 是恒等操作。
+  - separator [ref=e268]
+  - heading "7. 创建未完成：extraction evidence 状态判断" [level=2] [ref=e269]
+  - heading "现象" [level=3] [ref=e270]
+  - paragraph [ref=e271]: 上传文件后显示 10 项建议，接受后显示"创建未完成：资料仍保留在本地，可以重新开始并调整课程要求。"
+  - heading "原因" [level=3] [ref=e272]
+  - list [ref=e273]:
+    - listitem [ref=e274]:
+      - text: 上传的 markdown 被成功解析，生成了
+      - strong [ref=e275]: 191 个 chunks
+      - text: 和 extraction evidence
+    - listitem [ref=e276]:
+      - text: 但 extraction evidence 的
+      - code [ref=e277]: status
+      - text: 是
+      - code [ref=e278]: warning
+      - text: （解析器产生了非致命警告，但解析本身是成功的）
+    - listitem [ref=e279]:
+      - code [ref=e280]: source_is_extractable
+      - text: 的 fall-through 逻辑（用于
+      - code [ref=e281]: extraction_status=registered
+      - text: 的 governed-upload 源）只接受
+      - code [ref=e282]: status = 'verified'
+      - text: 的 extraction evidence
+    - listitem [ref=e283]:
+      - code [ref=e284]: warning ≠ verified
+      - text: ，所以源被判定为"不可提取"，导致
+      - code [ref=e285]: SlideBuildError
+  - heading "修复" [level=3] [ref=e286]
+  - table [ref=e287]:
+    - rowgroup [ref=e288]:
+      - row [ref=e289]:
+        - columnheader "文件" [ref=e290]
+        - columnheader "改动" [ref=e291]
+    - rowgroup [ref=e292]:
+      - row [ref=e293]:
+        - cell [ref=e294]:
+          - code [ref=e295]: catalog.py
+        - cell [ref=e296]:
+          - code [ref=e297]: source_is_extractable
+          - text: 的 fall-through 查询从
+          - code [ref=e298]: status = 'verified'
+          - text: 改为
+          - code [ref=e299]: status IN ('verified', 'warning')
+          - text: ，因为
+          - code [ref=e300]: warning
+          - text: 表示解析完成只是有非致命警告
+      - row [ref=e301]:
+        - cell [ref=e302]:
+          - code [ref=e303]: personal_orchestrator.py
+        - cell [ref=e304]:
+          - code [ref=e305]: _failed_phase
+          - text: 现在记录
+          - code [ref=e306]: error_message
+          - text: （实际错误消息），方便调试
+  - separator [ref=e307]
+  - heading "8. 点击开始授课无反应：401 旧令牌" [level=2] [ref=e308]
+  - heading "现象" [level=3] [ref=e309]
+  - paragraph [ref=e310]: 点击"开始授课"按钮没有反应，终端持续报 401：
+  - code [ref=e312]: GET /v1/personal-courses/.../projection HTTP/1.1" 401 Unauthorized
+  - heading "原因" [level=3] [ref=e313]
+  - paragraph [ref=e314]:
+    - text: 服务器重启后旧的会话令牌失效了，前端
+    - code [ref=e315]: sessionStorage
+    - text: 里存的还是旧令牌，导致所有请求返回 401。
+    - code [ref=e316]: openCourse
+    - text: 是 async 函数但没有 catch 错误，所以按钮看起来没反应。
+  - heading "修复" [level=3] [ref=e317]
+  - table [ref=e318]:
+    - rowgroup [ref=e319]:
+      - row [ref=e320]:
+        - columnheader "文件" [ref=e321]
+        - columnheader "改动" [ref=e322]
+    - rowgroup [ref=e323]:
+      - row [ref=e324]:
+        - cell [ref=e325]:
+          - code [ref=e326]: helper-session.ts
+        - cell [ref=e327]:
+          - text: 新增
+          - code [ref=e328]: rebootstrapSameOriginSession()
+          - text: 导出函数，先清除旧令牌再重新获取同源会话令牌
+      - row [ref=e329]:
+        - cell [ref=e330]:
+          - code [ref=e331]: knowledge-client.ts
+        - cell [ref=e332]:
+          - code [ref=e333]: KnowledgeClient
+          - text: 构造函数新增可选的
+          - code [ref=e334]: refreshSession
+          - text: 回调。
+          - code [ref=e335]: "#fetchJson"
+          - text: 收到 401 时自动调用该回调刷新令牌并重试一次请求。
+          - code [ref=e336]: "#sessionToken"
+          - text: 从
+          - code [ref=e337]: readonly
+          - text: 改为可变
+      - row [ref=e338]:
+        - cell [ref=e339]:
+          - code [ref=e340]: App.tsx
+        - cell [ref=e341]:
+          - text: 创建
+          - code [ref=e342]: KnowledgeClient
+          - text: 时传入
+          - code [ref=e343]: rebootstrapSameOriginSession
+          - text: 作为刷新回调；
+          - code [ref=e344]: openCourse
+          - text: 加了 try/catch，失败时弹窗提示
+  - separator [ref=e345]
+  - heading "9. 401 报错：同源 GET 请求无 Origin 头" [level=2] [ref=e346]
+  - heading "现象" [level=3] [ref=e347]
+  - paragraph [ref=e348]: 问题 8 的修复生效后（错误从静默变为弹窗提示），但点击"开始授课"仍然报 401：
+  - code [ref=e350]: "无法打开课程：本地知识服务暂不可用（HTTP 401: {\"detail\":\"unauthorized\"}）"
+  - heading "原因" [level=3] [ref=e351]
+  - paragraph [ref=e352]:
+    - strong [ref=e353]: 核心矛盾：浏览器对同源 GET 请求不发送 Origin 头
+  - paragraph [ref=e354]:
+    - text: 后端
+    - code [ref=e355]: require_session
+    - text: （
+    - code [ref=e356]: api.py
+    - text: ）的鉴权逻辑要求
+    - code [ref=e357]: Origin
+    - text: 头必须精确匹配
+    - code [ref=e358]: allowed_origin
+    - text: ，但浏览器对
+    - strong [ref=e359]:
+      - text: 同源 GET 请求不发送
+      - code [ref=e360]: Origin
+      - text: 头
+    - text: （Chrome/Firefox/Edge 均如此）：
+  - table [ref=e361]:
+    - rowgroup [ref=e362]:
+      - row [ref=e363]:
+        - columnheader "请求类型" [ref=e364]
+        - columnheader "方法" [ref=e365]
+        - columnheader "Origin 头" [ref=e366]
+        - columnheader "结果" [ref=e367]
+    - rowgroup [ref=e368]:
+      - row [ref=e369]:
+        - cell [ref=e370]:
+          - code [ref=e371]: /v1/session/same-origin
+          - text: （刷新）
+        - cell "POST" [ref=e372]
+        - cell [ref=e373]:
+          - code [ref=e374]: http://127.0.0.1:8765
+        - cell "通过" [ref=e375]
+      - row [ref=e376]:
+        - cell [ref=e377]:
+          - code [ref=e378]: /v1/jobs
+          - text: （课程状态查询）
+        - cell "POST" [ref=e379]
+        - cell [ref=e380]:
+          - code [ref=e381]: http://127.0.0.1:8765
+        - cell "通过" [ref=e382]
+      - row [ref=e383]:
+        - cell [ref=e384]:
+          - code [ref=e385]: "/v1/personal-courses/{id}/projection"
+        - cell [ref=e386]:
+          - strong [ref=e387]: GET
+        - cell [ref=e388]:
+          - strong [ref=e389]: 空
+        - cell [ref=e390]:
+          - strong [ref=e391]: "401"
+  - paragraph [ref=e392]:
+    - strong [ref=e393]: 为什么自动刷新重试也失败：
+  - list [ref=e394]:
+    - listitem [ref=e395]:
+      - code [ref=e396]: getPersonalCourseProjection
+      - text: （GET）→ 无 Origin → 401
+    - listitem [ref=e397]:
+      - text: 触发
+      - code [ref=e398]: rebootstrapSameOriginSession
+      - text: （POST）→ 有 Origin → 成功获取新 token
+    - listitem [ref=e399]:
+      - text: 用新 token 重试 GET → 仍无 Origin →
+      - strong [ref=e400]: 再次 401
+  - paragraph [ref=e401]: 无论刷新多少次，GET 请求永远 401。
+  - paragraph [ref=e402]:
+    - strong [ref=e403]: 代码不一致：
+  - paragraph [ref=e404]:
+    - code [ref=e405]: session.py
+    - text: 的
+    - code [ref=e406]: issue_same_origin_token
+    - text: 已经接受空 Origin（
+    - code [ref=e407]: origin != ""
+    - text: ），但
+    - code [ref=e408]: api.py
+    - text: 的
+    - code [ref=e409]: require_session
+    - text: 不接受。两者不一致。
+  - heading "修复" [level=3] [ref=e410]
+  - paragraph [ref=e411]:
+    - strong [ref=e412]:
+      - text: 文件：
+      - code [ref=e413]: platform/helper/course_helper/api.py
+  - code [ref=e415]: "# 修改前 if ( origin != runtime.launch_session.allowed_origin or not runtime.launch_session.verify_token(token) ): # 修改后 if ( (origin != runtime.launch_session.allowed_origin and origin != \"\") or not runtime.launch_session.verify_token(token) ):"
+  - paragraph [ref=e416]:
+    - text: 核心差异：条件从
+    - code [ref=e417]: origin != allowed_origin
+    - text: 改为
+    - code [ref=e418]: (origin != allowed_origin and origin != "")
+  - heading "安全性分析" [level=3] [ref=e419]
+  - table [ref=e420]:
+    - rowgroup [ref=e421]:
+      - row [ref=e422]:
+        - columnheader "关注点" [ref=e423]
+        - columnheader "分析" [ref=e424]
+    - rowgroup [ref=e425]:
+      - row [ref=e426]:
+        - cell "外部网络访问" [ref=e427]
+        - cell [ref=e428]:
+          - text: Helper 仅监听
+          - code [ref=e429]: 127.0.0.1
+          - text: ，外部无法访问
+      - row [ref=e430]:
+        - cell "跨源攻击" [ref=e431]
+        - cell "跨源请求携带非空且不匹配的 Origin，仍被拒绝" [ref=e432]
+      - row [ref=e433]:
+        - cell "空 Origin 场景" [ref=e434]
+        - cell "仅同源 GET 请求，安全" [ref=e435]
+      - row [ref=e436]:
+        - cell "一致性" [ref=e437]
+        - cell [ref=e438]:
+          - text: 与
+          - code [ref=e439]: issue_same_origin_token
+          - text: 保持一致
+      - row [ref=e440]:
+        - cell "Token 验证" [ref=e441]
+        - cell [ref=e442]:
+          - text: 仍要求有效
+          - code [ref=e443]: X-Course-Session
+          - text: token，未削弱
+  - separator [ref=e444]
+  - heading "10. 最终效果" [level=2] [ref=e445]
+  - paragraph [ref=e446]: 修复全部问题后，平台正常运行。以下是最终效果截图：
+  - heading "图 1：课程工作台" [level=3] [ref=e447]
+  - paragraph [ref=e448]:
+    - img "课程工作台" [ref=e449]
+  - paragraph [ref=e450]: 工作台首页，可以上传资料、输入课程要求、创建课程。
+  - heading "图 2：讲师屏" [level=3] [ref=e451]
+  - paragraph [ref=e452]:
+    - img "讲师屏" [ref=e453]
+  - paragraph [ref=e454]: 点击"开始授课"后进入的讲师屏，展示课程内容。
+  - separator [ref=e455]
+  - heading "附：全部修改文件清单" [level=2] [ref=e456]
+  - table [ref=e457]:
+    - rowgroup [ref=e458]:
+      - row [ref=e459]:
+        - columnheader "#" [ref=e460]
+        - columnheader "文件" [ref=e461]
+        - columnheader "修改内容" [ref=e462]
+        - columnheader "对应问题" [ref=e463]
+    - rowgroup [ref=e464]:
+      - row [ref=e465]:
+        - cell "1" [ref=e466]
+        - cell [ref=e467]:
+          - code [ref=e468]: platform/start-course-studio.ps1
+        - cell "Node.js/Python 自动探测 + 依赖自动安装" [ref=e469]
+        - cell "1" [ref=e470]
+      - row [ref=e471]:
+        - cell "2" [ref=e472]
+        - cell [ref=e473]:
+          - code [ref=e474]: platform/helper/pyproject.toml
+        - cell "包发现配置 + 包数据配置" [ref=e475]
+        - cell "1" [ref=e476]
+      - row [ref=e477]:
+        - cell "3" [ref=e478]
+        - cell [ref=e479]:
+          - code [ref=e480]: platform/helper/course_helper/server.py
+        - cell [ref=e481]:
+          - text: 启动顺序修复 +
+          - code [ref=e482]: _wait_for_loopback
+          - text: + 连接 URL 打印
+        - cell "2" [ref=e483]
+      - row [ref=e484]:
+        - cell "4" [ref=e485]
+        - cell [ref=e486]:
+          - code [ref=e487]: platform/helper/course_helper/static_web.py
+        - cell [ref=e488]:
+          - text: MIME 类型纠正 +
+          - code [ref=e489]: "Cache-Control: no-store"
+        - cell "3、4" [ref=e490]
+      - row [ref=e491]:
+        - cell "5" [ref=e492]
+        - cell [ref=e493]:
+          - code [ref=e494]: platform/helper/course_helper/session.py
+        - cell [ref=e495]:
+          - text: 新增
+          - code [ref=e496]: issue_same_origin_token
+          - text: 方法
+        - cell "4" [ref=e497]
+      - row [ref=e498]:
+        - cell "6" [ref=e499]
+        - cell [ref=e500]:
+          - code [ref=e501]: platform/helper/course_helper/api.py
+        - cell [ref=e502]:
+          - text: 新增
+          - code [ref=e503]: /v1/session/same-origin
+          - text: 端点 + 中文文件名解码 +
+          - code [ref=e504]: require_session
+          - text: 接受空 Origin
+        - cell "4、6、9" [ref=e505]
+      - row [ref=e506]:
+        - cell "7" [ref=e507]
+        - cell [ref=e508]:
+          - code [ref=e509]: platform/web/src/session/helper-session.ts
+        - cell [ref=e510]:
+          - text: fragment 丢失时同源恢复 +
+          - code [ref=e511]: rebootstrapSameOriginSession
+        - cell "4、8" [ref=e512]
+      - row [ref=e513]:
+        - cell "8" [ref=e514]
+        - cell [ref=e515]:
+          - code [ref=e516]: platform/web/src/client/knowledge-client.ts
+        - cell "错误处理改进 + 401 自动刷新重试 + 中文文件名编码" [ref=e517]
+        - cell "5、6、8" [ref=e518]
+      - row [ref=e519]:
+        - cell "9" [ref=e520]
+        - cell [ref=e521]:
+          - code [ref=e522]: platform/web/src/factory/governed-job-factory.ts
+        - cell [ref=e523]:
+          - code [ref=e524]: helperCanonicalTimestamp
+          - text: 修复
+        - cell "5" [ref=e525]
+      - row [ref=e526]:
+        - cell "10" [ref=e527]
+        - cell [ref=e528]:
+          - code [ref=e529]: platform/web/src/components/PersonalCourseCreate.tsx
+        - cell "错误信息显示具体原因" [ref=e530]
+        - cell "5" [ref=e531]
+      - row [ref=e532]:
+        - cell "11" [ref=e533]
+        - cell [ref=e534]:
+          - code [ref=e535]: platform/web/src/App.tsx
+        - cell [ref=e536]:
+          - text: 传入刷新回调 +
+          - code [ref=e537]: openCourse
+          - text: try/catch
+        - cell "8" [ref=e538]
+      - row [ref=e539]:
+        - cell "12" [ref=e540]
+        - cell [ref=e541]:
+          - code [ref=e542]: platform/helper/course_helper/catalog.py
+        - cell [ref=e543]:
+          - code [ref=e544]: source_is_extractable
+          - text: 接受
+          - code [ref=e545]: warning
+          - text: 状态
+        - cell "7" [ref=e546]
+      - row [ref=e547]:
+        - cell "13" [ref=e548]
+        - cell [ref=e549]:
+          - code [ref=e550]: platform/helper/course_helper/personal_orchestrator.py
+        - cell [ref=e551]:
+          - code [ref=e552]: _failed_phase
+          - text: 记录
+          - code [ref=e553]: error_message
+        - cell "7" [ref=e554]

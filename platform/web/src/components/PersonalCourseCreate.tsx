@@ -32,8 +32,10 @@ export function PersonalCourseCreate({ onStart }: PersonalCourseCreateProps) {
     setError(undefined);
     try {
       await onStart(files, prompt.trim());
-    } catch {
-      setError("课程创建未能开始，请检查资料后重试。");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[PersonalCourseCreate] onStart failed:", error);
+      setError(`课程创建未能开始：${message}`);
       setSubmitting(false);
     }
   };

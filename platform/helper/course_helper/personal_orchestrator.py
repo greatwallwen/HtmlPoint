@@ -969,7 +969,11 @@ def _failed_phase(
             catalog,
             run,
             phase=run.status,
-            output={"error_type": type(error).__name__, "safe_message": "phase failed"},
+            output={
+                "error_type": type(error).__name__,
+                "safe_message": "phase failed",
+                "error_message": str(error)[:500],
+            },
             status="failed",
         )
     return _PhaseOutcome("failed", evidence.evidence_id)

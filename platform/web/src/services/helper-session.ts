@@ -129,11 +129,65 @@ export function prepareHelperSessionLaunch(): void {
       : { status: "valid", ...material };
 }
 
+export async function rebootstrapSameOriginSession(): Promise<VerifiedHelperSession | undefined> {
+  // Clear any stale token first, then request a fresh same-origin token.
+  safeRemoveStoredSession();
+  const session = await bootstrapSameOriginSession();
+  if (!session) {
+    console.error("[rebootstrapSameOriginSession] bootstrapSameOriginSession returned undefined");
+  }
+  return session;
+}
+
+async function bootstrapSameOriginSession(): Promise<VerifiedHelperSession | undefined> {
+  // When the SPA is served from the same origin as the helper (the common
+  // local case), we can recover from a lost fragment by asking the helper
+  // directly for a session token without a nonce.
+  const helperOrigin = window.location.origin;
+  if (parseHelperOrigin(helperOrigin) === undefined) {
+    console.error("[bootstrapSameOriginSession] parseHelperOrigin rejected origin:", helperOrigin);
+    return undefined;
+  }
+  try {
+    const response = await fetch(`${helperOrigin}/v1/session/same-origin`, {
+      method: "POST",
+      credentials: "omit",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) {
+      console.error("[bootstrapSameOriginSession] same-origin response not ok:", response.status);
+      return undefined;
+    }
+    const parsed = exchangeResponseSchema.safeParse(await response.json());
+    if (!parsed.success) {
+      console.error("[bootstrapSameOriginSession] response schema parse failed");
+      return undefined;
+    }
+    const session = verifiedSession(helperOrigin, parsed.data.sessionToken);
+    window.sessionStorage.setItem(
+      HELPER_SESSION_STORAGE_KEY,
+      JSON.stringify({
+        helperOrigin: session.helperOrigin,
+        sessionToken: session.sessionToken,
+      }),
+    );
+    return session;
+  } catch (error) {
+    console.error("[bootstrapSameOriginSession] fetch threw:", error);
+    return undefined;
+  }
+}
+
 async function bootstrapPreparedSession(
   launch: PreparedLaunchState,
 ): Promise<VerifiedHelperSession | undefined> {
   if (launch.status === "none") {
-    return restoreStoredSession();
+    const restored = restoreStoredSession();
+    if (restored !== undefined) {
+      return restored;
+    }
+    // Fragment lost — try same-origin recovery before giving up.
+    return bootstrapSameOriginSession();
   }
   if (launch.status !== "valid") {
     safeRemoveStoredSession();

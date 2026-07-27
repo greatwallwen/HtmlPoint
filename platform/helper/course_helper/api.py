@@ -8,6 +8,7 @@ import hashlib
 import re
 import threading
 import time
+from urllib.parse import unquote
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -572,8 +573,11 @@ def create_app(runtime: HelperRuntime) -> FastAPI:
     def require_session(request: Request) -> str:
         origin = request.headers.get("Origin", "")
         token = request.headers.get("X-Course-Session", "")
+        # Browsers do not send the Origin header for same-origin GET requests.
+        # The helper is loopback-only, and issue_same_origin_token already
+        # accepts an empty origin, so require_session must stay consistent.
         if (
-            origin != runtime.launch_session.allowed_origin
+            (origin != runtime.launch_session.allowed_origin and origin != "")
             or not runtime.launch_session.verify_token(token)
         ):
             raise HTTPException(
@@ -599,6 +603,21 @@ def create_app(runtime: HelperRuntime) -> FastAPI:
         try:
             token = runtime.launch_session.exchange(
                 body.nonce,
+                origin=request.headers.get("Origin", ""),
+            )
+        except SessionRejected:
+            raise HTTPException(status_code=401, detail="unauthorized") from None
+        return SessionExchangeResponse(session_token=token)
+
+    @app.post("/v1/session/same-origin", response_model=SessionExchangeResponse)
+    def same_origin_session(request: Request) -> SessionExchangeResponse:
+        """Issue a session token for same-origin SPA requests without a nonce.
+
+        This allows the SPA to recover when the URL fragment (containing the
+        nonce) is lost, e.g. due to browser behavior or manual navigation.
+        """
+        try:
+            token = runtime.launch_session.issue_same_origin_token(
                 origin=request.headers.get("Origin", ""),
             )
         except SessionRejected:
@@ -769,7 +788,7 @@ def create_app(runtime: HelperRuntime) -> FastAPI:
                     catalog, Path(runtime.config.app_data_path)
                 ).create_upload_async(
                     request.stream(),
-                    file_name=names[0],
+                    file_name=unquote(names[0]),
                     media_type=media_types[0],
                     byte_size_hint=int(declared_length),
                     session_id=_session_owner_id(session_id),

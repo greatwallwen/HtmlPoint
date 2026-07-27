@@ -23,6 +23,12 @@ dependencies = [
 [project.scripts]
 course-helper = "course_helper.server:main"
 
+[tool.setuptools.packages.find]
+include = ["course_helper*"]
+
+[tool.setuptools.package-data]
+course_helper = ["*.sql", "*.json"]
+
 [project.optional-dependencies]
 dev = ["httpx==0.28.1", "pytest==8.3.4"]
 

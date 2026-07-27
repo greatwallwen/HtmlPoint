@@ -125,13 +125,17 @@ export function trustedExternalLinkProps(link: TrustedExternalLink): {
   };
 }
 
+export type SessionRefresher = () => Promise<VerifiedHelperSession | undefined>;
+
 export class KnowledgeClient implements KnowledgeSummaryClient {
   readonly #helperOrigin: string;
-  readonly #sessionToken: string;
+  #sessionToken: string;
+  readonly #refreshSession?: SessionRefresher;
 
-  constructor(session: VerifiedHelperSession) {
+  constructor(session: VerifiedHelperSession, refreshSession?: SessionRefresher) {
     this.#helperOrigin = session.helperOrigin;
     this.#sessionToken = session.sessionToken;
+    this.#refreshSession = refreshSession;
   }
 
   async #fetchJson<Schema extends z.ZodTypeAny>(
@@ -140,6 +144,31 @@ export class KnowledgeClient implements KnowledgeSummaryClient {
     schema: Schema,
     timeoutMs: number,
   ): Promise<z.infer<Schema>> {
+    const result = await this.#doFetch(path, init, schema, timeoutMs, this.#sessionToken);
+    if (!result.ok && result.status === 401 && this.#refreshSession) {
+      console.warn("[KnowledgeClient] 401 received, attempting session refresh");
+      const refreshed = await this.#refreshSession();
+      if (refreshed) {
+        console.info("[KnowledgeClient] session refreshed, retrying request");
+        this.#sessionToken = refreshed.sessionToken;
+        const retry = await this.#doFetch(path, init, schema, timeoutMs, this.#sessionToken);
+        if (retry.ok) return retry.value;
+        console.error("[KnowledgeClient] retry also failed", retry.status);
+        throw retry.error;
+      }
+      console.error("[KnowledgeClient] session refresh returned undefined");
+    }
+    if (result.ok) return result.value;
+    throw result.error;
+  }
+
+  async #doFetch<Schema extends z.ZodTypeAny>(
+    path: string,
+    init: RequestInit,
+    schema: Schema,
+    timeoutMs: number,
+    token: string,
+  ): Promise<{ ok: true; value: z.infer<Schema> } | { ok: false; status: number; error: Error }> {
     const controller = new AbortController();
     const timeout = globalThis.setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -148,17 +177,36 @@ export class KnowledgeClient implements KnowledgeSummaryClient {
         credentials: "omit",
         headers: {
           Accept: "application/json",
-          "X-Course-Session": this.#sessionToken,
+          "X-Course-Session": token,
           ...init.headers,
         },
         signal: controller.signal,
       });
       if (!response.ok) {
-        throw new Error(SAFE_HELPER_FAILURE_MESSAGE);
+        let detail = "";
+        try {
+          detail = await response.text();
+        } catch {
+          // ignore
+        }
+        return {
+          ok: false,
+          status: response.status,
+          error: new Error(
+            `${SAFE_HELPER_FAILURE_MESSAGE}（HTTP ${response.status}${detail ? `: ${detail.slice(0, 200)}` : ""}）`,
+          ),
+        };
       }
-      return schema.parse(await response.json());
-    } catch {
-      throw new Error(SAFE_HELPER_FAILURE_MESSAGE);
+      return { ok: true, value: schema.parse(await response.json()) };
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith(SAFE_HELPER_FAILURE_MESSAGE)) {
+        return { ok: false, status: 0, error: error };
+      }
+      return {
+        ok: false,
+        status: 0,
+        error: new Error(`${SAFE_HELPER_FAILURE_MESSAGE}（${error instanceof Error ? error.message : String(error)}）`),
+      };
     } finally {
       globalThis.clearTimeout(timeout);
     }
@@ -222,7 +270,7 @@ export class KnowledgeClient implements KnowledgeSummaryClient {
         method: "POST",
         headers: {
           "Content-Type": file.type,
-          "X-Upload-Name": fileName,
+          "X-Upload-Name": encodeURIComponent(fileName),
         },
         body: file,
       },

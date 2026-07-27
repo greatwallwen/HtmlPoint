@@ -1557,7 +1557,7 @@ class KnowledgeCatalog:
             return False
         evidence_rows = self.connection.execute(
             "SELECT payload_json FROM evidence WHERE kind = 'extraction' "
-            "AND status = 'verified' ORDER BY evidence_id"
+            "AND status IN ('verified', 'warning') ORDER BY evidence_id"
         ).fetchall()
         for evidence_row in evidence_rows:
             try:

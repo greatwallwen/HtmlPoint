@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import mimetypes
 import os
 import stat
 from pathlib import Path
@@ -10,6 +11,16 @@ from fastapi import FastAPI
 from starlette.exceptions import HTTPException
 from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
+
+# Windows registry may map .js to text/plain, which causes browsers to refuse
+# executing module scripts (strict MIME checking). Override with correct types.
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("application/javascript", ".mjs")
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("application/json", ".json")
+mimetypes.add_type("font/woff", ".woff")
+mimetypes.add_type("font/woff2", ".woff2")
+mimetypes.add_type("image/svg+xml", ".svg")
 
 
 class CourseStudioStaticFiles(StaticFiles):
@@ -22,9 +33,13 @@ class CourseStudioStaticFiles(StaticFiles):
         except HTTPException as error:
             if error.status_code != 404 or _is_api_path(normalized):
                 raise
-            return await super().get_response("index.html", scope)
+            response = await super().get_response("index.html", scope)
         if response.status_code == 404 and not _is_api_path(normalized):
-            return await super().get_response("index.html", scope)
+            response = await super().get_response("index.html", scope)
+        # Prevent browsers from caching stale responses (e.g. wrong MIME type
+        # from a previous server version). Vite assets have hashed filenames so
+        # re-fetching is cheap; index.html must always be fresh.
+        response.headers["Cache-Control"] = "no-store"
         return response
 
 

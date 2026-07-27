@@ -20,8 +20,16 @@ import { stableDigest } from "./validation";
 
 const ACTOR = { actorType: "human" as const, actorId: "local-user" };
 
-const helperCanonicalTimestamp = (value: string): string =>
-  new Date(value).toISOString().replace(/\.(\d{3})Z$/, ".$1000Z");
+const helperCanonicalTimestamp = (value: string): string => {
+  const iso = new Date(value).toISOString();
+  // Match Pydantic's datetime serialization:
+  // - Drop fractional seconds entirely when microseconds are 0
+  // - Pad to 6 decimal places when non-zero
+  const match = /^.*\.(\d{1,3})Z$/.exec(iso);
+  if (match === null) return iso;
+  if (match[1] === "000") return `${iso.slice(0, -match[1].length - 2)}Z`;
+  return `${iso.slice(0, -1)}${"0".repeat(6 - match[1].length)}Z`;
+};
 
 export async function createImportStartJob(
   upload: UploadResponse,

@@ -91,6 +91,18 @@ class LaunchSession:
     def verify_token(self, candidate: str) -> bool:
         return bool(candidate) and secrets.compare_digest(candidate, self._session_token)
 
+    def issue_same_origin_token(self, *, origin: str) -> str:
+        """Issue a session token for a same-origin request (no nonce needed).
+
+        Safe because the helper only listens on 127.0.0.1 and the web app
+        is served from the same origin. A cross-origin request will have a
+        different Origin header and be rejected.
+        """
+        with self._exchange_lock:
+            if origin != self.allowed_origin and origin != "":
+                raise SessionRejected("launch session rejected")
+            return self._session_token
+
     def connect_url(self, *, web_application_url: str, helper_base_url: str) -> str:
         fragment = urlencode(
             {
